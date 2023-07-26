@@ -1,7 +1,7 @@
 import numpy as np
 from django.db import IntegrityError, transaction
-from imports.models.generic import GenericData
-from imports.models.metric import MetricData
+from imports.omicspred.models.generic import GenericData
+from imports.omicspred.models.metric import MetricData
 from omicspred.models import Performance
 
 class PerformanceData(GenericData):

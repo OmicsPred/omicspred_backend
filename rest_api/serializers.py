@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from omicspred.models import *
-
+from applications.models import *
 
 class CohortSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cohort
-        meta_fields = ('name_short', 'name_full', 'name_others', 'url')
+        # meta_fields = ('name_short', 'name_full', 'name_others', 'url')
+        meta_fields = ('name_short', 'name_full', 'url')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -364,5 +365,65 @@ class ScoreTranscriptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score
         meta_fields = ('id','variants_number','genes','performance_data')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+##################
+## Applications ##
+##################
+
+class PhecodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phecode
+        meta_fields = ('id','name','category')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+class PhecodeSerializerExtended(PhecodeSerializer):
+
+    child_phecode = PhecodeSerializer(many=True,read_only=True)
+
+    class Meta(PhecodeSerializer.Meta):
+        meta_fields = ('child_phecode',)
+        fields = PhecodeSerializer.Meta.fields + meta_fields
+        read_only_fields = PhecodeSerializer.Meta.read_only_fields + meta_fields
+
+
+class PlatformApplicationsSerializer(PlatformSerializer):
+    class Meta:
+        model = PlatformApplications
+        fields = PlatformSerializer.Meta.fields
+        read_only_fields = PlatformSerializer.Meta.read_only_fields
+
+
+class CohortApplicationsSerializer(CohortSerializer):
+    class Meta:
+        model = CohortApplications
+        fields = CohortSerializer.Meta.fields
+        read_only_fields = CohortSerializer.Meta.read_only_fields
+
+
+class ScoreApplicationsSerializer(serializers.ModelSerializer):
+    phecode = PhecodeSerializer(many=False,read_only=True)
+    platform = PlatformApplicationsSerializer(many=False,read_only=True)
+    cohort = CohortApplicationsSerializer(many=False,read_only=True)
+    data_values = serializers.SerializerMethodField('get_data_values')
+    class Meta:
+        model = ScoreApplications
+        meta_fields = ('id', 'score_id','omics_name','phecode','platform','cohort','data_values')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+    def get_data_values(self, obj):
+        return obj.values_dict
+
+
+class SampleApplicationsSerializer(serializers.ModelSerializer):
+    phecode = PhecodeSerializer(many=False,read_only=True)
+    class Meta:
+        model = SampleApplications
+        meta_fields = ('id','sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phecode','platform_counts')
         fields = meta_fields
         read_only_fields = meta_fields

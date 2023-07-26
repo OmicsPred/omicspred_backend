@@ -12,6 +12,9 @@ class GenericData():
         '\uFEFF': ''   # byte order mark (BOM)
     }
 
+    # Applications DB 
+    applications_db = 'applications'
+
     def __init__(self):
         self.model = None
         self.data = {}

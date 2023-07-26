@@ -1,9 +1,9 @@
-from imports.parsers.gwas import GWASParser
-from imports.parsers.summary import SummaryParser
-from imports.parsers.rnaseq import RNAseqParser
-from imports.parsers.protein import ProteinParser
-from imports.parsers.metabolite import MetaboliteParser
-from imports.parsers.data_content import *
+from imports.omicspred.parsers.gwas import GWASParser
+from imports.omicspred.parsers.summary import SummaryParser
+from imports.omicspred.parsers.rnaseq import RNAseqParser
+from imports.omicspred.parsers.protein import ProteinParser
+from imports.omicspred.parsers.metabolite import MetaboliteParser
+from imports.omicspred.parsers.data_content import *
 from omicspred.models import Publication, Platform
 
 

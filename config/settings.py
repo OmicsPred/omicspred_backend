@@ -68,6 +68,7 @@ if 'OP_CURATION_SITE' in os.environ:
 
 INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
+    'applications.apps.ApplicationsConfig',
     'imports.apps.ImportsConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
@@ -133,28 +134,45 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # [START db_setup]
+DB_ENGINE = 'django.db.backends.postgresql'
 if OP_ON_GAE == 1:
     # Running on production App Engine, so connect to Google Cloud SQL using
     # the unix socket at /cloudsql/<your-cloudsql-connection string>
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': DB_ENGINE,
             'NAME': os.environ['DATABASE_NAME'],
             'USER': os.environ['DATABASE_USER'],
             'PASSWORD': os.environ['DATABASE_PASSWORD'],
             'HOST': os.environ['DATABASE_HOST'],
             'PORT': os.environ['DATABASE_PORT']
+        },
+        'applications': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.environ['DATABASE_NAME_2'],
+            'USER': os.environ['DATABASE_USER_2'],
+            'PASSWORD': os.environ['DATABASE_PASSWORD_2'],
+            'HOST': os.environ['DATABASE_HOST_2'],
+            'PORT': os.environ['DATABASE_PORT_2']
         }
     }
 else:
      DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': DB_ENGINE,
             'NAME': os.environ['DATABASE_NAME'],
             'USER': os.environ['DATABASE_USER'],
             'PASSWORD': os.environ['DATABASE_PASSWORD'],
             'HOST': 'localhost',
             'PORT': os.environ['DATABASE_PORT_LOCAL']
+        },
+        'applications': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.environ['DATABASE_NAME_2'],
+            'USER': os.environ['DATABASE_USER_2'],
+            'PASSWORD': os.environ['DATABASE_PASSWORD_2'],
+            'HOST': 'localhost',
+            'PORT': os.environ['DATABASE_PORT_LOCAL_2']
         }
     }
 

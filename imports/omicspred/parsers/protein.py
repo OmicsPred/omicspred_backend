@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-from imports.models.score import ScoreData
-from imports.models.performance import PerformanceData
-from imports.models.omics import GeneData, ProteinData
-from imports.models.efo import EFOData
+from imports.omicspred.models.score import ScoreData
+from imports.omicspred.models.performance import PerformanceData
+from imports.omicspred.models.omics import GeneData, ProteinData
+from imports.omicspred.models.efo import EFOData
 from omicspred.models import Platform
 
 

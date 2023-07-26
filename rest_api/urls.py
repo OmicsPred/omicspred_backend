@@ -1,5 +1,5 @@
-from django.urls import path, re_path
-from django.views.generic import TemplateView
+from django.urls import re_path
+# from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from .views import *
 
@@ -11,21 +11,36 @@ cache_time = 0
 slash = '/?'
 
 rest_urls = {
-    'cohort':      'rest/cohort/',
-    'platform':    'rest/platform/',
-    'performance': 'rest/performance/',
-    'publication': 'rest/publication/',
-    'release':     'rest/release/',
-    'sample':      'rest/sample/',
-    'score':       'rest/score/',
-    'table':       'rest/table/',
-    'plot':        'rest/plot/',
-    'test':        'rest/test/',
+    'applications_score':  'rest/applications_score/',
+    'applications_sample': 'rest/applications_sample/',
+    'cohort':              'rest/cohort/',
+    'gene':                'rest/gene/',
+    'metabolite':          'rest/metabolite/',
+    'metabolomics':        'rest/metabolomics/',
+    'phecode':             'rest/phecode/',
+    'platform':            'rest/platform/',
+    # 'plot':                'rest/plot/',
+    'performance':         'rest/performance/',
+    'protein':             'rest/protein/',
+    'proteomics':          'rest/proteomics/',
+    'publication':         'rest/publication/',
+    'sample':              'rest/sample/',
+    'score':               'rest/score/',
+    'transcriptomics':     'rest/transcriptomics/',
+    # 'table':               'rest/table/',
 }
 
 urlpatterns = [
     # Cohorts
-    re_path(r'^'+rest_urls['cohort']+'all'+slash, cache_page(cache_time)(RestListCohorts.as_view()), name="getAllCohorts"),
+    re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
+    # Omics - single entry
+    re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
+    re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
+    re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
+    # Omics - platform entry
+    re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="searchTestMetabolite"),
+    re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="searchTestProtein"),
+    re_path(r'^'+rest_urls['transcriptomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestTranscriptomics.as_view()), name="searchTestTranscript"),
     # Performance metrics
     re_path(r'^'+rest_urls['performance']+'all'+slash, cache_page(cache_time)(RestListPerformances.as_view()), name="getAllPerformanceMetrics"),
     re_path(r'^'+rest_urls['performance']+'search'+slash, RestPerformanceSearch.as_view(), name="searchPerformanceMetrics"),
@@ -43,14 +58,18 @@ urlpatterns = [
     re_path(r'^'+rest_urls['score']+'(?P<opgs_id>[^/]+)'+slash, RestScore.as_view(), name="getScore"),
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
-    re_path(r'^'+rest_urls['table']+'search'+slash, cache_page(cache_time)(RestTableSearch.as_view()), name="searchTables"),
-    re_path(r'^'+rest_urls['table']+'metabolite/search'+slash, cache_page(cache_time)(RestMetaboliteTableSearch.as_view()), name="searchMetaboliteTables"),
-    re_path(r'^'+rest_urls['table']+'protein/search'+slash, cache_page(cache_time)(RestProteinTableSearch.as_view()), name="searchProteinTables"),
-    re_path(r'^'+rest_urls['table']+'transcript/search'+slash, cache_page(cache_time)(RestTranscriptTableSearch.as_view()), name="searchEnsemblTables"),
-    # Plot
-    re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
-    # Test
-    re_path(r'^'+rest_urls['test']+'metabolite/'+slash, cache_page(cache_time)(RestTestMetabolite.as_view()), name="searchTestMetabolite"),
-    re_path(r'^'+rest_urls['test']+'protein/'+slash, cache_page(cache_time)(RestTestProtein.as_view()), name="searchTestProtein"),
-    re_path(r'^'+rest_urls['test']+'transcript/'+slash, cache_page(cache_time)(RestTestTranscript.as_view()), name="searchTestTranscript"),
+    re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),
+    # re_path(r'^'+rest_urls['table']+'search'+slash, cache_page(cache_time)(RestTableSearch.as_view()), name="searchTables"),
+    # re_path(r'^'+rest_urls['table']+'metabolite/search'+slash, cache_page(cache_time)(RestMetaboliteTableSearch.as_view()), name="searchMetaboliteTables"),
+    # re_path(r'^'+rest_urls['table']+'protein/search'+slash, cache_page(cache_time)(RestProteinTableSearch.as_view()), name="searchProteinTables"),
+    # re_path(r'^'+rest_urls['table']+'transcript/search'+slash, cache_page(cache_time)(RestTranscriptTableSearch.as_view()), name="searchEnsemblTables"),
+    # # Plot
+    # re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
+    # Applications
+    re_path(r'^'+rest_urls['phecode']+'(?P<phecode_id>[^/]+)'+slash, RestPhecode.as_view(), name="getPhecode"),
+    re_path(r'^'+rest_urls['phecode']+'(?P<phecode_id>[^/]+)'+slash, RestPhecode.as_view(), name="getPhecode"),
+    re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhecodeScore.as_view()), name="getAllPhecodeScores"),
+    re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhecodeScoreSearch.as_view(), name="searchPhecodeScores"),
+    re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhecodeScore.as_view(), name="getPhecodeScore"),
+    re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhecodeSample.as_view()), name="getAllPhecodeSamples"),
 ]

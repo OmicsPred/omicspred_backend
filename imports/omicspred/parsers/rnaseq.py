@@ -1,10 +1,8 @@
 import pandas as pd
-from imports.models.score import ScoreData
-from imports.models.performance import PerformanceData
-from imports.models.omics import GeneData
-from imports.models.efo import EFOData
-from omicspred.models import Platform
-
+from imports.omicspred.models.score import ScoreData
+from imports.omicspred.models.performance import PerformanceData
+from imports.omicspred.models.omics import GeneData
+from imports.omicspred.models.efo import EFOData
 
 
 class RNAseqParser():

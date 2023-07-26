@@ -1,6 +1,6 @@
 import json
-from imports.models.cohort import CohortData
-from imports.models.sample import SampleData
+from imports.omicspred.models.cohort import CohortData
+from imports.omicspred.models.sample import SampleData
 
 
 

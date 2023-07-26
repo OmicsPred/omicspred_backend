@@ -1,4 +1,4 @@
-from imports.parsers import *
+from imports.omicspred.parsers import *
 import pandas as pd
 import JSON
 

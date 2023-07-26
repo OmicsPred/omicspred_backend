@@ -403,7 +403,7 @@ class Performance(models.Model):
         if metrics:
             for m in metrics:
                 cohort_metrics[f'{cohort_label}_{m.name_short}'] = {
-                    'label': f'{cohort_label} {m.name_short}',
+                    # 'label': f'{cohort_label} {m.name_short}',
                     'estimate': m.display_value(m.estimate)
                 }
         return cohort_metrics
