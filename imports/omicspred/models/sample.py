@@ -1,6 +1,6 @@
 import re
 from django.db import IntegrityError, transaction
-from imports.omicspred.models.generic import GenericData
+from imports.generic_model import GenericData
 from omicspred.models import Sample
 
 class SampleData(GenericData):

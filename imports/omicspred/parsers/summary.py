@@ -17,6 +17,7 @@ class SummaryParser():
     def parse_summary_file(self):
         # Opening JSON file and load as dictionary
         f = open(self.filepath, 'r')
+        print(f'FILE: {self.filepath}')
         content = json.load(f)
         f.close()
 
@@ -85,6 +86,7 @@ class SummaryParser():
             for sample_ancestry in sample_ancestries:
                 cohort_label = None
                 [sample_number, ancestry_broad] = sample_ancestry.split(' ',1)
+                sample_number = int(sample_number.replace(',',''))
                 for sample_cohort in self.extra_sample_info.keys():
                     if self.extra_sample_info[sample_cohort]['name'] == cohort_name and self.extra_sample_info[sample_cohort]['ancestry'] == ancestry_broad:
                         cohort_label = sample_cohort

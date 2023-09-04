@@ -1,6 +1,6 @@
 import numpy as np
 from django.db import IntegrityError, transaction
-from imports.omicspred.models.generic import GenericData
+from imports.generic_model import GenericData
 from imports.omicspred.models.metric import MetricData
 from omicspred.models import Performance
 
@@ -49,7 +49,7 @@ class PerformanceData(GenericData):
                         pvalue_val = metric_values[pval_col]
                 if metric_values[metric_type] not in [None,np.nan,'nan','']:
                     metric_val = metric_values[metric_type]
-                if metric_val:
+                if metric_val != None:
                     metric_data = MetricData(metric_type,metric_val,pvalue_val)
                     self.metrics.append(metric_data)
 

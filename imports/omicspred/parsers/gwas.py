@@ -70,10 +70,10 @@ class GWASParser():
     def get_gcst_id(self,pmid):
         result = requests.get(f'https://www.ebi.ac.uk/gwas/rest/api/studies/search/findByPublicationIdPubmedId?pubmedId={pmid}')
         result = result.json()
-        results_list = result['_embedded']['studies']
-        if results_list:
-            result = results_list[0]
-            if result['accessionId']:
-                return result['accessionId']
-        else:
-            return None
+        if '_embedded' in result.keys():
+            results_list = result['_embedded']['studies']
+            if results_list:
+                result = results_list[0]
+                if result['accessionId']:
+                    return result['accessionId']
+        return None
