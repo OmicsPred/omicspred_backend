@@ -748,12 +748,8 @@ class RestTranscriptTableSearch(generics.RetrieveAPIView):
 class RestPlotSearch(generics.RetrieveAPIView):
 
     def get(self,request):
-        # score_performance = [Prefetch('score_performance', queryset=Score.objects.only('num').all())]
-        #queryset = Score.objects.only('num','platform_id','platform__id','platform__name','score_performance').select_related('platform').all().order_by('num')
-        #print(Performance.objects.only('score_id','platform_id','platform__id','platform__name','sample_id','sample__id').select_related('platform','sample').all().order_by('score_id').query)
 
-        queryset = Performance.objects.only('score_id','platform_id','platform__id','platform__name','sample_id','sample__id').select_related('platform','sample').all().prefetch_related('sample__cohorts').order_by('score_id')
-        # print(Performance.objects.only('score_id','platform_id','platform__id','platform__name','sample_id','sample__cohort').select_related('platform','sample').all().order_by('score_id').query)
+        queryset = Performance.objects.only('score_id','platform_id','platform__id','platform__name','cohort_label').select_related('platform').all().prefetch_related('performance_metric').order_by('score_id')
         params = 0
 
         # Search by platform
@@ -781,34 +777,55 @@ class RestPlotSearch(generics.RetrieveAPIView):
         # for score in queryset:
         for perf in queryset:
             perf_score_id = perf.score_id
-            idx = score_idx[perf_score_id]
-            #print(score.score_performance.all().query)
-        # for perf in score.score_performance.all():
-            cohort_name = perf.sample.cohorts.all()[0].name_short
-            cohort_name = cohort_name.replace(' ','_')
+            idx = perf_score_id
+            cohort_name = perf.cohort_label
             for metric in perf.performance_metrics:
                 metric_name = metric['name_short']
+                metric_type = metric_name.replace(' ','')
                 if 'estimate' in metric.keys():
                     estimate = metric['estimate']
                 else:
                     estimate = None
-                colname = f'{cohort_name}_{metric_name}'
+
+                colname = f'{cohort_name}_{metric_type}'
                 # Cohort estimate
                 if colname not in cohort_cols_names:
-                    cohort_cols[colname] = { "name": cohort_name, "title": colname, "type": f'_{metric_name}' ,  "data": {} }
+                    cohort_cols[colname] = { "name": cohort_name, "title": colname, "type": f'_{metric_type}' ,  "data": {} }
                     cohort_cols_names.append(colname)
                 cohort_cols[colname]["data"][idx] = estimate
             for col in cohort_cols.keys():
                 if idx not in cohort_cols[col]["data"].keys():
                     cohort_cols[col]["data"][idx] = None
-                if idx != 0:
-                    if missing_index not in cohort_cols[col]["data"].keys():
-                        cohort_cols[col]["data"][missing_index] = None
+                # if idx != 0:
+                #     if missing_index not in cohort_cols[col]["data"].keys():
+                #         cohort_cols[col]["data"][missing_index] = None
 
-        for colname in cohort_cols_names:
+        for colname in sorted(cohort_cols_names):
             data.append(cohort_cols[colname])
 
         return Response(data)
+
+
+class RestPlotScoreSearch(generics.ListAPIView):
+    """
+    Search the Polygenic Score(s) using query
+    """
+    serializer_class = ScorePlotSerializer
+
+    def get_queryset(self):
+        queryset = Score.objects.all().prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
+        params = 0
+
+        # Search by platform
+        platform = self.request.query_params.get('platform')
+        if platform and platform is not None:
+            queryset = queryset.filter(platform__name__iexact=platform)
+            params += 1
+
+        if params == 0:
+            queryset = []
+
+        return queryset
 
 
 
@@ -886,7 +903,7 @@ class RestPhecodeScore(generics.RetrieveAPIView):
             queryset = None
         serializer = ScoreApplicationsSerializer(queryset,many=False)
         return Response(serializer.data)
-    
+
 
 class RestPhecodeScoreSearch(generics.ListAPIView):
     """

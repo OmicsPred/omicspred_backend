@@ -163,12 +163,17 @@ class ScoreSerializer(serializers.ModelSerializer):
         return obj.date_released
 
 
-# class ScoreIdSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Score
-#         meta_fields = ('num','id')
-#         fields = meta_fields
-#         read_only_fields = meta_fields
+class ScorePlotSerializer(serializers.ModelSerializer):
+    genes = GeneSerializer(many=True, read_only=True)
+    transcripts = TranscriptSerializer(many=True, read_only=True)
+    proteins = ProteinSerializer(many=True, read_only=True)
+    metabolites = MetaboliteSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Score
+        meta_fields = ('num', 'id', 'variants_number', 'genes', 'transcripts', 'proteins', 'metabolites')
+        fields = meta_fields
+        read_only_fields = meta_fields
 
 
 class PerformanceSerializer(serializers.ModelSerializer):
@@ -182,7 +187,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Performance
         meta_fields = ('id', 'associated_pgs_id','publication','sample', 'platform', 'efo',
-                'performance_metrics',
+                'performance_metrics', 'cohort_label',
                 'evaluation_type', 'performance_additional', 'covariates')
         fields = meta_fields
         read_only_fields = meta_fields
