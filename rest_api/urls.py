@@ -33,6 +33,8 @@ rest_urls = {
 urlpatterns = [
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
+    # Proteins
+    re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
     # Omics - single entry
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),

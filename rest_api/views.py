@@ -409,6 +409,28 @@ class RestScoreSearch(generics.ListAPIView):
         return queryset
 
 
+class RestSearchProtein(generics.ListAPIView):
+    """
+    Search Proteins
+    """
+    serializer_class = ProteinSerializer
+
+    def get_queryset(self):
+        queryset = Protein.objects.select_related('gene').all().order_by('id')
+        params = 0
+
+        # Search by Gene
+        gene_id = self.request.query_params.get('gene_id')
+        if gene_id and gene_id is not None:
+            queryset = queryset.filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id))
+            params += 1
+
+        if params == 0:
+            queryset = []
+
+        return queryset
+
+
 ## Tables - format by column ##
 
 class RestTableSearch(generics.ListAPIView):
