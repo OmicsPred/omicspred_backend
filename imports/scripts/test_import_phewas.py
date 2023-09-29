@@ -7,7 +7,7 @@ from imports.applications.models.score import ScoreData
 from imports.applications.models.sample import SampleData
 from applications.models import Phecode
 
-path_root = '/Users/lg10/Workspace/git/clone/OmicsPred/src/pages/Applications/data'
+path_root = '/Users/lg10/Workspace/git/clone/OmicsPred_bak/src/pages/Applications/data'
 phecode_full_asso_path = f'{path_root}/phecode.json'
 phecode_sum_asso_path = f'{path_root}/all_omics_assoc_sum.json'
 
@@ -28,7 +28,7 @@ def fetch_json_data(filepath):
         for id in data_content.keys():
             d_key = f'op_{id}'
             if not d_key in data.keys():
-                data[d_key] = {}  
+                data[d_key] = {}
             data[d_key][data_name] = data_content[id]
     return data
 

@@ -53,28 +53,6 @@ class Publication(models.Model):
         return pub_date.strftime('%Y')
 
 
-class Platform(models.Model):
-    """ Class to describe the platform used to get the omics data """
-    name = models.CharField('Platform name', max_length=100)
-    full_name = models.CharField('Platform full name', max_length=100)
-    version = models.CharField('Platform version', max_length=50)
-    technic = models.CharField('Platform technic', max_length=100)
-    type = models.CharField('Platform type', max_length=100)
-
-
-    @property
-    def scores_count(self):
-        return self.platform_score.count()
-
-
-class PublicationPlatform(models.Model):
-    """ Class linking the Publication to the Platform """
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_pp', verbose_name='Publication')
-    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
-    omics_count = models.IntegerField('Omics Entities count', null=False)
-    omics_type = models.CharField('Omics type', max_length=50)
-
-
 class Cohort(models.Model):
     """ Class to describe cohorts used in samples """
     name_short = models.CharField('Cohort Short Name', max_length=100, db_index=True)
@@ -86,6 +64,19 @@ class Cohort(models.Model):
         return self.name_short
 
 
+class Platform(models.Model):
+    """ Class to describe the platform used to get the omics data """
+    name = models.CharField('Platform name', max_length=100)
+    full_name = models.CharField('Platform full name', max_length=100)
+    version = models.CharField('Platform version', max_length=50)
+    technic = models.CharField('Platform technic', max_length=100)
+    type = models.CharField('Platform type', max_length=100)
+
+    @property
+    def scores_count(self):
+        return self.platform_score.count()
+
+
 class EFO(models.Model):
     """ Class to store EFO entries """
     id = models.CharField('EFO ID', max_length=30, primary_key=True)
@@ -95,6 +86,16 @@ class EFO(models.Model):
     type = models.CharField('Entry type', max_length=100, null=True)
 
     child_efos = models.ManyToManyField('self', verbose_name='Children EFO', symmetrical=False, related_name='parent_efos')
+
+
+class PlatformAdditional(models.Model):
+    """ Class providing additional information to the Platform """
+    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_pp', verbose_name='Publication')
+    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
+    omics_count = models.IntegerField('Omics Entities count', null=False)
+    omics_type = models.CharField('Omics type', max_length=50)
+    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_platform', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
+    cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
 
 
 class Sample(models.Model):
@@ -260,16 +261,27 @@ class Omics(models.Model):
 class Gene(Omics):
     """ Class to describe Gene entity """
     synonyms = models.JSONField('Gene synonyms', null=True)
+    biotype = models.CharField('Gene biotype', max_length=100, null=True)
+    retired_gene_model = models.BooleanField('Retired Gene ID/model', default=False)
+
+    @property
+    def scores_count(self):
+        return self.gene_score.count()
 
 
 class Transcript(Omics):
     """ Class to describe Transcript entity """
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_transcript", null=True)
+    biotype = models.CharField('Gene biotype', max_length=100, null=True)
 
 
 class Protein(Omics):
     """ Class to describe Transcript entity """
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_protein", null=True)
+
+    @property
+    def scores_count(self):
+        return self.protein_score.count()
 
 
 class Pathway(Omics):
@@ -341,6 +353,13 @@ class Score(models.Model):
             for cohort in perf.cohort_metrics.keys():
                 data[cohort] = perf.cohort_metrics[cohort]
         return data
+
+
+class SourceAnnotations(models.Model):
+    """ Class to store original annotations """
+    score = models.OneToOneField(Score, on_delete=models.PROTECT, related_name='source_annotation_score', verbose_name='OmicsPred Score ID', primary_key=True)
+    annotations = models.JSONField('Annotations', default=dict)
+
 
 class Performance(models.Model):
     """ Class for Performance Metric """

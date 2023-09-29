@@ -20,12 +20,18 @@ class Phecode(models.Model):
     id = models.CharField('PheWAS ID', max_length=30, primary_key=True)
     name = models.CharField('PheWAS Name', max_length=150, null=True)
     category = models.CharField('PheWAS Category', max_length=100, null=True)
-    
+
     child_phecode = models.ManyToManyField('self', verbose_name='Children Phecode', symmetrical=False, related_name='parent_phecode')
 
     @property
+    def scores_count(self):
+        scores = ScoreApplications.objects.using('applications').only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
+        return scores
+
+
+    @property
     def score_number(self):
-        scores = ScoreApplications.objects.select_related('platform').filter(phecode=self)
+        scores = ScoreApplications.objects.using('applications').select_related('phecode','platform').filter(phecode=self)
         data = {}
         for score in scores.all():
             platform = score.platform.name

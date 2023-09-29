@@ -45,7 +45,7 @@ def add_platform(platform_name,platform_type,extra_data):
 
 def run():
 
-    path = '/Users/lg10/Workspace/git/clone/OmicsPred/src/data'
+    path = '/Users/lg10/Workspace/git/clone/OmicsPred_bak/src/data'
 
     print("# Fetch GWAS data")
     gwas_files = [f'{path}/paper_data/supplementary_tables_gwas.csv',f'{path}/paper_data/supplementary_tables_qc.csv']
@@ -65,7 +65,7 @@ def run():
         summary.parse_summary_file()
         samples_info = summary.import_to_database()
         # continue
-        
+
         # Data
         platform = study.split('_',1)[1]
         filename = study.split('_')[-1]

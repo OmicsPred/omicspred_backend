@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path
 
+from search import indexes
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('rest_api.urls')),

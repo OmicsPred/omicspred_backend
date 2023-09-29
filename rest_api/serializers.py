@@ -32,6 +32,15 @@ class SampleSerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
+class EFOSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = EFO
+        meta_fields = ('id', 'label', 'description', 'url', 'type')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
 class MetricSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -87,11 +96,16 @@ class PlatformExtendedSerializer(PlatformSerializer):
         read_only_fields = PlatformSerializer.Meta.read_only_fields + meta_fields
 
 
-class EFOSerializer(serializers.ModelSerializer):
+
+class PlatformAdditionalSerializer(serializers.ModelSerializer):
+    publication = PublicationSerializer(many=False, read_only=True)
+    platform = PlatformExtendedSerializer(many=False, read_only=True)
+    tissue = EFOSerializer(many=False, read_only=True)
+    cohorts = CohortSerializer(many=True, read_only=True)
 
     class Meta:
-        model = EFO
-        meta_fields = ('id', 'label', 'description', 'url', 'type')
+        model = PlatformAdditional
+        meta_fields = ('publication', 'platform', 'omics_count', 'omics_type', 'tissue', 'cohorts')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -107,7 +121,7 @@ class PathwaySerializer(serializers.ModelSerializer):
 class GeneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gene
-        meta_fields = ('name', 'external_id', 'external_id_source')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'biotype')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -388,12 +402,18 @@ class PhecodeSerializer(serializers.ModelSerializer):
 
 class PhecodeSerializerExtended(PhecodeSerializer):
 
-    child_phecode = PhecodeSerializer(many=True,read_only=True)
+    # child_phecode = PhecodeSerializer(many=True,read_only=True)
+    child_phecode = serializers.SerializerMethodField()
 
     class Meta(PhecodeSerializer.Meta):
         meta_fields = ('child_phecode',)
         fields = PhecodeSerializer.Meta.fields + meta_fields
         read_only_fields = PhecodeSerializer.Meta.read_only_fields + meta_fields
+
+    def get_child_phecode(self, obj):
+        ''' Sort phecode child terms by their IDs '''
+        children = obj.child_phecode.order_by('id')
+        return PhecodeSerializer(children, many=True).data
 
 
 class PlatformApplicationsSerializer(PlatformSerializer):

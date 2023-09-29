@@ -69,6 +69,7 @@ if 'OP_CURATION_SITE' in os.environ:
 INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
+    'search.apps.SearchConfig',
     'imports.apps.ImportsConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
@@ -271,6 +273,28 @@ REST_FRAMEWORK = {
         'anon': '100/min',
         'user': '100/min'
     }
+}
+
+
+#--------------------------#
+#  Elasticsearch Settings  #
+#--------------------------#
+
+# Elasticsearch configuration
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ['ELASTICSEARCH_URL_ROOT'],
+        'timeout': 180  # Custom timeout
+    }
+}
+
+# Name of the Elasticsearch index
+ELASTICSEARCH_INDEX_NAMES = {
+    'search.documents.gene': 'gene',
+    # 'search.documents.phecode': 'phecode',
+    'search.documents.platform': 'platform',
+    'search.documents.protein': 'protein',
+    'search.documents.score': 'score'
 }
 
 

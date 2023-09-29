@@ -11,22 +11,22 @@ cache_time = 0
 slash = '/?'
 
 rest_urls = {
-    'applications_score':  'rest/applications_score/',
-    'applications_sample': 'rest/applications_sample/',
-    'cohort':              'rest/cohort/',
-    'gene':                'rest/gene/',
-    'metabolite':          'rest/metabolite/',
-    'metabolomics':        'rest/metabolomics/',
-    'phecode':             'rest/phecode/',
-    'platform':            'rest/platform/',
-    'plot':                'rest/plot/',
-    'performance':         'rest/performance/',
-    'protein':             'rest/protein/',
-    'proteomics':          'rest/proteomics/',
-    'publication':         'rest/publication/',
-    'sample':              'rest/sample/',
-    'score':               'rest/score/',
-    'transcriptomics':     'rest/transcriptomics/',
+    'applications_score':   'rest/applications_score/',
+    'applications_sample':  'rest/applications_sample/',
+    'cohort':               'rest/cohort/',
+    'gene':                 'rest/gene/',
+    'metabolite':           'rest/metabolite/',
+    'metabolomics':         'rest/metabolomics/',
+    'phecode':              'rest/phecode/',
+    'platform':             'rest/platform/',
+    'plot':                 'rest/plot/',
+    'performance':          'rest/performance/',
+    'protein':              'rest/protein/',
+    'proteomics':           'rest/proteomics/',
+    'publication':          'rest/publication/',
+    'sample':               'rest/sample/',
+    'score':                'rest/score/',
+    'transcriptomics':      'rest/transcriptomics/',
     # 'table':               'rest/table/',
 }
 
@@ -58,6 +58,9 @@ urlpatterns = [
     re_path(r'^'+rest_urls['score']+'searchbymetabolite/(?P<metabolite>[^/]+)'+slash, RestScoreSearchByMetabolite.as_view(), name="searchScoresByMetabolite"),
     re_path(r'^'+rest_urls['score']+'search'+slash, RestScoreSearch.as_view(), name="searchScores"),
     re_path(r'^'+rest_urls['score']+'(?P<opgs_id>[^/]+)'+slash, RestScore.as_view(), name="getScore"),
+    # Platform_additional
+    re_path(r'^'+rest_urls['platform']+'additional/all'+slash, cache_page(cache_time)(RestListPlatformAdditionals.as_view()), name="getAllPlatformAdditionals"),
+    re_path(r'^'+rest_urls['platform']+'additional/(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestPlatformAdditional.as_view()), name="getPlatformAdditionals"),
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),
@@ -65,6 +68,7 @@ urlpatterns = [
     # re_path(r'^'+rest_urls['table']+'metabolite/search'+slash, cache_page(cache_time)(RestMetaboliteTableSearch.as_view()), name="searchMetaboliteTables"),
     # re_path(r'^'+rest_urls['table']+'protein/search'+slash, cache_page(cache_time)(RestProteinTableSearch.as_view()), name="searchProteinTables"),
     # re_path(r'^'+rest_urls['table']+'transcript/search'+slash, cache_page(cache_time)(RestTranscriptTableSearch.as_view()), name="searchEnsemblTables"),
+
     # # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchPlots"),

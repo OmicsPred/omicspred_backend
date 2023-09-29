@@ -1,5 +1,5 @@
 #### Django library ####
-Django==4.2
+Django==4.2.5
 #### Compress SCSS/SASS files in CSS ####
 django-compressor==4.3
 django-libsass==0.9
@@ -11,8 +11,12 @@ psycopg2-binary==2.9.6
 #### Django REST API libraries ####
 djangorestframework==3.14.0
 #django-cors-headers==3.13.0
+#### Python & Django Elasticsearch libraries
+elasticsearch==7.17.9
+elasticsearch-dsl==7.4.1
+django-elasticsearch-dsl==7.3
 #### Others ####
 requests==2.31.0
 
 # For testing only:
-django-debug-toolbar==3.8.1
+django-debug-toolbar==4.2.0

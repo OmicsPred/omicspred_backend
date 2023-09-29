@@ -219,6 +219,28 @@ class RestPlatform(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
+class RestListPlatformAdditionals(generics.ListAPIView):
+    """
+    Retrieve all the PublicationPlatforms
+    """
+    queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').all().prefetch_related('cohorts')
+    serializer_class = PlatformAdditionalSerializer
+
+
+class RestPlatformAdditional(generics.RetrieveAPIView):
+    """
+    Retrieve one Platform Additional information
+    """
+
+    def get(self, request, platform):
+        try:
+            queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').prefetch_related('cohorts').get(platform__name__iexact=platform)
+        except PlatformAdditional.DoesNotExist:
+            queryset = None
+        serializer = PlatformAdditionalSerializer(queryset,many=False)
+        return Response(serializer.data)
+
+
 ## Publications ##
 
 class RestListPublications(generics.ListAPIView):
