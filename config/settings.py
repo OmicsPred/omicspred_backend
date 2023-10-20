@@ -291,6 +291,7 @@ ELASTICSEARCH_DSL = {
 # Name of the Elasticsearch index
 ELASTICSEARCH_INDEX_NAMES = {
     'search.documents.gene': 'gene',
+    'search.documents.metabolite': 'metabolite',
     # 'search.documents.phecode': 'phecode',
     'search.documents.platform': 'platform',
     'search.documents.protein': 'protein',

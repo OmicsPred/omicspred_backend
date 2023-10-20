@@ -33,13 +33,27 @@ class PhecodeDocument(Document):
             'raw': fields.KeywordField()
         }
     )
-    # scores_count = fields.IntegerField()
-    # score_number = fields.TextField(
-    #     analyzer=name_delimiter,
-    #     fields={
-    #         'raw': fields.KeywordField()
-    #     }
-    # )
+    scores_count = fields.IntegerField()
+    platform_name = fields.TextField(
+        analyzer=name_delimiter,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
+    omics_type = fields.TextField(
+        analyzer=name_delimiter,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
+
+
+    def prepare_platform_name(self, instance):
+        return instance.platforms
+
+    def prepare_omics_type(self, instance):
+        return instance.omics_types
+
 
     class Django(object):
         """Inner nested class Django."""

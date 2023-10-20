@@ -1,7 +1,7 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, Index, fields
 from search.analyzers import id_analyzer, name_delimiter_analyzer
-from omicspred.models import Protein
+from omicspred.models import Metabolite
 
 # Name of the Elasticsearch index
 INDEX = Index(settings.ELASTICSEARCH_INDEX_NAMES[__name__])
@@ -18,8 +18,8 @@ name_delimiter = name_delimiter_analyzer()
 
 
 @INDEX.doc_type
-class ProteinDocument(Document):
-    """ Protein elasticsearch document """
+class MetaboliteDocument(Document):
+    """ Metabolite elasticsearch document """
     name = fields.TextField(
         analyzer=name_delimiter,
         fields={
@@ -48,13 +48,13 @@ class ProteinDocument(Document):
 
     def prepare_platform_name(self, instance):
         platforms = set()
-        for score in instance.protein_score.all():
+        for score in instance.metabolite_score.all():
             platforms.add(score.platform.name)
         return list(platforms)
 
     def prepare_omics_type(self, instance):
         types = set()
-        for score in instance.protein_score.all():
+        for score in instance.metabolite_score.all():
             types.add(score.platform.type)
         return list(types)
 
@@ -62,4 +62,4 @@ class ProteinDocument(Document):
     class Django(object):
         """Inner nested class Django."""
 
-        model = Protein # The model associated with this Document
+        model = Metabolite # The model associated with this Document

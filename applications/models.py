@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.postgres.fields import DecimalRangeField
 
+applications_db = 'applications'
+# applications_db = 'default'
 
 class CohortApplications(models.Model):
     """ Class to describe cohorts used in samples """
@@ -25,13 +27,13 @@ class Phecode(models.Model):
 
     @property
     def scores_count(self):
-        scores = ScoreApplications.objects.using('applications').only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
+        scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
         return scores
 
 
     @property
     def score_number(self):
-        scores = ScoreApplications.objects.using('applications').select_related('phecode','platform').filter(phecode=self)
+        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
         data = {}
         for score in scores.all():
             platform = score.platform.name
@@ -40,6 +42,25 @@ class Phecode(models.Model):
             else:
                 data[platform] = 1
         return data
+
+
+    @property
+    def platforms(self):
+        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+        platforms = set()
+        for score in scores.all():
+            platform = score.platform.name
+            platforms.add(platform)
+        return list(platforms)
+
+    @property
+    def omics_types(self):
+        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+        types = set()
+        for score in scores.all():
+            type = score.platform.type
+            types.add(type)
+        return list(types)
 
 
 class PlatformApplications(models.Model):
