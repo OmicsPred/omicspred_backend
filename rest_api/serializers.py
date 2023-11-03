@@ -142,6 +142,15 @@ class ProteinSerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
+class ProteinSerializerExtended(ProteinSerializer):
+    gene = GeneSerializer(many=False, read_only=True)
+
+    class Meta(ProteinSerializer.Meta):
+        meta_fields = ('gene',)
+        fields = ProteinSerializer.Meta.fields + meta_fields
+        read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
+
+
 class MetaboliteSerializer(serializers.ModelSerializer):
     pathway_group = PathwaySerializer(many=False, read_only=True)
     pathway_subgroup = PathwaySerializer(many=False, read_only=True)

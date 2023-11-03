@@ -125,11 +125,15 @@ class RestProtein(generics.RetrieveAPIView):
     """
 
     def get(self, request, protein_id):
+        param_inc_gene = self.request.query_params.get('include_gene')
         try:
             queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
         except Protein.DoesNotExist:
             queryset = None
-        serializer = ProteinSerializer(queryset,many=False)
+        if (param_inc_gene and str(param_inc_gene)=='1'):
+            serializer = ProteinSerializerExtended(queryset,many=False)
+        else:
+            serializer = ProteinSerializer(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -914,7 +918,6 @@ class RestPhecode(generics.RetrieveAPIView):
     """
     def get(self, request, phecode_id):
         param_inc_children = self.request.query_params.get('include_children')
-        print(f'include_children: {param_inc_children}')
         try:
             queryset = Phecode.objects.using(applications_db).get(id=phecode_id)
         except Phecode.DoesNotExist:

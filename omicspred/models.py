@@ -274,6 +274,10 @@ class Transcript(Omics):
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_transcript", null=True)
     biotype = models.CharField('Gene biotype', max_length=100, null=True)
 
+    @property
+    def scores_count(self):
+        return self.transcript_score.count()
+
 
 class Protein(Omics):
     """ Class to describe Transcript entity """
@@ -292,6 +296,10 @@ class Metabolite(Omics):
     """ Class to describe Metabolite entity """
     pathway_group = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Group', related_name="pathway_group_metabolite", null=True)
     pathway_subgroup = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Subgroup', related_name="pathway_subgroup_metabolite", null=True)
+
+    @property
+    def scores_count(self):
+        return self.metabolite_score.count()
 
 
 class Score(models.Model):
