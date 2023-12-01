@@ -396,7 +396,7 @@ class Performance(models.Model):
     curation_notes = models.TextField('Curation Notes', default='')
 
     @property
-    def associated_pgs_id(self):
+    def associated_opgs_id(self):
         return self.score.id
 
     @property

@@ -1,5 +1,5 @@
-from django.urls import re_path
-# from django.views.generic import TemplateView
+from django.urls import path,re_path
+from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from .views import *
 
@@ -31,6 +31,8 @@ rest_urls = {
 }
 
 urlpatterns = [
+    # REST Documentation
+    path('rest/', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
     # Proteins
@@ -40,9 +42,9 @@ urlpatterns = [
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
     re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
     # Omics - platform entry
-    re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="searchTestMetabolite"),
-    re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="searchTestProtein"),
-    re_path(r'^'+rest_urls['transcriptomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestTranscriptomics.as_view()), name="searchTestTranscript"),
+    re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="getMetabolomicsScores"),
+    re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="getProteomicsScores"),
+    re_path(r'^'+rest_urls['transcriptomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestTranscriptomics.as_view()), name="getTranscriptomicsScores"),
     # Performance metrics
     re_path(r'^'+rest_urls['performance']+'all'+slash, cache_page(cache_time)(RestListPerformances.as_view()), name="getAllPerformanceMetrics"),
     re_path(r'^'+rest_urls['performance']+'search'+slash, RestPerformanceSearch.as_view(), name="searchPerformanceMetrics"),
@@ -71,10 +73,9 @@ urlpatterns = [
 
     # # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
-    re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchPlots"),
+    re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
     # Applications
-    re_path(r'^'+rest_urls['phecode']+'(?P<phecode_id>[^/]+)'+slash, RestPhecode.as_view(), name="getPhecode"),
     re_path(r'^'+rest_urls['phecode']+'(?P<phecode_id>[^/]+)'+slash, RestPhecode.as_view(), name="getPhecode"),
     re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhecodeScore.as_view()), name="getAllPhecodeScores"),
     re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhecodeScoreSearch.as_view(), name="searchPhecodeScores"),

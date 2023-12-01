@@ -171,19 +171,19 @@ class ScoreSerializer(serializers.ModelSerializer):
     metabolites = MetaboliteSerializer(many=True, read_only=True)
     # efos = EFOSerializer(many=True, read_only=True)
 
-    date_release = serializers.SerializerMethodField('get_date_released')
+    # date_release = serializers.SerializerMethodField('get_date_released')
 
     class Meta:
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_additional', 'method_name', 'method_params',
                     'trait_reported', 'trait_additional', 'method_name', 'method_params', 'variants_number',
                     'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                    'variants_interactions', 'variants_genomebuild', 'date_release')
+                    'variants_interactions', 'variants_genomebuild')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
-    def get_date_released(self, obj):
-        return obj.date_released
+    # def get_date_released(self, obj):
+    #     return obj.date_released
 
 
 class ScorePlotSerializer(serializers.ModelSerializer):
@@ -209,7 +209,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Performance
-        meta_fields = ('id', 'associated_pgs_id','publication','sample', 'platform', 'efo',
+        meta_fields = ('id', 'associated_opgs_id','publication','sample', 'platform', 'efo',
                 'performance_metrics', 'cohort_label',
                 'evaluation_type', 'performance_additional', 'covariates')
         fields = meta_fields

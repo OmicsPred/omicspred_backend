@@ -1,0 +1,1794 @@
+openapi: 3.1.0
+servers:
+  - url: http://127.0.0.1:7000/
+info:
+  title: 'OmicsPred REST API'
+  version: '1.0'
+  description: 'Programmatic access to the OmicsPred metadata.'
+  license:
+    name: 'Apache 2.0'
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  contact:
+    email: add_email
+    name: OmicsPred
+    url: https://www.omicspred.org
+tags:
+  - name: "Score endpoints"
+    description: Polygenic Score metadata with associated traits, publications, samples and cohorts
+  - name: "Publication endpoints"
+    description: Publication metadata (PubMed IDs, doi, authors, associated Polygenic Scores, ...)
+  - name: "Trait endpoints (Applications)"
+    description: Trait metadata (PheCode [ID, label, description, ...], associated Polygenic Scores, ...)
+  - name: "Performance Metrics endpoints"
+    description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
+  - name: "Sample endpoints"
+    description: Sample metadata (number of individuals, ancestry, cohorts)
+  - name: "Platform endpoints"
+    description: "Platform metadata (name, label, technic, ...)"
+  - name: "Omics endpoints"
+    description: "Omics metadata (metabolomics, proteomics, transcriptomics, ...)"
+  - name: "Biological feature endpoints"
+    description: "Feature metadata (metabolite, protein, gene)"
+
+components:
+  schemas:
+
+    Cohort:
+      type: object
+      description: "Structure containing information about a Cohort."
+      properties:
+        name_short:
+          type: string
+          description: "Cohort symbol"
+          example: "INTERVAL"
+        name_full:
+          type: string
+          description: "Cohort full name"
+          example: "INTERVAL"
+        url:
+          type: string
+          description: "URL of the Cohort project"
+          example: "https://www.intervalstudy.org.uk/"
+
+    EFO:
+      type: object
+      description: "Structure containing information about a Trait. Mainly extracted from the Experimental Factor Ontology (EFO)."
+      properties:
+        id:
+          type: string
+          description: "A trait identifier that links to an Ontology (e.g. EFO)"
+          example: "'UBERON_0001969"
+        label:
+          type: string
+          description: "Trait label/name"
+          example: "blood plasma"
+        description:
+          type: string
+          description: "Detailed description of the trait."
+          example: "The liquid component of blood, in which erythrocytes are suspended.."
+        url:
+          type: string
+          description: "External link to the Ontology entry"
+          example: "http://purl.obolibrary.org/obo/UBERON_0001969"
+        type:
+          type: string
+          description: "Type of trait"
+          example: "tissue"
+
+    # Gene #
+    Gene_Small:
+      type: object
+      description: "Simple structure containing information about a Gene."
+      properties:
+        name:
+          type: string
+          description: "Gene name/symbol"
+          example: "SERPINA12"
+        external_id:
+          type: string
+          description: "Gene ID"
+          example: "ENSG00000165953"
+
+    Gene:
+      description: "Structure containing information about a Gene."
+      allOf:
+        - $ref: '#/components/schemas/Gene_Small'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Gene ID"
+              example: "Ensembl"
+            biotype:
+              type: string
+              description: "Biotype of the gene"
+              example: "protein_coding"
+
+    # Metabolite #
+    Metabolite_Small:
+      type: object
+      description: "Simple structure containing information about a Metabolite."
+      properties:
+        name:
+          type: string
+          description: "Metabolite name"
+          example: "ibuprofen"
+        external_id:
+          type: string
+          description: "Metabolite ID"
+          example: "M17799"
+        pathway_group:
+          $ref: '#/components/schemas/Pathway'
+        pathway_subgroup:
+          $ref: '#/components/schemas/Pathway'
+
+    Metabolite:
+      description: "Structure containing information about a Metabolite."
+      allOf:
+        - $ref: '#/components/schemas/Metabolite_Small'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Metabolite ID"
+              example: "Metabolon"
+
+    Pathway:
+      type: object
+      description: "Structure containing information about a Pathway."
+      properties:
+        name:
+          type: string
+          description: "Pathway name"
+          example: "Amino Acid"
+        external_id:
+          type: string
+          description: "Pathway ID"
+          example: "R-HSA-71291"
+        external_id_source:
+          type: string
+          description: "Source of the Pathway ID"
+          example: "Reactome"
+
+    # Performance Metrics #
+    Performance:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Internal ID"
+          example: 1
+        associated_opgs_id:
+          type: string
+          description: "Associated OmicsPred Score ID"
+          example: "OPGS002402"
+        publication:
+          $ref: '#/components/schemas/Publication'
+        sample:
+          $ref: '#/components/schemas/Sample'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        efo:
+          $ref: '#/components/schemas/EFO'
+        performance_metrics:
+          $ref: '#/components/schemas/Performance_Metrics'
+        cohort_label:
+          type: string
+          description: "Name of the cohort used to calculate the performance metric"
+          example: "INTERVAL"
+        evaluation_type:
+          type: string
+          description: "Type of evaluation performed"
+          example: "Training"
+        performance_additional:
+          description: "Additional information about the performance metric"
+          example: "Performed on 308 genes"
+        covariates:
+          type: string
+          description: "Covariates used in the prediction model to evaluate the PGS."
+          example: "Age, sex and the first 10 genetic principal components"
+
+    Performance_Metrics:
+      type: object
+      description: "Structure containing information about a Performance Metrics."
+      properties:
+        type:
+          type: string
+          description: "Type of metrics"
+          example: "Pearson's correlation"
+        name_long:
+          type: string
+          description: "Long notation of the metric "
+          example: "Proportion of the variance explained"
+        name_short:
+          type: string
+          description: "Short notation of the metric"
+          example: "R2"
+        estimate:
+          type: number
+          example: 0.33
+        p_value:
+          type: number
+          example: 2.66e-77
+
+    # Phecode #
+    Phecode:
+      type: object
+      description: "Structure containing information about a Phecode."
+      properties:
+        id:
+          type: string
+          description: "Phecode ID"
+          example: "70.3"
+        name:
+          type: string
+          description: "Phenotype name"
+          example: "Viral hepatitis C"
+        category:
+          type: string
+          description: "Phenotype category"
+          example: "infectious diseases"
+
+    # Platform #
+    Platform:
+      type: object
+      description: "Structure containing information about a Plaform."
+      properties:
+        id:
+          type: integer
+          description: "Internal ID"
+          example: 1
+        name:
+          type: string
+          description: "Name of the platform"
+          example: "Olink"
+        full_name:
+          type: string
+          description: "Full name of the platform"
+          example: "Olink Target"
+        version:
+          type: string
+          description: "Platform's version"
+          example: "3.0"
+        technic:
+          type: string
+          description: "Technic used by the platform"
+          example: "aptamer-based multiplex protein assay"
+        type:
+          type: string
+          description: "Type of Omics"
+          example: "Proteomics"
+
+    Platform_extended:
+      description: "Based on the **Platform** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Platform'
+        - type: object
+          properties:
+            scores_count:
+              type: interger
+              description: "Number of scores associated with the platform"
+              example: 2384
+
+    PlatformAdditional:
+      type: object
+      description: "Structure containing information about a Plaform + Additional data."
+      properties:
+        publication:
+          $ref: '#/components/schemas/Publication'
+        platform:
+          $ref: '#/components/schemas/Platform_extended'
+        omics_type:
+          type: string
+          description: "Type of biological feature detected by the platform"
+          example: "protein"
+        omics_count:
+          type: integer
+          description: "Number of biological feature detected by the platform"
+          example: 308
+        tissue:
+          $ref: '#/components/schemas/EFO'
+        cohorts:
+          description: "List of cohorts associated with the platform"
+          items:
+            $ref: '#/components/schemas/Cohort'
+
+    # Protein #
+    Protein_Small:
+      type: object
+      description: "Simple structure containing information about a Protein."
+      properties:
+        name:
+          type: string
+          description: "Protein name"
+          example: "Serpin A12"
+        external_id:
+          type: string
+          description: "Protein ID"
+          example: "Q8IW75"
+
+    Protein:
+      description: "Structure containing information about a Protein."
+      allOf:
+        - $ref: '#/components/schemas/Protein_Small'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Protein ID"
+              example: "UniProt"
+
+    Protein_extended:
+      description: "Based on the **Protein** schema, with the addition of the '**gene**'."
+      allOf:
+        - $ref: '#/components/schemas/Protein'
+        - type: object
+          properties:
+            gene:
+              $ref: '#/components/schemas/Gene'
+
+    Publication:
+      type: object
+      description: "Structure containing information about a Publication."
+      properties:
+        title:
+          type: string
+          description: "Publication title"
+          example: "An atlas of genetic scores to predict multi-omic traits."
+        doi:
+          type: string
+          description: "Digital Object Identifier"
+          example: "10.1038/s41586-023-05844-9"
+        pmid:
+          type: integer
+          description: "PubMed idenfier"
+          example: 25855707
+        journal:
+          type: string
+          description: "The publication's location"
+          example: "Nature"
+        firstauthor:
+          type: string
+          description: "First author of the publication"
+          example: "Xu Y"
+        date_publication:
+          type: string
+          description: "Date of publication (format YYYY-MM-DD)"
+          format: date
+          example: "2023-03-29"
+
+    Sample:
+      type: object
+      description: "Structure containing information about a study Sample."
+      properties:
+        sample_number:
+          type: integer
+          description: "Number of participants in the sample"
+          example: 1043
+        sample_age:
+          type: integer
+          description: "Mean age in the sample population"
+          example: 53.8
+        sample_age_sd:
+          type: integer
+          description: "Standard deviation of the mean age in the sample population"
+          example: 8.01
+        sample_percent_male:
+          type: number
+          description: "Percentage of male participants"
+          example: 67.75
+        ancestry_broad:
+          type: string
+          description: "Author reported ancestry is mapped to the best matching ancestry category from the NHGRI-EBI GWAS Catalog framework (Table 1, Morales et al. (2018))."
+          example: "European"
+        ancestry_free:
+          type: string
+          description: "A more detailed description of sample ancestry that usually matches the most specific description described by the authors (e.g. French, Chinese)."
+          example: "French Canadian"
+        ancestry_country:
+          type: string
+          description: "Author reported countries of recruitment (if available)."
+          example: "Canada"
+        ancestry_additional:
+          type: string
+          description: "Any additional description not captured in the structured data (e.g. founder or genetically isolated populations, or further description of admixed samples)."
+          example: "Cohort contains individuals of East Asian, European & Hispanic ancestries"
+        source_gwas_catalog:
+          type: string
+          description: "Associated NHGRI-EBI GWAS Catalog study identifier"
+          example: "GCST001937"
+        source_pmid:
+          type: integer
+          description: "Associated PubMed identifier"
+          example: 26343387
+        source_doi:
+          type: string
+          description: "Associated Digital Object Identifier"
+          example: "10.1038/s41588-021-00783-5"
+        cohorts:
+          type: array
+          description: "List of cohorts that collected the samples"
+          items:
+            $ref: '#/components/schemas/Cohort'
+        cohorts_additional:
+          type: string
+          description: "Any additional description about the samples and what they were used for that is not captured by the structured categories (e.g. sub-cohort information)."
+          example: "Phase 1"
+
+    SampleApplication:
+      type: object
+      description: "Structure containing information about a SampleAppliction."
+      properties:
+        id:
+          type: integer
+          description: "Internal ID"
+          example: 1
+        sample_number:
+          type: integer
+          description: "Number of participants in the sample"
+          example: 403874
+        sample_cases:
+          type: integer
+          description: "Number of cases in the sample"
+          example: 723
+        sample_percent_male:
+          type: number
+          description: "Percentage of male participants"
+          example: 54.0
+        sample_age:
+          type: integer
+          description: "Mean age in the sample population"
+          example: 53.8
+        sample_age_sd:
+          type: integer
+          description: "Standard deviation of the mean age in the sample population"
+          example: 8.01
+        phecode:
+          $ref: '#/components/schemas/Phecode'
+        platform_counts:
+          type: object
+          description: "List and count the number of platforms that have been using the sample."
+          additionalProperties:
+            type: integer
+          example:
+            SomaScan: 1
+            Olink: 1
+
+    # Score #
+    Score:
+      type: object
+      description: "Structure containing Score information."
+      properties:
+        id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        name:
+          type: string
+          description: This may be the name that the authors describe the PGS with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a PGS ID has been given)
+          example: "CLEC12A.11187.11.3"
+        trait_reported:
+          type: string
+          description: "The author-reported trait that the PGS has been developed to predict."
+          example: "Breast Cancer"
+        trait_additional:
+          type: string
+          description: "Any additional description not captured in the structured data"
+          example: "PheCode 174.1"
+        method_name:
+          type: string
+          description: "The name or description of the method or computational algorithm used to develop the PGS."
+          example: "Bayesian Ridge regression"
+        method_params:
+          type: string
+          description: "A description of the relevant inputs and parameters relevant to the PGS development method/process."
+          example: "P<5x10-8"
+        variants_number:
+          type: integer
+          description: "Number of variants used to calculate the PGS."
+          example: 182
+        publication:
+          $ref: '#/components/schemas/Publication'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        genes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gene'
+        transcripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transcript'
+        proteins:
+          type: array
+          items:
+            $ref: '#/components/schemas/Protein'
+        metabolites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metabolite'
+        variants_interactions:
+          type: integer
+          description: "Number of higher-order variant interactions included in the PGS."
+          example: 0
+        variants_genomebuild:
+          type: string
+          description: "The version of the genome assembly that the variants present in the PGS are associated with. Listed as NR (Not Reported) if unknown."
+          example: "GRCh38"
+
+    ScoreApplication:
+      type: object
+      description: "Structure containing ScoreApplicatio information (Score + Phecode)."
+      properties:
+        id:
+          type: integer
+          description: "Internal ID"
+          example: 1
+        score_id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        omics_name:
+           type: string
+           description: "Name/ID of the biological feature"
+           example: "TCF19"
+        phecode:
+          $ref: '#/components/schemas/Phecode'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        cohort:
+          $ref: '#/components/schemas/Cohort'
+        data_values:
+          type: object
+          description: "Measurements of the association between the Score and Phecode."
+          properties:
+            R2:
+               type: number
+               description: "Coefficient of determination"
+               example: 0.269
+            HR:
+              type: number
+              description: "Hazard Ratio"
+              example: 1.13,
+            HR_lower:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Lower"
+              example: 1.07,
+            HR_upper:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Upper"
+              example: 1.19,
+            FDR:
+              type: number
+              description: "False Discovery Rate adjusted P-value"
+              example: 0.0404
+
+    ScoreOmics:
+      type: object
+      description: "Structure containing Score information with its associated performance metrics."
+      properties:
+        id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        variants_number:
+          type: integer
+        performance_data:
+          type: array
+          description: "Simplified structure containing information about a Performance Metrics for a Cohort."
+          items:
+            additionalProperties:
+              type: object
+              properties:
+                estimate:
+                  type: integer
+                  description: "Numeric value of the performance metrics"
+                  example: 0.345
+
+    ScoreMetabolite:
+      description: "Structure containing Score information with its associated performance metrics for a given metabolomics platform."
+      allOf:
+        - $ref: '#/components/schemas/ScoreOmics'
+        - type: object
+          properties:
+            metabolites:
+              type: array
+              items:
+                $ref: '#/components/schemas/Metabolite_Small'
+
+    ScoreProtein:
+      description: "Structure containing Score information with its associated performance metrics for a given proteomics platform."
+      allOf:
+        - $ref: '#/components/schemas/ScoreOmics'
+        - type: object
+          properties:
+            genes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gene_Small'
+            proteins:
+              type: array
+              items:
+                $ref: '#/components/schemas/Protein_Small'
+
+    ScoreTranscript:
+      description: "Structure containing Score information with its associated performance metrics for a given transcriptomics platform."
+      allOf:
+        - $ref: '#/components/schemas/ScoreOmics'
+        - type: object
+          properties:
+            transcripts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gene_Small'
+
+    Transcript:
+      type: object
+      description: "Structure containing information about a Transcript."
+      properties:
+        name:
+          type: string
+          description: "Transcript name/symbol"
+          example: "SERPINA12-201"
+        external_id:
+          type: string
+          description: "Transcript ID"
+          example: "ENST00000341228"
+        external_id_source:
+          type: string
+          description: "Source of the Transcript ID"
+          example: "Ensembl"
+
+    Pagination:
+      type: object
+      properties:
+        size:
+          type: integer
+          description: "Number of results in the current page"
+          example: 50
+        count:
+          type: integer
+          description: "Total count of results from the query"
+          example: 137
+        next:
+          type: string
+          description: "URL to the next page of results"
+          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50&offset=100"
+        previous:
+          type: string
+          description: "URL to the previous page of results"
+          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50"
+
+    Error_4XX:
+      type: object
+      properties:
+        error_status:
+          type: number
+          example: 404
+        message:
+          type: string
+          example: "This REST endpoint does not exist"
+
+#############################################################
+
+paths:
+
+  ## Sample/Cohort endpoints ##
+  /rest/cohort/all:
+    get:
+      tags:
+        - "Sample endpoints"
+      operationId: getAllCohorts
+      description: |
+        Retrieve all Cohorts, including for each of them:
+          * Cohort full name
+          * Cohort Project URL
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/cohort/all
+        ```
+      parameters:
+        - in: query
+          name: filter_ids
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of cohort symbols or JSON object with an array of cohort symbols
+          examples:
+            pgs_cohort_sel:
+              summary: Select an example or type cohort symbol(s) - click on 'Try it out' first
+            pgs_cohort_1:
+              summary: 'INTERVAL, UKB'
+              value: 'INTERVAL,UKB'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of OmicsPred Cohorts"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cohort'
+          description: |
+                  All OmicsPred Cohorts
+
+                  ---
+
+                  __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/sample/all:
+    get:
+      tags:
+        - "Sample endpoints"
+      operationId: getAllSamples
+      description: Retrieve all the Samples
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Samples"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sample'
+          description: 'List of Sample data'
+
+
+  ## Biological feature endpoints ##
+  /rest/protein/search:
+    get:
+      tags:
+        - "Biological feature endpoints"
+      operationId: searchProteins
+      description: Search proteins by gene name/symbol/ID
+      parameters:
+      - name: gene_id
+        required: true
+        in: query
+        description: Gene name/symbol/ID.
+        examples:
+          COL1A1:
+            value: "COL1A1"
+          ENSG00000165953:
+            value: "ENSG00000165953"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of proteins'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Protein'
+          description: 'List of proteins associated with the gene name/ID provided'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/metabolite/{metabolite_id}:
+    get:
+      tags:
+        - "Biological feature endpoints"
+      operationId: getMetabolite
+      description: Retrieve one Metabolite
+      parameters:
+      - name: metabolite_id
+        in: path
+        required: true
+        description: 'Metabolite name/ID'
+        examples:
+          M17799:
+            value: 'M17799'
+          methionylalanine:
+            value: 'methionylalanine'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metabolite'
+          description: 'Metabolite information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/protein/{protein_id}:
+    get:
+      tags:
+        - "Biological feature endpoints"
+      operationId: getProtein
+      description: Retrieve one Protein
+      parameters:
+      - name: protein_id
+        in: path
+        required: true
+        description: 'Protein name/ID'
+        examples:
+          P08887:
+            value: 'P08887'
+          Vitronectin:
+            value: 'Vitronectin'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Protein'
+          description: 'Protein information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/gene/{gene_id}:
+    get:
+      tags:
+        - "Biological feature endpoints"
+      operationId: getGene
+      description: Retrieve one Gene
+      parameters:
+      - name: gene_id
+        in: path
+        required: true
+        description: 'Gene name/symbol/ID'
+        examples:
+          COL1A1:
+            value: "COL1A1"
+          ENSG00000165953:
+            value: "ENSG00000165953"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gene'
+          description: 'Gene information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Omics endpoints ##
+  /rest/metabolomics/{platform}:
+    get:
+      tags:
+        - "Omics endpoints"
+      operationId: getMetabolomicsScores
+      description: 'Retrieve all the Scores associated with the given Petabolomics platform'
+      parameters:
+      - name: platform
+        in: path
+        required: true
+        description: 'Name of the metabolomics platform'
+        examples:
+          Metabolon:
+            value: 'Metabolon'
+          Nightingale:
+            value: 'Nightingale'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of Scores'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreMetabolite'
+          description: 'List all the score associated with the given Metabolomics platform'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/proteomics/{platform}:
+    get:
+      tags:
+        - "Omics endpoints"
+      operationId: getProteomicsScores
+      description: 'Retrieve all the Scores associated with the given Proteomics platform'
+      parameters:
+      - name: platform
+        in: path
+        required: true
+        description: 'Name of the proteomics platform'
+        examples:
+          Olink:
+            value: 'Olink'
+          Somalogic:
+            value: 'Somalogic'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of Scores'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreProtein'
+          description: 'List all the scores associated with the given Proteomics platform'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/transcriptomics/{platform}:
+    get:
+      tags:
+        - "Omics endpoints"
+      operationId: getTranscriptomicsScores
+      description: 'Retrieve all the Scores associated with the given Transcriptomics platform'
+      parameters:
+      - name: platform
+        in: path
+        required: true
+        description: ''
+        examples:
+          Illumina_RNAseq:
+            value: 'Illumina_RNAseq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of Scores'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreTranscript'
+          description: 'List all the scores associated with the given Transcriptomics platform'
+
+  ## Performance metrics endpoints ##
+
+  # /rest/performance/all:
+  #   get:
+  #     operationId: getAllPerformanceMetrics
+  #     description: Retrieve all the Performance Metrics
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 count:
+  #                   type: integer
+  #                   example: 123
+  #                 next:
+  #                   type: string
+  #                   nullable: true
+  #                   format: uri
+  #                   example: http://api.example.org/accounts/?offset=400&limit=100
+  #                 previous:
+  #                   type: string
+  #                   nullable: true
+  #                   format: uri
+  #                   example: http://api.example.org/accounts/?offset=200&limit=100
+  #                 results:
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/Performance'
+  #         description: ''
+
+  /rest/performance/search:
+    get:
+      tags:
+        - "Performance Metrics endpoints"
+      operationId: searchPerformanceMetrics
+      description: Retrieve the Performance Metric(s) using query
+      parameters:
+        - name: opgs_id
+          required: false
+          in: query
+          description: OmicsPred Score ID - *optional*
+          schema:
+            type: string
+          examples:
+            op_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+            OPGS002402:
+              value: 'OPGS002402'
+            OPGS003423:
+              value: 'OPGS003423'
+        - name: pmid
+          required: false
+          in: query
+          description: PubMed ID (without the prefix "PMID:") - *optional*
+          schema:
+            type: integer
+          examples:
+              pmid_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              pmid_1:
+                summary: 'PMID: 36991119'
+                value: 36991119
+        - name: platform
+          required: false
+          in: query
+          description: The platform name.
+          schema:
+            type: string
+          examples:
+            platform_sel:
+              summary: Select an example or type a platform name - click on 'Try it out' first
+            Olink:
+              value: 'Olink'
+            Nightingale:
+              value: 'Nightingale'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of Performance Metrics'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreTranscript'
+          description: 'List of Performance Metrics'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Publication endpoints ##
+  /rest/publication/all:
+    get:
+      tags:
+        - "Publication endpoints"
+      operationId: getAllPublications
+      description: Retrieve all the PGS Publications
+      parameters:
+        - in: query
+          name: filter_ids
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of PubMed IDs (without the prefix "PMID:")
+          examples:
+            pmid_sel:
+              summary: Select an example or type PubMed ID(s) - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Publications"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Publication'
+          description: 'All Publication information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/publication/search:
+    get:
+      tags:
+          - "Publication endpoints"
+      operationId: searchPublications
+      description: Retrieve the Publication(s) using query
+      parameters:
+        - in: query
+          name: opgs_id
+          schema:
+            type: string
+          required: false
+          description: OmicsPred Score ID - *optional*
+          examples:
+            pgs_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPGS002402:
+              value: 'OPGS002402'
+            OPGS003423:
+              value: 'OPGS003423'
+        - in: query
+          name: pmid
+          schema:
+            type: integer
+          required: false
+          description: PubMed ID (without the prefix "PMID:") - *optional*
+          examples:
+            pmid_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
+        - in: query
+          name: author
+          schema:
+            type: string
+          required: false
+          description: Publication author (any author in the list of authors in a publication) - *optional*
+          examples:
+            author_sel:
+              summary: Select an example or type a name - click on 'Try it out' first
+            Xu:
+              value: 'Xu'
+            Inouye:
+              value: 'Inouye'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Publications"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Publication'
+          description: 'All Publication information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  ## Score endpoints ##
+  /rest/score/all:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: getAllScores
+      description: Retrieve the Polygenic Scores
+      parameters:
+        - in: query
+          name: filter_ids
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of OmicsPred Score IDs or JSON object with an array of OmicsPred Score IDs
+          examples:
+            opgs_ids_sel:
+              summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+            opgs_ids_1:
+              summary: 'OPGS002402, OPGS003423'
+              value: 'OPGS002402,OPGS003423'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Polygenic Scores"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Score'
+          description: 'All Polygenic Scores'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/{opgs_id}:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: getScore
+      description: Retrieve one Polygenic Score (PGS)
+      parameters:
+      - name: opgs_id
+        in: path
+        required: true
+        description: 'OmicsPred Score ID'
+        examples:
+          OPGS002402:
+            value: 'OPGS002402'
+          OPGS003423:
+            value: 'OPGS003423'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+          description: 'OmicsPred Score'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/search:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: searchScores
+      description: Search the Polygenic Score(s) using query
+      parameters:
+        - name: opgs_ids
+          required: false
+          in: query
+          description: Comma-separated list of OmicsPred Score IDs - *optional*
+          schema:
+            type: string
+          examples:
+            opgs_ids_sel:
+              summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+            opgs_ids_1:
+              summary: 'OPGS002402, OPGS003423'
+              value: 'OPGS002402,OPGS003423'
+        - name: pmid
+          required: false
+          in: query
+          description: PubMed ID (without the prefix "PMID:") - *optional*
+          schema:
+            type: integer
+          examples:
+              pmid_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              pmid_1:
+                summary: 'PMID: 36991119'
+                value: 36991119
+        - name: platform
+          required: false
+          in: query
+          description: The platform name.
+          schema:
+            type: string
+          examples:
+            platform_sel:
+              summary: Select an example or type a platform name - click on 'Try it out' first
+            Olink:
+              value: 'Olink'
+            Nightingale:
+              value: 'Nightingale'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Polygenic Scores"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Score'
+          description: 'All Polygenic Scores'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/searchbygene/{gene}:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: searchScoresByGene
+      description: Search the Polygenic Score(s) using gene name/ID
+      parameters:
+        - name: gene
+          in: path
+          required: true
+          description: 'Gene name/symbol/ID'
+          examples:
+            COL1A1:
+              value: "COL1A1"
+            ENSG00000165953:
+              value: "ENSG00000165953"
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Polygenic Scores"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Score'
+          description: 'All Polygenic Scores'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/searchbyprotein/{protein}:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: searchScoresByProtein
+      description: Search the Polygenic Score(s) using protein name/ID
+      parameters:
+      - name: protein
+        in: path
+        required: true
+        description: 'Protein name/ID'
+        examples:
+          P08887:
+            value: 'P08887'
+          Vitronectin:
+            value: 'Vitronectin'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Polygenic Scores"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Score'
+          description: 'All Polygenic Scores'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/searchbymetabolite/{metabolite}:
+    get:
+      tags:
+        - "Score endpoints"
+      operationId: searchScoresByMetabolite
+      description: Search the Polygenic Score(s) using metabolite name/ID
+      parameters:
+      - name: metabolite
+        in: path
+        required: true
+        description: 'Metabolite name/ID'
+        examples:
+          M17799:
+            value: 'M17799'
+          methionylalanine:
+            value: 'methionylalanine'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+          description: ''
+
+
+  ## Platform endpoints ##
+  /rest/platform/all:
+    get:
+      tags:
+        - "Platform endpoints"
+      operationId: getAllPlatforms
+      description: Retrieve all the Platforms
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of Platforms"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Platform_extended'
+          description: 'List of Platform data'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/platform/{platform}:
+    get:
+      tags:
+        - "Platform endpoints"
+      operationId: getPlatform
+      description: Retrieve one Platform
+      parameters:
+      - name: platform
+        in: path
+        required: true
+        description: 'Platform name'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Platform_extended'
+          description: 'Platform data'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/platform/additional/all:
+    get:
+      tags:
+        - "Platform endpoints"
+      operationId: getAllPlatformAdditionals
+      description: Retrieve all the PlatformAdditional
+      parameters:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    description: "List of Platform Additional data"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlatformAdditional'
+          description: "List of Platform Additional data"
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/platform/additional/{platform}:
+    get:
+      tags:
+        - "Platform endpoints"
+      operationId: getPlatformAdditionals
+      description: Retrieve one Platform Additional information
+      parameters:
+      - name: platform
+        in: path
+        required: true
+        description: "Platform name"
+        example: "Olink"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformAdditional'
+          description: "Platform Additional data"
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Plot ##
+  # /rest/plot/search:
+  #   get:
+  #     operationId: retrieveScorePlot
+  #     description: Retrieve performance metrics for a given platform.
+  #     parameters: []
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ScorePlot'
+  #         description: ''
+  #     tags:
+  #     - rest
+  #
+  # /rest/plot/score/search:
+  #   get:
+  #     operationId: listScorePlots
+  #     description: Search the Polygenic Score(s) using query
+  #     parameters:
+  #     - name: limit
+  #       required: false
+  #       in: query
+  #       description: Number of results to return per page.
+  #       schema:
+  #         type: integer
+  #     - name: offset
+  #       required: false
+  #       in: query
+  #       description: The initial index from which to return the results.
+  #       schema:
+  #         type: integer
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 count:
+  #                   type: integer
+  #                   example: 123
+  #                 next:
+  #                   type: string
+  #                   nullable: true
+  #                   format: uri
+  #                   example: http://api.example.org/accounts/?offset=400&limit=100
+  #                 previous:
+  #                   type: string
+  #                   nullable: true
+  #                   format: uri
+  #                   example: http://api.example.org/accounts/?offset=200&limit=100
+  #                 results:
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/ScorePlot'
+  #         description: ''
+  #     tags:
+  #     - rest
+
+  ## Phecode endpoints ##
+  /rest/phecode/{phecode_id}:
+    get:
+      tags:
+        - "Trait endpoints (Applications)"
+      operationId: getPhecode
+      description: Retrieve the Phecode information
+      parameters:
+        - name: phecode_id
+          in: path
+          required: true
+          description: 'Phecode ID'
+          example: "70.3"
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Phecode'
+          description: 'Phecode information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  ## Score Application
+  /rest/applications_score/all:
+    get:
+      tags:
+        - "Trait endpoints (Applications)"
+      operationId: getAllPhecodeScores
+      description: Retrieve all the Phecode Score Applications
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreApplication'
+          description: 'All the Phecode Score Applications'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/applications_score/{opgs_id}:
+    get:
+      tags:
+        - "Trait endpoints (Applications)"
+      operationId: getPhecodeScore
+      description: Retrieve one Phecode Score Application
+      parameters:
+      - name: opgs_id
+        in: path
+        required: true
+        description: 'OmicsPred Score ID'
+        schema:
+          type: string
+        examples:
+          OPGS002402:
+            value: 'OPGS002402'
+          OPGS003423:
+            value: 'OPGS003423'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreApplication'
+          description: 'Phecode Score Applications'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/applications_score/search:
+    get:
+      tags:
+        - "Trait endpoints (Applications)"
+      operationId: searchPhecodeScores
+      description: Search the Phecode Score Application using query
+      parameters:
+        - name: opgs_id
+          required: false
+          in: query
+          description: OmicsPred Score ID - *optional*
+          schema:
+            type: string
+          examples:
+            op_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+            OPGS002402:
+              value: 'OPGS002402'
+            OPGS003423:
+              value: 'OPGS003423'
+        - name: phecode_id
+          required: false
+          in: query
+          description: Phecode ID - *optional*
+          examples:
+            op_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+            pc_1:
+              value: "557.1"
+            pc_2:
+              value: "250.2"
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreApplication'
+          description: 'Phecode Score Applications entry(ies)'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  /rest/applications_sample/all:
+    get:
+      tags:
+        - "Sample endpoints"
+      operationId: getAllPhecodeSamples
+      description: Retrieve all the Phecode Sample Applications
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SampleApplication'
+          description: 'All the Phecode Sample Applications'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)

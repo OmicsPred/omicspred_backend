@@ -25,8 +25,9 @@ related_dict = {
     'genes_sources': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source').all().order_by('id'))],
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label').all().prefetch_related(*performance_metric).order_by('id'))],
-    'perf_select': ['score', 'publication', 'platform', 'efo'],
-    'publication_defer': [*generic_defer,'curation_status']
+    'perf_select': ['score', 'publication', 'platform', 'sample', 'efo'],
+    'publication_defer': [*generic_defer,'curation_status'],
+    'score_prefetch' : ['genes','transcripts','proteins','metabolites']
 }
 missing_index = 0
 
@@ -104,7 +105,7 @@ class RestListCohorts(generics.ListAPIView):
         return queryset
 
 
-## Omics ##
+## Biological features ##
 class RestMetabolite(generics.RetrieveAPIView):
     """
     Retrieve one Metabolite
@@ -112,7 +113,7 @@ class RestMetabolite(generics.RetrieveAPIView):
 
     def get(self, request, metabolite_id):
         try:
-            queryset = Metabolite.objects.get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
+            queryset = Metabolite.objects.prefetch_related('pathway_group').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
         except Metabolite.DoesNotExist:
             queryset = None
         serializer = MetaboliteSerializer(queryset,many=False)
@@ -151,13 +152,65 @@ class RestGene(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
+class RestSearchProtein(generics.ListAPIView):
+    """
+    Search Proteins
+    """
+    serializer_class = ProteinSerializer
+
+    def get_queryset(self):
+        queryset = Protein.objects.select_related('gene').all().order_by('id')
+        params = 0
+
+        # Search by Gene
+        gene_id = self.request.query_params.get('gene_id')
+        if gene_id and gene_id is not None:
+            queryset = queryset.filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id))
+            params += 1
+
+        if params == 0:
+            queryset = []
+
+        return queryset
+
+
+## Omics by platform ##
+
+class RestMetabolomics(generics.ListAPIView):
+    serializer_class = ScoreMetaboliteSerializer
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).order_by('num')
+        return queryset
+
+
+class RestProteomics(generics.ListAPIView):
+    serializer_class = ScoreProteinSerializer
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
+        return queryset
+
+
+class RestTranscriptomics(generics.ListAPIView):
+    serializer_class = ScoreTranscriptSerializer
+
+    def get_queryset(self):
+        platform = self.kwargs['platform']
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
+
+        return queryset
+
+
 ## Performance metrics ##
 
 class RestListPerformances(generics.ListAPIView):
     """
-    Retrieve the PGS Performance Metrics
+    Retrieve all the Performance Metrics
     """
-    queryset = Performance.objects.all().order_by('id')
+    queryset = Performance.objects.select_related(*related_dict['perf_select']).all().prefetch_related('sample__cohorts','performance_metric').order_by('id')
     serializer_class = PerformanceSerializer
 
 
@@ -167,10 +220,9 @@ class RestPerformanceSearch(generics.ListAPIView):
     """
     serializer_class = PerformanceSerializer
 
-
     def get_queryset(self):
 
-        queryset = Performance.objects.select_related(*related_dict['perf_select']).all().prefetch_related('performance_metric').order_by('id')
+        queryset = Performance.objects.select_related(*related_dict['perf_select']).all().prefetch_related('sample__cohorts','performance_metric').order_by('id')
         params = 0
 
         # Search by Score ID
@@ -204,8 +256,8 @@ class RestListPlatforms(generics.ListAPIView):
     """
     Retrieve all the Platforms
     """
-    queryset = Platform.objects.all().order_by('name')
     serializer_class = PlatformExtendedSerializer
+    queryset = Platform.objects.all().prefetch_related('platform_score').order_by('name')
 
 
 class RestPlatform(generics.RetrieveAPIView):
@@ -225,10 +277,10 @@ class RestPlatform(generics.RetrieveAPIView):
 
 class RestListPlatformAdditionals(generics.ListAPIView):
     """
-    Retrieve all the PublicationPlatforms
+    Retrieve all the PlatformAdditional
     """
-    queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').all().prefetch_related('cohorts')
     serializer_class = PlatformAdditionalSerializer
+    queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').all().prefetch_related('cohorts','platform__platform_score')
 
 
 class RestPlatformAdditional(generics.RetrieveAPIView):
@@ -309,8 +361,8 @@ class RestListSamples(generics.ListAPIView):
     """
     Retrieve all the Samples
     """
-    queryset = Sample.objects.all().order_by('id')
     serializer_class = SampleSerializer
+    queryset = Sample.objects.all().prefetch_related('cohorts').order_by('id')
 
 
 ## Scores ##
@@ -323,8 +375,7 @@ class RestListScores(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Scores
-        # queryset = Score.objects.defer(*related_dict['score_defer']).select_related('publication').all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
-        queryset = Score.objects.select_related('publication','platform').all().order_by('num')
+        queryset = Score.objects.select_related('publication','platform').all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
@@ -360,7 +411,7 @@ class RestScoreSearchByGene(generics.ListAPIView):
         try:
             gene = self.kwargs['gene']
             # Database filtering
-            queryset = Score.objects.select_related('publication','platform').filter(Q(genes__name__iexact=gene) | Q(genes__external_id__iexact=gene)).prefetch_related('genes').order_by('num')
+            queryset = Score.objects.select_related('publication','platform').filter(Q(genes__name__iexact=gene) | Q(genes__external_id__iexact=gene)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
         except Score.DoesNotExist:
             queryset = []
         return queryset
@@ -376,7 +427,7 @@ class RestScoreSearchByProtein(generics.ListAPIView):
         try:
             protein = self.kwargs['protein']
             # Database filtering
-            queryset = Score.objects.select_related('publication','platform').filter(Q(proteins__name__iexact=protein) | Q(proteins__external_id__iexact=protein)).prefetch_related('proteins').order_by('num')
+            queryset = Score.objects.select_related('publication','platform').filter(Q(proteins__name__iexact=protein) | Q(proteins__external_id__iexact=protein)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
         except Score.DoesNotExist:
             queryset = []
         return queryset
@@ -392,7 +443,7 @@ class RestScoreSearchByMetabolite(generics.ListAPIView):
         try:
             metabolite = self.kwargs['metabolite']
             # Database filtering
-            queryset = Score.objects.select_related('publication','platform').filter(Q(metabolites__name__iexact=metabolite) | Q(metabolites__external_id__iexact=metabolite)).prefetch_related('metabolites').order_by('num')
+            queryset = Score.objects.select_related('publication','platform').filter(Q(metabolites__name__iexact=metabolite) | Q(metabolites__external_id__iexact=metabolite)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
             print(queryset.query)
         except Score.DoesNotExist:
             queryset = []
@@ -427,28 +478,6 @@ class RestScoreSearch(generics.ListAPIView):
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
             queryset = queryset.filter(platform__name__iexact=platform)
-            params += 1
-
-        if params == 0:
-            queryset = []
-
-        return queryset
-
-
-class RestSearchProtein(generics.ListAPIView):
-    """
-    Search Proteins
-    """
-    serializer_class = ProteinSerializer
-
-    def get_queryset(self):
-        queryset = Protein.objects.select_related('gene').all().order_by('id')
-        params = 0
-
-        # Search by Gene
-        gene_id = self.request.query_params.get('gene_id')
-        if gene_id and gene_id is not None:
-            queryset = queryset.filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id))
             params += 1
 
         if params == 0:
@@ -794,6 +823,9 @@ class RestTranscriptTableSearch(generics.RetrieveAPIView):
 ## Plots ##
 
 class RestPlotSearch(generics.RetrieveAPIView):
+    """
+    Retrieve performance metrics for a given platform.
+    """
 
     def get(self,request):
 
@@ -856,7 +888,7 @@ class RestPlotSearch(generics.RetrieveAPIView):
 
 class RestPlotScoreSearch(generics.ListAPIView):
     """
-    Search the Polygenic Score(s) using query
+    Retrieve the score information for the searched platform, in order to add information to the data plot (for the same platform in RestPlotSearch)
     """
     serializer_class = ScorePlotSerializer
 
@@ -876,37 +908,6 @@ class RestPlotScoreSearch(generics.ListAPIView):
         return queryset
 
 
-
-## Omics by platform ##
-
-class RestMetabolomics(generics.ListAPIView):
-    serializer_class = ScoreMetaboliteSerializer
-
-    def get_queryset(self):
-        platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).order_by('num')
-        return queryset
-
-
-class RestProteomics(generics.ListAPIView):
-    serializer_class = ScoreProteinSerializer
-
-    def get_queryset(self):
-        platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
-        return queryset
-
-
-class RestTranscriptomics(generics.ListAPIView):
-    serializer_class = ScoreTranscriptSerializer
-
-    def get_queryset(self):
-        platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
-
-        return queryset
-
-
 ##################
 ## Applications ##
 ##################
@@ -916,6 +917,7 @@ class RestPhecode(generics.RetrieveAPIView):
     """
     Retrieve the Phecode information
     """
+
     def get(self, request, phecode_id):
         param_inc_children = self.request.query_params.get('include_children')
         try:
@@ -933,8 +935,8 @@ class RestListPhecodeScore(generics.ListAPIView):
     """
     Retrieve all the Phecode Score Applications
     """
-    queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
     serializer_class = ScoreApplicationsSerializer
+    queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
 
 
 class RestPhecodeScore(generics.RetrieveAPIView):
@@ -962,6 +964,12 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
         queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').all()
         params = 0
 
+        # Search by Score ID
+        opgs_id = self.request.query_params.get('opgs_id')
+        if opgs_id and opgs_id is not None:
+            opgs_id = opgs_id.upper()
+            queryset = queryset.filter(score_id=opgs_id)
+            params += 1
         # Search by Phecode ID
         phecode_id = self.request.query_params.get('phecode_id')
         if phecode_id and re.match('^\d+\.?\d*$',phecode_id):
@@ -978,5 +986,5 @@ class RestListPhecodeSample(generics.ListAPIView):
     """
     Retrieve all the Phecode Sample Applications
     """
-    queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
     serializer_class = SampleApplicationsSerializer
+    queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
