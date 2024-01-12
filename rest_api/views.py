@@ -180,8 +180,14 @@ class RestMetabolomics(generics.ListAPIView):
     serializer_class = ScoreMetaboliteSerializer
 
     def get_queryset(self):
+        # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).order_by('num')
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
         return queryset
 
 
@@ -189,8 +195,24 @@ class RestProteomics(generics.ListAPIView):
     serializer_class = ScoreProteinSerializer
 
     def get_queryset(self):
+        # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+        # Sort data
+        sort_field = self.request.query_params.get('sort_field')
+        sort = self.request.query_params.get('sort')
+        if sort_field and sort_field is not None and sort and sort is not None:
+            if sort == 'desc':
+                sort_field = '-'+sort_field
+            queryset = queryset.order_by(sort_field)
+        else:
+            queryset = queryset.order_by('num')
+
         return queryset
 
 
@@ -198,9 +220,14 @@ class RestTranscriptomics(generics.ListAPIView):
     serializer_class = ScoreTranscriptSerializer
 
     def get_queryset(self):
+        # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).order_by('num')
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').filter(platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
         return queryset
 
 

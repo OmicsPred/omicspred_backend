@@ -226,7 +226,7 @@ STATICFILES_FINDERS = [
 	'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder'
 ]
-if not os.getenv('GAE_APPLICATION', None):
+if OP_ON_GAE == 0:
     STATICFILES_FINDERS.append('compressor.finders.CompressorFinder')
 
 

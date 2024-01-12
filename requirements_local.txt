@@ -1,0 +1,10 @@
+#### Python & Django Elasticsearch libraries
+elasticsearch==7.17.9
+elasticsearch-dsl==7.4.1
+django-elasticsearch-dsl==7.3
+
+#### Others ####
+requests==2.31.0
+
+# For testing only:
+django-debug-toolbar==4.2.0

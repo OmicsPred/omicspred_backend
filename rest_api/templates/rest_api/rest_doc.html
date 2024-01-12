@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <title>OmicsPred REST API documentation</title>
-    <meta name="keywords" content="polygenic score, polygenic risk score, pgs, prs, catalog, catalogue, database, genetic, genomic, programmatic, rest, api" /><!-- 3 to 10 keywords about the content of this page (not the whole project) -->
+    <meta name="keywords" content="omicspred, polygenic score, polygenic risk score, pgs, prs, catalog, catalogue, database, genetic, genomic, programmatic, rest, api" /><!-- 3 to 10 keywords about the content of this page (not the whole project) -->
     <meta name="author" content="Omicspred" /><!-- Your [project-name] here -->
     <meta name="description" content="Programmatic access to the OmicsPred metadata via a REST API." />
     <meta name="HandheldFriendly" content="true" />
@@ -13,7 +13,8 @@
     <meta name="theme-color" content="#007C82" /> <!-- Android Chrome mobile browser tab color -->
 
     <!-- (S)CSS libraries -->
-    <link rel="stylesheet" type="text/css" href="{% static 'rest_api/openapi/swagger-dist-ui_5.10.3/swagger-ui.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui.css' %}"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
     <!-- Javascript libraries -->
     <script src="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui-bundle.js' %}"></script>
@@ -133,13 +134,14 @@
           // Remove from schema
           models_to_remove = ['Pagination','Error_4XX','ScoreOmics'];
           var schema_obj = document.getElementsByClassName("json-schema-2020-12__title");
-          console.log(schema_obj.length);
           for (var i = 0; i < schema_obj.length; i++) {
             for (j=0;j<models_to_remove.length;j++) {
               var element = schema_obj[i];
-              if (element.textContent == models_to_remove[j]) {
-                var parent_element = element.closest('.json-schema-2020-12');
-                parent_element.parentElement.removeChild(parent_element)
+              if (element) {
+                if (element.textContent == models_to_remove[j]) {
+                  var parent_element = element.closest('.json-schema-2020-12');
+                  parent_element.parentElement.removeChild(parent_element)
+                }
               }
             }
           }
@@ -159,6 +161,27 @@
     </script>
   </head>
   <body>
-    <div id="swagger-ui"></div>
+    <header style="position:fixed;top:0;left:0;width:100%;z-index:10">
+      <nav position="fixed" class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div class="container">
+          <a href="/" class="navbar-brand"><img class="pe-2" src="/images/OmicsPred_logo.png" height="30" alt="" loading="lazy">OmicsPred</a>
+          <button aria-controls="basic-navbar-nav" type="button" aria-label="Toggle navigation" class="navbar-toggler collapsed"><span class="navbar-toggler-icon"></span></button>
+          <div class="navbar-collapse collapse" id="basic-navbar-nav">
+            <div class="me-auto navbar-nav">
+              <a href="/" data-rr-ui-event-key="/" class="nav-link">Home</a>
+              <a href="/scores" data-rr-ui-event-key="/scores" class="nav-link">Scores</a>
+              <a href="/applications" data-rr-ui-event-key="/applications" class="nav-link">Applications</a>
+              <a href="https://forms.gle/KLZGbvurrftF5vo46" target="_blank" data-rr-ui-event-key="https://forms.gle/KLZGbvurrftF5vo46" class="nav-link">Submit Score</a>
+              <a href="/faqs" data-rr-ui-event-key="/faqs" class="nav-link">FAQs</a>
+              <a href="/cohorts" data-rr-ui-event-key="/cohorts" class="nav-link">Cohorts</a>
+              <a href="/about" data-rr-ui-event-key="/about" class="nav-link">About</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <div class="container-fluid container-extra" style="margin-top:5rem">
+      <div id="swagger-ui"></div>
+    </div>
   </body>
 </html>
