@@ -59,19 +59,6 @@ class PublicationSerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
-class PublicationExtendedSerializer(PublicationSerializer):
-    date_release = serializers.SerializerMethodField('get_date_released')
-
-    class Meta(PublicationSerializer.Meta):
-        model = Publication
-        meta_fields = ('date_release', 'authors')
-        fields = PublicationSerializer.Meta.fields + meta_fields
-        read_only_fields = PublicationSerializer.Meta.read_only_fields + meta_fields
-
-    def get_date_released(self, obj):
-        return obj.date_released
-
-
 class PlatformSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField('get_full_name')
 
@@ -96,7 +83,6 @@ class PlatformExtendedSerializer(PlatformSerializer):
         read_only_fields = PlatformSerializer.Meta.read_only_fields + meta_fields
 
 
-
 class PlatformAdditionalSerializer(serializers.ModelSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
     platform = PlatformExtendedSerializer(many=False, read_only=True)
@@ -108,6 +94,32 @@ class PlatformAdditionalSerializer(serializers.ModelSerializer):
         meta_fields = ('publication', 'platform', 'omics_count', 'omics_type', 'tissue', 'cohorts')
         fields = meta_fields
         read_only_fields = meta_fields
+
+class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
+    platform = PlatformExtendedSerializer(many=False, read_only=True)
+    tissue = EFOSerializer(many=False, read_only=True)
+    cohorts = CohortSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PlatformAdditional
+        meta_fields = ('platform', 'omics_count', 'omics_type', 'tissue', 'cohorts')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+class PublicationExtendedSerializer(PublicationSerializer):
+    date_release = serializers.SerializerMethodField('get_date_released')
+    platforms = PlatformAdditionalLightSerializer(many=True, read_only=True)
+
+    class Meta(PublicationSerializer.Meta):
+        model = Publication
+        # meta_fields = ('date_release', 'authors','publication_pp')
+        meta_fields = ('date_release', 'authors', 'platforms')
+        fields = PublicationSerializer.Meta.fields + meta_fields
+        read_only_fields = PublicationSerializer.Meta.read_only_fields + meta_fields
+
+    def get_date_released(self, obj):
+        return obj.date_released
 
 
 class PathwaySerializer(serializers.ModelSerializer):

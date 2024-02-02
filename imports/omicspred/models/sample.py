@@ -5,7 +5,7 @@ from omicspred.models import Sample
 
 class SampleData(GenericData):
 
-    def __init__(self,sample_number,ancestry,cohort, percent_male=None, sample_age=None, sample_age_sd=None):
+    def __init__(self,sample_number,ancestry,cohort,percent_male=None,sample_age=None, sample_age_sd=None):
         GenericData.__init__(self)
         self.data['sample_number'] = sample_number
         self.data['ancestry_broad'] = ancestry
@@ -18,11 +18,12 @@ class SampleData(GenericData):
             self.data['sample_age_sd'] = sample_age_sd
 
 
+
     def sample_model_exist(self):
         '''
         Check if a Sample model already exists.
         Only to be used for GWAS/Dev samples from existing Scores in the database!
-        Return type: Sample object (catalog.models) or None
+        Return type: Sample object (omicspred.models) or None
         '''
         sample_data = {}
         s_cohorts = ''

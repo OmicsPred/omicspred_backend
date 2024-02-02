@@ -18,7 +18,6 @@ class EFOData(GenericData):
         try:
             efo = EFO.objects.get(id=self.data['id'])
             self.model = efo
-            #print(f'Cohort {self.name} found in the DB')
         except EFO.DoesNotExist:
             self.model = None
 

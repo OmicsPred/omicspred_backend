@@ -15,8 +15,10 @@
     <!-- (S)CSS libraries -->
     <link rel="stylesheet" type="text/css" href="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui.css' %}"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css" crossorigin="anonymous"/>
 
     <!-- Javascript libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui-bundle.js' %}"></script>
     <script src="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui-standalone-preset.js' %}"></script>
     <script>
@@ -161,25 +163,9 @@
     </script>
   </head>
   <body>
-    <header style="position:fixed;top:0;left:0;width:100%;z-index:10">
-      <nav position="fixed" class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-        <div class="container">
-          <a href="/" class="navbar-brand"><img class="pe-2" src="/images/OmicsPred_logo.png" height="30" alt="" loading="lazy">OmicsPred</a>
-          <button aria-controls="basic-navbar-nav" type="button" aria-label="Toggle navigation" class="navbar-toggler collapsed"><span class="navbar-toggler-icon"></span></button>
-          <div class="navbar-collapse collapse" id="basic-navbar-nav">
-            <div class="me-auto navbar-nav">
-              <a href="/" data-rr-ui-event-key="/" class="nav-link">Home</a>
-              <a href="/scores" data-rr-ui-event-key="/scores" class="nav-link">Scores</a>
-              <a href="/applications" data-rr-ui-event-key="/applications" class="nav-link">Applications</a>
-              <a href="https://forms.gle/KLZGbvurrftF5vo46" target="_blank" data-rr-ui-event-key="https://forms.gle/KLZGbvurrftF5vo46" class="nav-link">Submit Score</a>
-              <a href="/faqs" data-rr-ui-event-key="/faqs" class="nav-link">FAQs</a>
-              <a href="/cohorts" data-rr-ui-event-key="/cohorts" class="nav-link">Cohorts</a>
-              <a href="/about" data-rr-ui-event-key="/about" class="nav-link">About</a>
-            </div>
-          </div>
-        </div>
-      </nav>
-    </header>
+
+    {% include "rest_api/header.html" %}
+
     <div class="container-fluid container-extra" style="margin-top:5rem">
       <div id="swagger-ui"></div>
     </div>

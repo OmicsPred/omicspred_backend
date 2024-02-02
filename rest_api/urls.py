@@ -51,6 +51,7 @@ urlpatterns = [
     # Publication
     re_path(r'^'+rest_urls['publication']+'all'+slash, cache_page(cache_time)(RestListPublications.as_view()), name="getAllPublications"),
     re_path(r'^'+rest_urls['publication']+'search'+slash, cache_page(cache_time)(RestPublicationSearch.as_view()), name="searchPublications"),
+    re_path(r'^'+rest_urls['publication']+'(?P<pmid>[^/]+)'+slash, RestPublication.as_view(), name="getPublication"),
     # Samples
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
     # Scores

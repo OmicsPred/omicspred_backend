@@ -27,6 +27,7 @@ related_dict = {
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label').all().prefetch_related(*performance_metric).order_by('id'))],
     'perf_select': ['score', 'publication', 'platform', 'sample', 'efo'],
     'publication_defer': [*generic_defer,'curation_status'],
+    'publication_platforms': [Prefetch('platforms',PlatformAdditional.objects.select_related('platform','tissue').all().prefetch_related('cohorts','platform__platform_score'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites']
 }
 missing_index = 0
@@ -310,18 +311,20 @@ class RestListPlatformAdditionals(generics.ListAPIView):
     queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').all().prefetch_related('cohorts','platform__platform_score')
 
 
-class RestPlatformAdditional(generics.RetrieveAPIView):
+class RestPlatformAdditional(generics.ListAPIView):
     """
-    Retrieve one Platform Additional information
+    Retrieve the Platform Additional information from a given platform
     """
+    serializer_class = PlatformAdditionalSerializer
 
-    def get(self, request, platform):
+    def get_queryset(self):
         try:
-            queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').prefetch_related('cohorts').get(platform__name__iexact=platform)
+            platform = self.kwargs['platform']
+            # Database filtering
+            queryset = PlatformAdditional.objects.select_related('platform','publication','tissue').prefetch_related('cohorts').filter(platform__name__iexact=platform)
         except PlatformAdditional.DoesNotExist:
-            queryset = None
-        serializer = PlatformAdditionalSerializer(queryset,many=False)
-        return Response(serializer.data)
+            queryset = []
+        return queryset
 
 
 ## Publications ##
@@ -334,7 +337,7 @@ class RestListPublications(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Publications
-        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().order_by('id')
+        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_platforms']).order_by('id')
 
         # Filter by list of Publications IDs
         pmids_list = get_ids_list(self)
@@ -342,6 +345,21 @@ class RestListPublications(generics.ListAPIView):
             queryset = queryset.filter(pmid__in=pmids_list)
 
         return queryset
+
+
+class RestPublication(generics.RetrieveAPIView):
+    """
+    Retrieve one Publication
+    """
+
+    def get(self, request, pmid):
+        try:
+            # queryset = Publication.objects.get(pmid__iexact=pmid)
+            queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related(*related_dict['publication_platforms']).get(pmid__iexact=pmid)
+        except Publication.DoesNotExist:
+            queryset = None
+        serializer = PublicationExtendedSerializer(queryset,many=False)
+        return Response(serializer.data)
 
 
 class RestPublicationSearch(generics.ListAPIView):
@@ -352,6 +370,8 @@ class RestPublicationSearch(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Publication.objects.defer(*related_dict['publication_defer']).all().order_by('id')
+        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_platforms']).order_by('id')
+
         params = 0
 
         # Search by Score ID

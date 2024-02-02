@@ -2,14 +2,18 @@ import numpy as np
 from django.db import IntegrityError, transaction
 from imports.generic_model import GenericData
 from imports.omicspred.models.metric import MetricData
-from omicspred.models import Performance
+from omicspred.models import Performance,EFO
 
 class PerformanceData(GenericData):
 
     ancestries = {
-        'East Asian': 'CN',
+        'Additional Asian Ancestries': 'MA',
+        'African American or Afro-Caribbean': 'AFA',
+        'African American or Afro-Caribbean, East Asian, European, Hispanic or Latin American': 'ALL',
+        'East Asian': 'CHN', #'CN'
+        'European': 'EUR',
+        'Hispanic or Latin American': 'HIS',
         'South Asian': 'IN',
-        'Additional Asian Ancestries': 'MA'
     }
 
     def __init__(self,score,publication,sample,platform,efo,type,gwas_info,extra=None):
@@ -21,9 +25,11 @@ class PerformanceData(GenericData):
             'publication': publication,
             'sample': sample,
             'platform': platform,
-            'efo': efo,
             'eval_type': type
         }
+        if efo:
+           self.data['efo'] = efo
+        self.get_cohort_label()
         if gwas_info:
             if 'gcst_id' in gwas_info.keys():
                 self.data['source_gwas_catalog'] = gwas_info['gcst_id']
@@ -58,7 +64,7 @@ class PerformanceData(GenericData):
         sample = self.data['sample']
         cohorts = [x.name_short for x in sample.cohorts.all()]
         cohort_label = '_'.join(sorted(cohorts))
-        if cohort_label == 'MEC':
+        if cohort_label in ['MEC','MESA']:
             sample_anc = sample.ancestry_broad
             if sample_anc in self.ancestries.keys():
                 cohort_label = f'{cohort_label}-{self.ancestries[sample_anc]}'

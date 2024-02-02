@@ -1,7 +1,7 @@
 #### Python & Django Elasticsearch libraries
 elasticsearch==7.17.9
 elasticsearch-dsl==7.4.1
-django-elasticsearch-dsl==7.3
+django-elasticsearch-dsl==7.4
 
 #### Others ####
 requests==2.31.0

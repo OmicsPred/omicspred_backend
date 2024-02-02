@@ -94,10 +94,10 @@ def post_process_phecode():
 
 def run():
     # # Parse full PheWAS data
-    # parse_full_structured_content()
+    parse_full_structured_content()
 
     # # Parse summary PheWAS data
-    # parse_sum_structured_content()
+    parse_sum_structured_content()
 
     # Phecode parent/child updates
     post_process_phecode()

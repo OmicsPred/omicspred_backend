@@ -76,9 +76,9 @@ components:
           example: "tissue"
 
     # Gene #
-    Gene_Small:
+    Gene:
       type: object
-      description: "Simple structure containing information about a Gene."
+      description: "Structure containing information about a Gene."
       properties:
         name:
           type: string
@@ -88,26 +88,19 @@ components:
           type: string
           description: "Gene ID"
           example: "ENSG00000165953"
-
-    Gene:
-      description: "Structure containing information about a Gene."
-      allOf:
-        - $ref: '#/components/schemas/Gene_Small'
-        - type: object
-          properties:
-            external_id_source:
-              type: string
-              description: "Source of the Gene ID"
-              example: "Ensembl"
-            biotype:
-              type: string
-              description: "Biotype of the gene"
-              example: "protein_coding"
+        external_id_source:
+          type: string
+          description: "Source of the Gene ID"
+          example: "Ensembl"
+        biotype:
+          type: string
+          description: "Biotype of the gene"
+          example: "protein_coding"
 
     # Metabolite #
-    Metabolite_Small:
+    Metabolite:
       type: object
-      description: "Simple structure containing information about a Metabolite."
+      description: "Structure containing information about a Metabolite."
       properties:
         name:
           type: string
@@ -117,21 +110,14 @@ components:
           type: string
           description: "Metabolite ID"
           example: "M17799"
+        external_id_source:
+          type: string
+          description: "Source of the Metabolite ID"
+          example: "Metabolon"
         pathway_group:
           $ref: '#/components/schemas/Pathway'
         pathway_subgroup:
           $ref: '#/components/schemas/Pathway'
-
-    Metabolite:
-      description: "Structure containing information about a Metabolite."
-      allOf:
-        - $ref: '#/components/schemas/Metabolite_Small'
-        - type: object
-          properties:
-            external_id_source:
-              type: string
-              description: "Source of the Metabolite ID"
-              example: "Metabolon"
 
     Pathway:
       type: object
@@ -272,10 +258,8 @@ components:
 
     PlatformAdditional:
       type: object
-      description: "Structure containing information about a Plaform + Additional data."
+      description: "Structure containing information about a Plaform + Additional data (EXCEPT the associated Publication information)"
       properties:
-        publication:
-          $ref: '#/components/schemas/Publication'
         platform:
           $ref: '#/components/schemas/Platform_extended'
         omics_type:
@@ -293,10 +277,19 @@ components:
           items:
             $ref: '#/components/schemas/Cohort'
 
+    PlatformAdditional_extended:
+      description: "Structure containing information about a Plaform + Additional data (INCLUDING the associated Publication information)"
+      allOf:
+        - $ref: '#/components/schemas/PlatformAdditional'
+        - type: object
+          properties:
+            publication:
+              $ref: '#/components/schemas/Publication'
+
     # Protein #
-    Protein_Small:
+    Protein:
       type: object
-      description: "Simple structure containing information about a Protein."
+      description: "Structure containing information about a Protein."
       properties:
         name:
           type: string
@@ -306,17 +299,10 @@ components:
           type: string
           description: "Protein ID"
           example: "Q8IW75"
-
-    Protein:
-      description: "Structure containing information about a Protein."
-      allOf:
-        - $ref: '#/components/schemas/Protein_Small'
-        - type: object
-          properties:
-            external_id_source:
-              type: string
-              description: "Source of the Protein ID"
-              example: "UniProt"
+        external_id_source:
+          type: string
+          description: "Source of the Protein ID"
+          example: "UniProt"
 
     Protein_extended:
       description: "Based on the **Protein** schema, with the addition of the '**gene**'."
@@ -327,6 +313,7 @@ components:
             gene:
               $ref: '#/components/schemas/Gene'
 
+    # Publication #
     Publication:
       type: object
       description: "Structure containing information about a Publication."
@@ -342,7 +329,7 @@ components:
         pmid:
           type: integer
           description: "PubMed idenfier"
-          example: 25855707
+          example: 36991119
         journal:
           type: string
           description: "The publication's location"
@@ -356,6 +343,18 @@ components:
           description: "Date of publication (format YYYY-MM-DD)"
           format: date
           example: "2023-03-29"
+
+    Publication_extended:
+      description: "Based on the **Publication** schema, with the addition of the '**platforms**'."
+      allOf:
+        - $ref: '#/components/schemas/Publication'
+        - type: object
+          properties:
+            platforms:
+              type: array
+              description: "List of platform + additional data"
+              items:
+                $ref: '#/components/schemas/PlatformAdditional'
 
     Sample:
       type: object
@@ -594,7 +593,7 @@ components:
             metabolites:
               type: array
               items:
-                $ref: '#/components/schemas/Metabolite_Small'
+                $ref: '#/components/schemas/Metabolite'
 
     ScoreProtein:
       description: "Structure containing Score information with its associated performance metrics for a given proteomics platform."
@@ -605,11 +604,11 @@ components:
             genes:
               type: array
               items:
-                $ref: '#/components/schemas/Gene_Small'
+                $ref: '#/components/schemas/Gene'
             proteins:
               type: array
               items:
-                $ref: '#/components/schemas/Protein_Small'
+                $ref: '#/components/schemas/Protein'
 
     ScoreTranscript:
       description: "Structure containing Score information with its associated performance metrics for a given transcriptomics platform."
@@ -620,7 +619,7 @@ components:
             transcripts:
               type: array
               items:
-                $ref: '#/components/schemas/Gene_Small'
+                $ref: '#/components/schemas/Gene'
 
     Transcript:
       type: object
@@ -1141,6 +1140,37 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /rest/publication/{pmid}:
+    get:
+      tags:
+        - "Publication endpoints"
+      operationId: getPublication
+      description: Retrieve one Publication
+      parameters:
+      - name: pmid
+        in: path
+        required: true
+        description: 'PubMed ID'
+        examples:
+          pmid_sel:
+            summary: 'PMID: 36991119'
+            value: 36991119
+        schema:
+          type: int
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+          description: 'Publication'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
   /rest/publication/search:
     get:
       tags:
@@ -1529,7 +1559,7 @@ paths:
                     description: "List of Platform Additional data"
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlatformAdditional'
+                      $ref: '#/components/schemas/PlatformAdditional_extended'
           description: "List of Platform Additional data"
         '4XX':
           content:
@@ -1543,7 +1573,7 @@ paths:
       tags:
         - "Platform endpoints"
       operationId: getPlatformAdditionals
-      description: Retrieve one Platform Additional information
+      description: Retrieve the Platform Additional information
       parameters:
       - name: platform
         in: path
@@ -1557,8 +1587,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlatformAdditional'
-          description: "Platform Additional data"
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlatformAdditional_extended'
+          description: "List of Platform Additional data from the given platform"
         '4XX':
           content:
               application/json:

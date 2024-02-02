@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from datetime import datetime
 
 class Publication(models.Model):
     """ Class for publications with OmicsPred """
@@ -49,7 +50,7 @@ class Publication(models.Model):
         # Dependant on the context, sometimes the date_publication is returned as a string
         pub_date = self.date_publication
         if type(pub_date) == str:
-            pub_date = datetime.datetime.strptime(pub_date, '%Y-%m-%d')
+            pub_date = datetime.strptime(pub_date, '%Y-%m-%d')
         return pub_date.strftime('%Y')
 
 
@@ -90,7 +91,7 @@ class EFO(models.Model):
 
 class PlatformAdditional(models.Model):
     """ Class providing additional information to the Platform """
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_pp', verbose_name='Publication')
+    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='platforms', verbose_name='Publication')
     platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
@@ -133,7 +134,7 @@ class Sample(models.Model):
         s = 'Sample {}'.format(str(self.pk))
         if self.ancestry_broad:
             s += ' - {}'.format(self.ancestry_broad)
-        s += ' '+self.display_sample_number_total
+        s += ' '+str(self.display_sample_number_total)
         return s
 
 
