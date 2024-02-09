@@ -59,20 +59,47 @@ class PublicationSerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
+class PlatformMasterSerializer(serializers.ModelSerializer):
+    # versions = serializers.SerializerMethodField('get_versions')
+    class Meta:
+        model = PlatformMaster
+        meta_fields = ('name', 'full_name', 'versions', 'technic', 'type', 'scores_count')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+    # def get_versions(self, obj):
+    #     versions = []
+    #     print(obj.platform_version.all())
+    #     for platform in obj.platform_version.all():
+    #         if platform.version:
+    #             versions.append(platform.version)
+    #     return sorted(versions)
+
+
 class PlatformSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField('get_full_name')
+    technic = serializers.SerializerMethodField('get_technic')
+    type = serializers.SerializerMethodField('get_type')
 
     class Meta:
         model = Platform
-        meta_fields = ('id', 'name', 'full_name', 'version', 'technic', 'type')
+        meta_fields = ('name', 'full_name', 'version', 'technic', 'type')
         fields = meta_fields
         read_only_fields = meta_fields
 
     def get_full_name(self, obj):
-        if obj.full_name:
-            return obj.full_name
+        full_name = obj.platform_master.full_name
+        if full_name:
+            return full_name
         else:
             return obj.name
+
+    def get_technic(self, obj):
+        return obj.platform_master.technic
+
+    def get_type(self, obj):
+        return obj.platform_master.type
+
 
 
 class PlatformExtendedSerializer(PlatformSerializer):

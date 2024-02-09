@@ -204,6 +204,11 @@ class RestProteomics(generics.ListAPIView):
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+        # Filter platforms
+        platform_versions = self.request.query_params.get('versions')
+        if platform_versions and platform_versions is not None:
+            platform_versions_list = platform_versions.split(';')
+            queryset = queryset.filter(platform__version__in=platform_versions_list)
         # Sort data
         sort_field = self.request.query_params.get('sort_field')
         sort = self.request.query_params.get('sort')
@@ -284,8 +289,8 @@ class RestListPlatforms(generics.ListAPIView):
     """
     Retrieve all the Platforms
     """
-    serializer_class = PlatformExtendedSerializer
-    queryset = Platform.objects.all().prefetch_related('platform_score').order_by('name')
+    serializer_class = PlatformMasterSerializer
+    queryset = PlatformMaster.objects.all().prefetch_related('platform_version','platform_version__platform_score').order_by('name')
 
 
 class RestPlatform(generics.RetrieveAPIView):
@@ -295,11 +300,11 @@ class RestPlatform(generics.RetrieveAPIView):
 
     def get(self, request, platform):
         try:
-            queryset = Platform.objects.get(name__iexact=platform)
+            queryset = PlatformMaster.objects.prefetch_related('platform_version','platform_version__platform_score').get(name__iexact=platform)
             # queryset = Score.objects.defer(*related_dict['score_defer']).select_related('publication').prefetch_related(*related_dict['score_prefetch']).get(id=pgs_id)
         except Platform.DoesNotExist:
             queryset = None
-        serializer = PlatformExtendedSerializer(queryset,many=False)
+        serializer = PlatformMasterSerializer(queryset,many=False)
         return Response(serializer.data)
 
 

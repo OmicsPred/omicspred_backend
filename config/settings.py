@@ -55,13 +55,13 @@ if os.getenv('GAE_APPLICATION', None):
 else:
     OP_ON_GAE = 0
 
-OP_ON_LIVE_SITE = False
-if 'OP_LIVE_SITE' in os.environ:
-    OP_ON_LIVE_SITE = True if os.environ['OP_LIVE_SITE'] in ['True', True] else False
+# OP_ON_LIVE_SITE = False
+# if 'OP_LIVE_SITE' in os.environ:
+#     OP_ON_LIVE_SITE = True if os.environ['OP_LIVE_SITE'] in ['True', True] else False
 
-OP_ON_CURATION_SITE = False
-if 'OP_CURATION_SITE' in os.environ:
-    OP_ON_CURATION_SITE = True if os.environ['OP_CURATION_SITE'] in ['True', True] else False
+# OP_ON_CURATION_SITE = False
+# if 'OP_CURATION_SITE' in os.environ:
+#     OP_ON_CURATION_SITE = True if os.environ['OP_CURATION_SITE'] in ['True', True] else False
 
 
 # Application definition
@@ -69,8 +69,6 @@ if 'OP_CURATION_SITE' in os.environ:
 INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
-    'search.apps.SearchConfig',
-    'imports.apps.ImportsConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -79,14 +77,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
 # Local app installation
 if OP_ON_GAE == 0:
     local_apps = [
-        'django_extensions'
+        'django_extensions',
+        'imports.apps.ImportsConfig',
+        'misc.apps.MiscConfig',
+        'search.apps.SearchConfig',
+        'django_elasticsearch_dsl'
     ]
     INSTALLED_APPS.extend(local_apps)
 

@@ -220,10 +220,6 @@ components:
       type: object
       description: "Structure containing information about a Plaform."
       properties:
-        id:
-          type: integer
-          description: "Internal ID"
-          example: 1
         name:
           type: string
           description: "Name of the platform"
@@ -255,6 +251,37 @@ components:
               type: interger
               description: "Number of scores associated with the platform"
               example: 2384
+
+    PlatformMaster:
+      type: object
+      description: "Structure containing grouped information about a Plaform."
+      properties:
+        name:
+          type: string
+          description: "Name of the platform"
+          example: "Olink"
+        full_name:
+          type: string
+          description: "Full name of the platform"
+          example: "Olink Target"
+        versions:
+          type: array
+          description: "List of platform versions"
+          items:
+              type: string
+          example: "[1.0, 3.0]"
+        technic:
+          type: string
+          description: "Technic used by the platform"
+          example: "aptamer-based multiplex protein assay"
+        type:
+          type: string
+          description: "Type of Omics"
+          example: "Proteomics"
+        scores_count:
+            type: interger
+            description: "Total number of scores associated with the platform"
+            example: 2384
 
     PlatformAdditional:
       type: object
@@ -1505,7 +1532,7 @@ paths:
                     description: "List of Platforms"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Platform_extended'
+                      $ref: '#/components/schemas/PlatformMaster'
           description: 'List of Platform data'
         '4XX':
           content:
@@ -1532,7 +1559,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Platform_extended'
+                $ref: '#/components/schemas/PlatformMaster'
           description: 'Platform data'
         '4XX':
           content:

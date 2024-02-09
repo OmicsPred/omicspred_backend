@@ -65,13 +65,38 @@ class Cohort(models.Model):
         return self.name_short
 
 
-class Platform(models.Model):
+class PlatformMaster(models.Model):
     """ Class to describe the platform used to get the omics data """
     name = models.CharField('Platform name', max_length=100)
     full_name = models.CharField('Platform full name', max_length=100)
-    version = models.CharField('Platform version', max_length=50)
     technic = models.CharField('Platform technic', max_length=100)
     type = models.CharField('Platform type', max_length=100)
+
+    @property
+    def versions(self):
+        print(self.platform_version)
+        versions_list = []
+        for platform in self.platform_version.all():
+            if platform.version:
+                versions_list.append(platform.version)
+        return sorted(versions_list)
+
+    @property
+    def scores_count(self):
+        total_count = 0
+        for p_version in self.platform_version.all():
+            total_count += p_version.scores_count
+        return total_count
+
+
+class Platform(models.Model):
+    """ Class to describe the versioned platform used to get the omics data """
+    name = models.CharField('Platform name', max_length=100)
+    # full_name = models.CharField('Platform full name', max_length=100)
+    version = models.CharField('Platform version', max_length=50)
+    # technic = models.CharField('Platform technic', max_length=100)
+    # type = models.CharField('Platform type', max_length=100)
+    platform_master = models.ForeignKey(PlatformMaster, on_delete=models.CASCADE, related_name='platform_version', verbose_name='Platform')
 
     @property
     def scores_count(self):
