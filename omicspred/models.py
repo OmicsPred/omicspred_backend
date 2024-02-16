@@ -114,16 +114,6 @@ class EFO(models.Model):
     child_efos = models.ManyToManyField('self', verbose_name='Children EFO', symmetrical=False, related_name='parent_efos')
 
 
-class PlatformAdditional(models.Model):
-    """ Class providing additional information to the Platform """
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='platforms', verbose_name='Publication')
-    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
-    omics_count = models.IntegerField('Omics Entities count', null=False)
-    omics_type = models.CharField('Omics type', max_length=50)
-    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_platform', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
-    cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
-
-
 class Sample(models.Model):
     """Class to describe samples used in variant associations and PGS training/testing"""
 
@@ -174,18 +164,18 @@ class Sample(models.Model):
         else:
             return None
 
-    @property
-    def display_samples(self):
-        sinfo = [common.individuals_format(self.sample_number)]
-        if self.sample_cases != None:
-            sstring = '[ {:,} cases'.format(self.sample_cases)
-            if self.sample_controls != None:
-                sstring += ', {:,} controls'.format(self.sample_controls)
-            sstring += ' ]'
-            sinfo.append(sstring)
-        if self.sample_percent_male != None:
-            sinfo.append('%s %% Male samples'%str(round(self.sample_percent_male,2)))
-        return sinfo
+    # @property
+    # def display_samples(self):
+    #     sinfo = [common.individuals_format(self.sample_number)]
+    #     if self.sample_cases != None:
+    #         sstring = '[ {:,} cases'.format(self.sample_cases)
+    #         if self.sample_controls != None:
+    #             sstring += ', {:,} controls'.format(self.sample_controls)
+    #         sstring += ' ]'
+    #         sinfo.append(sstring)
+    #     if self.sample_percent_male != None:
+    #         sinfo.append('%s %% Male samples'%str(round(self.sample_percent_male,2)))
+    #     return sinfo
 
     @property
     def display_samples_for_table(self):
@@ -272,6 +262,34 @@ class Sample(models.Model):
             return self.ancestry_broad
         else:
             return '{} <small>({})</small>'.format(self.ancestry_broad, self.ancestry_free)
+
+
+class PlatformAdditional(models.Model):
+    """ Class providing additional information to the Platform """
+    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='platforms', verbose_name='Publication')
+    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
+    omics_count = models.IntegerField('Omics Entities count', null=False)
+    omics_type = models.CharField('Omics type', max_length=50)
+    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_platform', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
+    # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
+    samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_platform')
+    samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_platform')
+
+    @property
+    def cohorts_training(self):
+        cohorts = set()
+        for sample in self.samples_training.all():
+            for cohort in sample.cohorts:
+                cohorts.add(cohort.name_short)
+        return list(cohorts)
+
+    @property
+    def cohorts_validation(self):
+        cohorts = set()
+        for sample in self.samples_validation.all():
+            for cohort in sample.cohorts:
+                cohorts.add(cohort.name_short)
+        return list(cohorts)
 
 
 class Omics(models.Model):

@@ -63,13 +63,32 @@ class Phecode(models.Model):
         return list(types)
 
 
-class PlatformApplications(models.Model):
+class PlatformMasterApplications(models.Model):
     """ Class to describe the platform used to get the omics data """
     name = models.CharField('Platform name', max_length=100)
     full_name = models.CharField('Platform full name', max_length=100)
-    version = models.CharField('Platform version', max_length=50)
     technic = models.CharField('Platform technic', max_length=100)
     type = models.CharField('Platform type', max_length=100)
+
+    @property
+    def versions(self):
+        print(self.platform_version)
+        versions_list = []
+        for platform in self.platform_version.all():
+            if platform.version:
+                versions_list.append(platform.version)
+        return sorted(versions_list)
+
+
+class PlatformApplications(models.Model):
+    """ Class to describe the platform used to get the omics data """
+    name = models.CharField('Platform name', max_length=100)
+    # full_name = models.CharField('Platform full name', max_length=100)
+    version = models.CharField('Platform version', max_length=50)
+    # technic = models.CharField('Platform technic', max_length=100)
+    # type = models.CharField('Platform type', max_length=100)
+    platform_master = models.ForeignKey(PlatformMasterApplications, on_delete=models.CASCADE, related_name='platform_version', verbose_name='Platform')
+
 
 
 class SampleApplications(models.Model):

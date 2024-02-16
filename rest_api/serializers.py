@@ -114,13 +114,17 @@ class PlatformAdditionalSerializer(serializers.ModelSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
     platform = PlatformExtendedSerializer(many=False, read_only=True)
     tissue = EFOSerializer(many=False, read_only=True)
-    cohorts = CohortSerializer(many=True, read_only=True)
+    # cohorts = CohortSerializer(many=True, read_only=True)
+    samples_training = SampleSerializer(many=True, read_only=True)
+    samples_validation = SampleSerializer(many=True, read_only=True)
 
     class Meta:
         model = PlatformAdditional
-        meta_fields = ('publication', 'platform', 'omics_count', 'omics_type', 'tissue', 'cohorts')
+        meta_fields = ('publication', 'platform', 'omics_count', 'omics_type', 'tissue',
+                       'samples_training','samples_validation')
         fields = meta_fields
         read_only_fields = meta_fields
+
 
 class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
     platform = PlatformExtendedSerializer(many=False, read_only=True)
@@ -266,6 +270,26 @@ class PerformanceLightSerializer(serializers.ModelSerializer):
         fields = meta_fields
         read_only_fields = meta_fields
 
+
+class PerformanceOnlySerializer(serializers.ModelSerializer):
+    evaluation_type = serializers.SerializerMethodField('get_eval_type_label')
+    class Meta:
+        model = Performance
+        meta_fields = ('performance_metrics', 'cohort_label','performance_additional', 'evaluation_type', 'covariates')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+    def get_eval_type_label(self, obj):
+        return obj.get_eval_type_display()
+
+
+class ScorePerformanceSerializer(ScoreSerializer):
+    score_performance = PerformanceOnlySerializer(many=True, read_only=True)
+
+    class Meta(ScoreSerializer.Meta):
+        meta_fields = ('score_performance',)
+        fields = ScoreSerializer.Meta.fields + meta_fields
+        read_only_fields = ScoreSerializer.Meta.read_only_fields + meta_fields
 
 
 ###########

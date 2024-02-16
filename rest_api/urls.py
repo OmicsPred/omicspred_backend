@@ -56,6 +56,8 @@ urlpatterns = [
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
     # Scores
     re_path(r'^'+rest_urls['score']+'all'+slash, cache_page(cache_time)(RestListScores.as_view()), name="getAllScores"),
+    re_path(r'^'+rest_urls['score']+'performance/searchbyprotein/(?P<protein>[^/]+)'+slash, RestScoreSearchByProteinWithPerformance.as_view(), name="searchScoresByProteinWithPerformance"),
+    re_path(r'^'+rest_urls['score']+'performance/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScoreWithPerformance.as_view()), name="getScoreWithPerformance"),
     re_path(r'^'+rest_urls['score']+'searchbygene/(?P<gene>[^/]+)'+slash, RestScoreSearchByGene.as_view(), name="searchScoresByGene"),
     re_path(r'^'+rest_urls['score']+'searchbyprotein/(?P<protein>[^/]+)'+slash, RestScoreSearchByProtein.as_view(), name="searchScoresByProtein"),
     re_path(r'^'+rest_urls['score']+'searchbymetabolite/(?P<metabolite>[^/]+)'+slash, RestScoreSearchByMetabolite.as_view(), name="searchScoresByMetabolite"),
