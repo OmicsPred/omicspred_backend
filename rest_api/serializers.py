@@ -133,7 +133,7 @@ class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlatformAdditional
-        meta_fields = ('platform', 'omics_count', 'omics_type', 'tissue', 'cohorts')
+        meta_fields = ('platform', 'scores_count', 'omics_count', 'omics_type', 'tissue', 'cohorts')
         fields = meta_fields
         read_only_fields = meta_fields
 

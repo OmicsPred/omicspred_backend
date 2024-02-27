@@ -1,23 +1,16 @@
 from django.conf import settings
-from django_elasticsearch_dsl import Document, Index, fields
+from django_elasticsearch_dsl import Document, fields
+from django_elasticsearch_dsl.registries import registry
 from search.analyzers import id_analyzer, name_delimiter_analyzer
 from applications.models import Phecode
 
-# Name of the Elasticsearch index
-INDEX = Index(settings.ELASTICSEARCH_INDEX_NAMES[__name__])
-
-# See Elasticsearch Indices API reference for available settings
-INDEX.settings(
-    number_of_shards=1,
-    number_of_replicas=1
-)
 
 # PGS index analyzer
 id_analyzer = id_analyzer()
 name_delimiter = name_delimiter_analyzer()
 
 
-@INDEX.document
+@registry.register_document
 class PhecodeDocument(Document):
     """ Phecode elasticsearch document """
     id = fields.TextField(analyzer=id_analyzer)
@@ -47,7 +40,6 @@ class PhecodeDocument(Document):
         }
     )
 
-
     def prepare_platform_name(self, instance):
         return instance.platforms
 
@@ -55,8 +47,14 @@ class PhecodeDocument(Document):
         return instance.omics_types
 
 
-    class Django(object):
+    class Index:
+        name = settings.ELASTICSEARCH_INDEX_NAMES[__name__]
+        settings = settings.ELASTICSEARCH_INDEX_SETTINGS
+
+    class Django:
         """Inner nested class Django."""
 
         model = Phecode # The model associated with this Document
         db = 'applications'
+        # Extra fields to store and return
+        # fields = []

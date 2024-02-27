@@ -100,7 +100,10 @@ class Platform(models.Model):
 
     @property
     def scores_count(self):
-        return self.platform_score.count()
+        total_count = 0
+        for p_version in self.platform_pp.all():
+            total_count += p_version.scores_count
+        return total_count
 
 
 class EFO(models.Model):
@@ -271,6 +274,7 @@ class PlatformAdditional(models.Model):
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
     tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_platform', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
+    scores_count = models.IntegerField('Associated Scores count', null=False)
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
     samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_platform')
     samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_platform')
@@ -296,7 +300,7 @@ class Omics(models.Model):
     """ Generic Class to describe an Omics entity """
     name = models.CharField('Omics entity name', max_length=100, null=True)
     external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
-    external_id_source = models.CharField('External ID Source', max_length=100, null=True)
+    external_id_source = models.CharField('External ID source', max_length=100, null=True)
 
     class Meta:
         abstract = True

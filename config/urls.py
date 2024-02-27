@@ -18,21 +18,23 @@ Including another URLconf
 # from django.urls import include, path, re_path
 from django.urls import include, path
 
-# from search import indexes
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
     path('', include('rest_api.urls')),
 ]
 
+# Settings-specific configuration
+from django.conf import settings
+
+# Allow to build search indexes by importing the module
+if settings.OP_ON_GAE == 0:
+    from search import indexes
 
 # Debug SQL queries
-from django.conf import settings
 if settings.DEBUG:
-    from django.urls import include  # For django versions from 2.0 and
+    from django.urls import include
     import debug_toolbar
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),
     ] + urlpatterns
     from django.conf.urls.static import static
-    #urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

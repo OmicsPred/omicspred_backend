@@ -77,6 +77,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    # 'search.apps.SearchConfig',
+    # 'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
@@ -289,11 +291,16 @@ ELASTICSEARCH_DSL = {
     }
 }
 
+ELASTICSEARCH_INDEX_SETTINGS = {
+    'number_of_shards': 1,
+    'number_of_replicas': 0
+}
+
 # Name of the Elasticsearch index
 ELASTICSEARCH_INDEX_NAMES = {
     'search.documents.gene': 'gene',
     'search.documents.metabolite': 'metabolite',
-    # 'search.documents.phecode': 'phecode',
+    'search.documents.phecode': 'phecode',
     'search.documents.platform': 'platform',
     'search.documents.protein': 'protein',
     'search.documents.score': 'score'

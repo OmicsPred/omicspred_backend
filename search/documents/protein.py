@@ -1,23 +1,16 @@
 from django.conf import settings
-from django_elasticsearch_dsl import Document, Index, fields
+from django_elasticsearch_dsl import Document, fields
+from django_elasticsearch_dsl.registries import registry
 from search.analyzers import id_analyzer, name_delimiter_analyzer
 from omicspred.models import Protein
 
-# Name of the Elasticsearch index
-INDEX = Index(settings.ELASTICSEARCH_INDEX_NAMES[__name__])
-
-# See Elasticsearch Indices API reference for available settings
-INDEX.settings(
-    number_of_shards=1,
-    number_of_replicas=1
-)
 
 # PGS index analyzer
 id_analyzer = id_analyzer()
 name_delimiter = name_delimiter_analyzer()
 
 
-@INDEX.doc_type
+@registry.register_document
 class ProteinDocument(Document):
     """ Protein elasticsearch document """
     name = fields.TextField(
@@ -55,11 +48,17 @@ class ProteinDocument(Document):
     def prepare_omics_type(self, instance):
         types = set()
         for score in instance.protein_score.all():
-            types.add(score.platform.type)
+            types.add(score.platform.platform_master.type)
         return list(types)
 
 
-    class Django(object):
+    class Index:
+        name = settings.ELASTICSEARCH_INDEX_NAMES[__name__]
+        settings = settings.ELASTICSEARCH_INDEX_SETTINGS
+
+    class Django:
         """Inner nested class Django."""
 
         model = Protein # The model associated with this Document
+        # Extra fields to store and return
+        # fields = []

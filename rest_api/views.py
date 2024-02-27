@@ -28,7 +28,7 @@ related_dict = {
     'perf_select': ['score', 'publication', 'platform', 'sample', 'efo'],
     'platform_add_select': ['platform','platform__platform_master','publication','tissue'],
     'platform_add_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts','platform__platform_score'],
-    'platform_prefetch': ['platform_version','platform_version__platform_score'],
+    'platform_prefetch': ['platform_version','platform_version__platform_pp'],
     'publication_defer': [*generic_defer,'curation_status'],
     'publication_platforms': [Prefetch('platforms',PlatformAdditional.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training__cohorts','samples_validation','samples_validation__cohorts','platform__platform_score'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites']
@@ -429,12 +429,21 @@ class RestListScores(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Scores
-        queryset = Score.objects.select_related('publication','platform').all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
+        queryset = Score.objects.select_related('publication','platform','platform__platform_master').all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
         if ids_list:
             queryset = queryset.filter(id__in=ids_list)
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(name__iexact=filter_term) |
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term) |
+                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
+                                       Q(platform__name__iexact=filter_term) | Q(publication__firstauthor__iexact=filter_term))
 
         return queryset
 

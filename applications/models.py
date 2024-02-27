@@ -55,10 +55,10 @@ class Phecode(models.Model):
 
     @property
     def omics_types(self):
-        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','platform__platform_master').filter(phecode=self)
         types = set()
         for score in scores.all():
-            type = score.platform.type
+            type = score.platform.platform_master.type
             types.add(type)
         return list(types)
 
