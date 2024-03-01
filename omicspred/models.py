@@ -185,7 +185,7 @@ class Sample(models.Model):
         div_id = "sample_"+str(self.pk)
         sstring = ''
         if self.sample_cases != None:
-            sstring += '<div><a class="toggle_table_btn pgs_btn_plus pgs_helptip" id="{}" title="Click to show/hide the details">{}</a></div>'.format(div_id,common.individuals_format(self.sample_number))
+            sstring += '<div><a class="toggle_table_btn pgs_btn_plus pgs_helptip" id="{}" title="Click to show/hide the details">{}</a></div>'.format(div_id,self.sample_number)
             sstring += '<div class="toggle_list" id="list_'+div_id+'">'
             sstring += '<span class="only_export">[</span>'
             sstring += '<ul>\n<li>{:,} cases</li>\n'.format(self.sample_cases)
@@ -360,8 +360,8 @@ class Score(models.Model):
     name = models.CharField('OmicsPred Name', max_length=100, null=True)
 
     # Trait information
-    trait_reported = models.TextField('Reported Trait')
-    trait_additional = models.TextField('Additional Trait Information', null=True)
+    trait_reported = models.TextField('Reported Trait', null=True)
+    trait_reported_id = models.CharField('Reported Trait ID', null=True)
 
     # PGS Development/method details
     method_name = models.TextField('Score Development Method')
@@ -413,7 +413,7 @@ class Score(models.Model):
 
 class SourceAnnotations(models.Model):
     """ Class to store original annotations """
-    score = models.OneToOneField(Score, on_delete=models.PROTECT, related_name='source_annotation_score', verbose_name='OmicsPred Score ID', primary_key=True)
+    score = models.OneToOneField(Score, on_delete=models.PROTECT, related_name='source_annotation_score', verbose_name='OmicsPred Score', primary_key=True)
     annotations = models.JSONField('Annotations', default=dict)
 
 

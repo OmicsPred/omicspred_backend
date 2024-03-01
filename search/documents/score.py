@@ -68,5 +68,6 @@ class ScoreDocument(Document):
         model = Score  # The model associated with this Document
         # Extra fields to store and return
         fields = [
-            "trait_reported"
+            "trait_reported",
+            "trait_reported_id"
         ]

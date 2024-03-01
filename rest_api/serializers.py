@@ -112,28 +112,29 @@ class PlatformExtendedSerializer(PlatformSerializer):
 
 class PlatformAdditionalSerializer(serializers.ModelSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
-    platform = PlatformExtendedSerializer(many=False, read_only=True)
+    platform = PlatformSerializer(many=False, read_only=True)
     tissue = EFOSerializer(many=False, read_only=True)
-    # cohorts = CohortSerializer(many=True, read_only=True)
     samples_training = SampleSerializer(many=True, read_only=True)
     samples_validation = SampleSerializer(many=True, read_only=True)
 
     class Meta:
         model = PlatformAdditional
-        meta_fields = ('publication', 'platform', 'omics_count', 'omics_type', 'tissue',
+        meta_fields = ('publication', 'platform', 'scores_count', 'omics_count', 'omics_type', 'tissue',
                        'samples_training','samples_validation')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
 class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
-    platform = PlatformExtendedSerializer(many=False, read_only=True)
+    platform = PlatformSerializer(many=False, read_only=True)
     tissue = EFOSerializer(many=False, read_only=True)
-    cohorts = CohortSerializer(many=True, read_only=True)
+    samples_training = SampleSerializer(many=True, read_only=True)
+    samples_validation = SampleSerializer(many=True, read_only=True)
 
     class Meta:
         model = PlatformAdditional
-        meta_fields = ('platform', 'scores_count', 'omics_count', 'omics_type', 'tissue', 'cohorts')
+        meta_fields = ('platform', 'scores_count', 'omics_count', 'omics_type',
+                       'tissue', 'samples_training', 'samples_validation')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -218,10 +219,9 @@ class ScoreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        meta_fields = ('id', 'name', 'trait_reported', 'trait_additional', 'method_name', 'method_params',
-                    'trait_reported', 'trait_additional', 'method_name', 'method_params', 'variants_number',
-                    'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                    'variants_interactions', 'variants_genomebuild')#, 'date_release')
+        meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
+                       'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
+                       'variants_number', 'variants_interactions', 'variants_genomebuild')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -309,10 +309,9 @@ class ScoreExtendedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        meta_fields = ('id', 'name', 'trait_reported', 'trait_additional', 'method_name', 'method_params',
-                    'trait_reported', 'trait_additional', 'method_name', 'method_params', 'variants_number',
-                    'publication', 'platform', 'score_performance', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                    'variants_interactions', 'variants_genomebuild', 'date_release')
+        meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
+                       'publication', 'platform', 'score_performance', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
+                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -329,10 +328,9 @@ class OmicsScoreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        meta_fields = ('id', 'name', 'trait_reported', 'trait_additional', 'method_name', 'method_params',
-                    'trait_reported', 'trait_additional', 'method_name', 'method_params', 'variants_number',
+        meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
                     'publication', 'platform', 'score_performance',
-                    'variants_interactions', 'variants_genomebuild')
+                    'variants_number', 'variants_interactions', 'variants_genomebuild')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -436,7 +434,7 @@ class ScoreMetaboliteSerializer(serializers.ModelSerializer):
     metabolites = MetaboliteLightSerializer(many=True, read_only=True)
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','metabolites','performance_data')
+        meta_fields = ('id','trait_reported','trait_reported_id','variants_number','metabolites','performance_data')
         fields = meta_fields
         read_only_fields = meta_fields
 
