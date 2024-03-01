@@ -10,7 +10,7 @@ id_analyzer = id_analyzer()
 name_delimiter = name_delimiter_analyzer()
 
 
-@registry.register_documentq
+@registry.register_document
 class GeneDocument(Document):
     """ Gene elasticsearch document """
     name = fields.TextField(
