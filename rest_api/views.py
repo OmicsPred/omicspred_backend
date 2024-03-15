@@ -118,10 +118,10 @@ class RestMetabolite(generics.RetrieveAPIView):
 
     def get(self, request, metabolite_id):
         try:
-            queryset = Metabolite.objects.prefetch_related('pathway_group').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
+            queryset = Metabolite.objects.prefetch_related('pathway_group','pathways').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
         except Metabolite.DoesNotExist:
             queryset = None
-        serializer = MetaboliteSerializer(queryset,many=False)
+        serializer = MetaboliteSerializerExtended(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -150,10 +150,10 @@ class RestGene(generics.RetrieveAPIView):
 
     def get(self, request, gene_id):
         try:
-            queryset = Gene.objects.get(Q(name__iexact=gene_id) | Q(external_id__iexact=gene_id))
+            queryset = Gene.objects.prefetch_related('pathways').get(Q(name__iexact=gene_id) | Q(external_id__iexact=gene_id))
         except Gene.DoesNotExist:
             queryset = None
-        serializer = GeneSerializer(queryset,many=False)
+        serializer = GeneSerializerExtended(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -177,6 +177,20 @@ class RestSearchProtein(generics.ListAPIView):
             queryset = []
 
         return queryset
+
+
+class RestPathway(generics.RetrieveAPIView):
+    """
+    Retrieve one Pathway
+    """
+
+    def get(self, request, pathway_id):
+        try:
+            queryset = PathwayNew.objects.prefetch_related('superpathways','pathway_genes','pathway_metabolites').get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+        except Gene.DoesNotExist:
+            queryset = None
+        serializer = PathwaySerializerNewExtended(queryset,many=False)
+        return Response(serializer.data)
 
 
 ## Omics by platform ##
