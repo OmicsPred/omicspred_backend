@@ -296,29 +296,44 @@ class PlatformAdditional(models.Model):
         return list(cohorts)
 
 
-class Omics(models.Model):
-    """ Generic Class to describe an Omics entity """
-    name = models.CharField('Omics entity name', max_length=100, null=True)
+class MolecularTrait(models.Model):
+    """ Generic Class to describe a molecular trait """
+    name = models.CharField('Molecular trait name', max_length=150, null=True)
     external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
     external_id_source = models.CharField('External ID source', max_length=100, null=True)
+    synonyms = models.JSONField('Synonyms', null=True)
+    xrefs = models.JSONField('External references', null=True)
 
     class Meta:
         abstract = True
 
 
-class Gene(Omics):
-    """ Class to describe Gene entity """
-    synonyms = models.JSONField('Gene synonyms', null=True)
+class Pathway(MolecularTrait):
+    """ Class to describe a SuperPathway entity """
+
+
+class SuperPathway(MolecularTrait):
+    """ Class to describe a SuperPathway entity """
+
+
+class PathwayNew(MolecularTrait):
+    """ Class to describe a Pathway entity """
+    superpathways = models.ManyToManyField(SuperPathway, related_name='subpathway', verbose_name='SuperPathway(s)')
+
+
+class Gene(MolecularTrait):
+    """ Class to describe a Gene entity """
     biotype = models.CharField('Gene biotype', max_length=100, null=True)
     retired_gene_model = models.BooleanField('Retired Gene ID/model', default=False)
+    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_genes', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):
         return self.gene_score.count()
 
 
-class Transcript(Omics):
-    """ Class to describe Transcript entity """
+class Transcript(MolecularTrait):
+    """ Class to describe a Transcript entity """
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_transcript", null=True)
     biotype = models.CharField('Gene biotype', max_length=100, null=True)
 
@@ -327,23 +342,22 @@ class Transcript(Omics):
         return self.transcript_score.count()
 
 
-class Protein(Omics):
-    """ Class to describe Transcript entity """
+class Protein(MolecularTrait):
+    """ Class to describe a Protein entity """
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_protein", null=True)
+    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_proteins', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):
         return self.protein_score.count()
 
 
-class Pathway(Omics):
-    """ Class to describe Pathway entity """
-
-
-class Metabolite(Omics):
+class Metabolite(MolecularTrait):
     """ Class to describe Metabolite entity """
+    description = models.TextField('Description', null=True)
     pathway_group = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Group', related_name="pathway_group_metabolite", null=True)
     pathway_subgroup = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Subgroup', related_name="pathway_subgroup_metabolite", null=True)
+    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_metabolites', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):

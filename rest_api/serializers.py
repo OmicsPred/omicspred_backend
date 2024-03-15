@@ -162,12 +162,37 @@ class PathwaySerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
+class SuperPathwaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuperPathway
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+class PathwayNewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PathwayNew
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
 class GeneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gene
-        meta_fields = ('name', 'external_id', 'external_id_source', 'biotype')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'biotype')
         fields = meta_fields
         read_only_fields = meta_fields
+
+
+class GeneSerializerExtended(GeneSerializer):
+    pathways = PathwayNewSerializer(many=True, read_only=True)
+
+    class Meta(GeneSerializer.Meta):
+        meta_fields = ('pathways',)
+        fields = GeneSerializer.Meta.fields + meta_fields
+        read_only_fields = GeneSerializer.Meta.read_only_fields + meta_fields
 
 
 class TranscriptSerializer(serializers.ModelSerializer):
@@ -198,11 +223,31 @@ class ProteinSerializerExtended(ProteinSerializer):
 class MetaboliteSerializer(serializers.ModelSerializer):
     pathway_group = PathwaySerializer(many=False, read_only=True)
     pathway_subgroup = PathwaySerializer(many=False, read_only=True)
+
     class Meta:
         model = Metabolite
-        meta_fields = ('name', 'external_id', 'external_id_source', 'pathway_group', 'pathway_subgroup')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs','pathway_group', 'pathway_subgroup')
         fields = meta_fields
         read_only_fields = meta_fields
+
+
+class MetaboliteSerializerExtended(MetaboliteSerializer):
+    pathways = PathwayNewSerializer(many=True, read_only=True)
+
+    class Meta(MetaboliteSerializer.Meta):
+        meta_fields = ('description', 'pathways',)
+        fields = MetaboliteSerializer.Meta.fields + meta_fields
+        read_only_fields = MetaboliteSerializer.Meta.read_only_fields + meta_fields
+
+
+class PathwaySerializerNewExtended(PathwayNewSerializer):
+    superpathways = SuperPathwaySerializer(many=True, read_only=True)
+    genes = GeneSerializer(source='pathway_genes', many=True, read_only=True)
+    metabolites = MetaboliteSerializer(source='pathway_metabolites', many=True, read_only=True)
+    class Meta(PathwayNewSerializer.Meta):
+        meta_fields = ('superpathways', 'genes', 'metabolites')
+        fields = PathwayNewSerializer.Meta.fields + meta_fields
+        read_only_fields = PathwayNewSerializer.Meta.read_only_fields + meta_fields
 
 
 class ScoreSerializer(serializers.ModelSerializer):

@@ -17,6 +17,7 @@ rest_urls = {
     'gene':                 'rest/gene/',
     'metabolite':           'rest/metabolite/',
     'metabolomics':         'rest/metabolomics/',
+    'pathway':              'rest/pathway/',
     'phecode':              'rest/phecode/',
     'platform':             'rest/platform/',
     'plot':                 'rest/plot/',
@@ -41,6 +42,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
     re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
+    re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
     # Omics - platform entry
     re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="getMetabolomicsScores"),
     re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="getProteomicsScores"),
