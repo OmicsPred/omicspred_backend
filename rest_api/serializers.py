@@ -145,7 +145,6 @@ class PublicationExtendedSerializer(PublicationSerializer):
 
     class Meta(PublicationSerializer.Meta):
         model = Publication
-        # meta_fields = ('date_release', 'authors','publication_pp')
         meta_fields = ('date_release', 'authors', 'platforms')
         fields = PublicationSerializer.Meta.fields + meta_fields
         read_only_fields = PublicationSerializer.Meta.read_only_fields + meta_fields
@@ -171,9 +170,11 @@ class SuperPathwaySerializer(serializers.ModelSerializer):
 
 
 class PathwayNewSerializer(serializers.ModelSerializer):
+    superpathways = SuperPathwaySerializer(many=True, read_only=True)
+
     class Meta:
         model = PathwayNew
-        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs', 'superpathways')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -181,7 +182,7 @@ class PathwayNewSerializer(serializers.ModelSerializer):
 class GeneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gene
-        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'biotype')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'description', 'biotype')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -241,11 +242,12 @@ class MetaboliteSerializerExtended(MetaboliteSerializer):
 
 
 class PathwaySerializerNewExtended(PathwayNewSerializer):
-    superpathways = SuperPathwaySerializer(many=True, read_only=True)
+    # superpathways = SuperPathwaySerializer(many=True, read_only=True)
     genes = GeneSerializer(source='pathway_genes', many=True, read_only=True)
     metabolites = MetaboliteSerializer(source='pathway_metabolites', many=True, read_only=True)
     class Meta(PathwayNewSerializer.Meta):
-        meta_fields = ('superpathways', 'genes', 'metabolites')
+        meta_fields = ('genes', 'metabolites')
+        # meta_fields = ('superpathways', 'genes', 'metabolites')
         fields = PathwayNewSerializer.Meta.fields + meta_fields
         read_only_fields = PathwayNewSerializer.Meta.read_only_fields + meta_fields
 
@@ -266,12 +268,21 @@ class ScoreSerializer(serializers.ModelSerializer):
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
                        'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                       'variants_number', 'variants_interactions', 'variants_genomebuild')#, 'date_release')
+                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
     # def get_date_released(self, obj):
     #     return obj.date_released
+
+
+class ScorePathwaySerializer(ScoreSerializer):
+    genes = GeneSerializerExtended(many=True, read_only=True)
+    metabolites = MetaboliteSerializerExtended(many=True, read_only=True)
+
+    class Meta(ScoreSerializer.Meta):
+        fields = ScoreSerializer.Meta.fields
+        read_only_fields = ScoreSerializer.Meta.read_only_fields
 
 
 class ScorePlotSerializer(serializers.ModelSerializer):
@@ -545,14 +556,23 @@ class CohortApplicationsSerializer(CohortSerializer):
         read_only_fields = CohortSerializer.Meta.read_only_fields
 
 
+class MolecularTraitApplicationsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MolecularTraitApplications
+        meta_fields = ('external_id','name','type')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
 class ScoreApplicationsSerializer(serializers.ModelSerializer):
     phecode = PhecodeSerializer(many=False,read_only=True)
     platform = PlatformApplicationsSerializer(many=False,read_only=True)
     cohort = CohortApplicationsSerializer(many=False,read_only=True)
+    molecular_traits = MolecularTraitApplicationsSerializer(many=True,read_only=True)
     data_values = serializers.SerializerMethodField('get_data_values')
     class Meta:
         model = ScoreApplications
-        meta_fields = ('id', 'score_id','omics_name','phecode','platform','cohort','data_values')
+        meta_fields = ('score_id','omics_name','phecode','platform','cohort','data_values','molecular_traits')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -564,6 +584,6 @@ class SampleApplicationsSerializer(serializers.ModelSerializer):
     phecode = PhecodeSerializer(many=False,read_only=True)
     class Meta:
         model = SampleApplications
-        meta_fields = ('id','sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phecode','platform_counts')
+        meta_fields = ('sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phecode','platform_counts')
         fields = meta_fields
         read_only_fields = meta_fields
