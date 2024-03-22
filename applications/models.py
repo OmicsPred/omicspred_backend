@@ -101,6 +101,20 @@ class SampleApplications(models.Model):
     platform_counts = models.JSONField('Associations by platform', null=True)
 
 
+class MolecularTraitApplications(models.Model):
+    TYPE_CHOICES = [
+        ('gene', 'gene'),
+        ('protein', 'protein'),
+        ('metabolite', 'metabolite')
+    ]
+    name = models.CharField('Molecular trait name', max_length=150, null=True)
+    external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
+    type = models.CharField(max_length=20,
+        choices=TYPE_CHOICES,
+        default=''
+    )
+
+
 class ScoreApplications(models.Model):
     """ Class for score association for the application """
     score_id = models.CharField('Omicspred ID', max_length=30, db_index=True)
@@ -108,6 +122,7 @@ class ScoreApplications(models.Model):
     phecode = models.ForeignKey(Phecode, on_delete=models.PROTECT, related_name='phecode_score', verbose_name='Phecode')
     platform = models.ForeignKey(PlatformApplications, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     cohort = models.ForeignKey(CohortApplications, on_delete=models.PROTECT, related_name='cohort_score', verbose_name='Cohort')
+    molecular_traits = models.ManyToManyField(MolecularTraitApplications, related_name='molecular_trait_score', verbose_name='Molecular traits')
     # Values
     r2 = models.FloatField(verbose_name='R2', null=False)
     hr = models.FloatField(verbose_name='Hazard Ratio', null=False)

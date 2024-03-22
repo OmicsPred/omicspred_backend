@@ -299,6 +299,7 @@ class PlatformAdditional(models.Model):
 class MolecularTrait(models.Model):
     """ Generic Class to describe a molecular trait """
     name = models.CharField('Molecular trait name', max_length=150, null=True)
+    description = models.TextField('Description', null=True)
     external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
     external_id_source = models.CharField('External ID source', max_length=100, null=True)
     synonyms = models.JSONField('Synonyms', null=True)
@@ -354,7 +355,6 @@ class Protein(MolecularTrait):
 
 class Metabolite(MolecularTrait):
     """ Class to describe Metabolite entity """
-    description = models.TextField('Description', null=True)
     pathway_group = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Group', related_name="pathway_group_metabolite", null=True)
     pathway_subgroup = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Subgroup', related_name="pathway_subgroup_metabolite", null=True)
     pathways = models.ManyToManyField(PathwayNew, related_name='pathway_metabolites', verbose_name='Pathway(s)')
@@ -402,7 +402,7 @@ class Score(models.Model):
     metabolites = models.ManyToManyField(Metabolite, related_name='metabolite_score', verbose_name='Metabolite(s)')
 
     # # LICENSE information/text
-    # license = models.TextField('License/Terms of Use', default='''PGS obtained from the Catalog should be cited appropriately, and used in accordance with any licensing restrictions set by the authors. See EBI Terms of Use (https://www.ebi.ac.uk/about/terms-of-use/) for additional details.''')
+    license = models.TextField('License/Terms of Use', default='Creative Commons Attribution 4.0 International (CC BY 4.0)')
 
 
     # Methods

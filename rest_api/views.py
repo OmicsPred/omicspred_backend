@@ -32,6 +32,7 @@ related_dict = {
     'publication_defer': [*generic_defer,'curation_status'],
     'publication_platforms': [Prefetch('platforms',queryset=PlatformAdditional.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
+    'score_applications_select': ['phecode','platform','platform__platform_master','cohort'],
     'search_by_select': ['publication','platform','platform__platform_master']
 }
 missing_index = 0
@@ -470,12 +471,19 @@ class RestScore(generics.RetrieveAPIView):
 
     def get(self, request, opgs_id):
         opgs_id = opgs_id.upper()
+        include_pathway = self.request.query_params.get('include_pathway')
         try:
-            queryset = Score.objects.select_related('publication','platform').get(id=opgs_id)
-            # queryset = Score.objects.defer(*related_dict['score_defer']).select_related('publication').prefetch_related(*related_dict['score_prefetch']).get(id=pgs_id)
+            if include_pathway and include_pathway is not None:
+                queryset = Score.objects.select_related('publication','platform').prefetch_related('genes__pathways','genes__pathways__superpathways','metabolites__pathways','metabolites__pathways__superpathways').get(id=opgs_id)
+            else:
+                queryset = Score.objects.select_related('publication','platform').get(id=opgs_id)
         except Score.DoesNotExist:
             queryset = None
-        serializer = ScoreSerializer(queryset,many=False)
+        if include_pathway and include_pathway is not None:
+            serializer = ScorePathwaySerializer(queryset,many=False)
+        else:
+            serializer = ScoreSerializer(queryset,many=False)
+
         return Response(serializer.data)
 
 
@@ -1051,7 +1059,19 @@ class RestListPhecodeScore(generics.ListAPIView):
     Retrieve all the Phecode Score Applications
     """
     serializer_class = ScoreApplicationsSerializer
-    queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+
+    def get_queryset(self):
+        # Fetch all the ScoresApplications
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) |
+                                       Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term) |
+                                       Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
+
+        return queryset
 
 
 class RestPhecodeScore(generics.RetrieveAPIView):
@@ -1062,7 +1082,7 @@ class RestPhecodeScore(generics.RetrieveAPIView):
     def get(self, request, opgs_id):
         opgs_id = opgs_id.upper()
         try:
-            queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').get(score_id=opgs_id)
+            queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').get(score_id=opgs_id)
         except ScoreApplications.DoesNotExist:
             queryset = None
         serializer = ScoreApplicationsSerializer(queryset,many=False)
@@ -1076,7 +1096,7 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
     serializer_class = ScoreApplicationsSerializer
 
     def get_queryset(self):
-        queryset = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','cohort').all()
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').all()
         params = 0
 
         # Search by Score ID
@@ -1091,6 +1111,11 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(phecode__id=phecode_id)
             params += 1
 
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
+
         if params == 0:
             queryset = []
 
@@ -1102,4 +1127,14 @@ class RestListPhecodeSample(generics.ListAPIView):
     Retrieve all the Phecode Sample Applications
     """
     serializer_class = SampleApplicationsSerializer
-    queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+
+    def get_queryset(self):
+        # Fetch all the ScoresApplications
+        queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term))
+
+        return queryset
