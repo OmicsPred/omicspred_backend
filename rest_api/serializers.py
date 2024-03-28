@@ -521,7 +521,7 @@ class ScoreTranscriptSerializer(serializers.ModelSerializer):
 class PhecodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phecode
-        meta_fields = ('id','name','category')
+        meta_fields = ('id','name','category','scores_count')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -538,7 +538,7 @@ class PhecodeSerializerExtended(PhecodeSerializer):
 
     def get_child_phecode(self, obj):
         ''' Sort phecode child terms by their IDs '''
-        children = obj.child_phecode.order_by('id')
+        children = obj.child_phecode.prefetch_related('phecode_score').order_by('id')
         return PhecodeSerializer(children, many=True).data
 
 

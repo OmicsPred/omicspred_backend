@@ -27,12 +27,14 @@ class Phecode(models.Model):
 
     @property
     def scores_count(self):
-        scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
+        # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
+        scores = self.phecode_score.count()
         return scores
 
 
     @property
     def score_number(self):
+        # scores = self.phecode_score
         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
         data = {}
         for score in scores.all():
