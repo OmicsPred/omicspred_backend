@@ -1044,7 +1044,7 @@ class RestPhecode(generics.RetrieveAPIView):
     def get(self, request, phecode_id):
         param_inc_children = self.request.query_params.get('include_children')
         try:
-            queryset = Phecode.objects.using(applications_db).get(id=phecode_id)
+            queryset = Phecode.objects.using(applications_db).prefetch_related('phecode_score').get(id=phecode_id)
         except Phecode.DoesNotExist:
             queryset = None
         if (param_inc_children and str(param_inc_children)=='1'):
