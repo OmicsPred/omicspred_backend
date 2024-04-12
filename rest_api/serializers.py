@@ -120,7 +120,7 @@ class PlatformAdditionalSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlatformAdditional
         meta_fields = ('publication', 'platform', 'scores_count', 'omics_count', 'omics_type', 'tissue',
-                       'samples_training','samples_validation')
+                       'samples_training','samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
 
