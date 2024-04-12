@@ -2,12 +2,16 @@ import requests
 import time
 import json
 
+# platforms = {
+#     'Nightingale': 'metabolomics',
+#     'Metabolon': 'metabolomics',
+#     'Olink': 'proteomics',
+#     'Somalogic': 'proteomics',
+#     'Illumina RNAseq': 'transcriptomics'
+# }
+
 platforms = {
-    'Nightingale': 'metabolomics',
-    'Metabolon': 'metabolomics',
-    'Olink': 'proteomics',
-    'Somalogic': 'proteomics',
-    'Illumina RNAseq': 'transcriptomics'
+    'Somalogic': 35202437,
 }
 
 
@@ -16,7 +20,7 @@ plot_url_root = f'{url_root}/plot/search?format=json&platform='
 plot_score_url_root = f'{url_root}/plot/score/search?format=json&platform='
 table_url_root = f'{url_root}/'
 
-default_path = '/Users/lg10/Workspace/git/fork/omicspred_frontend/src/data'
+default_path = '/Users/lg10/Workspace/git/fork/omicspred_frontend/public/data'
 
 
 def rest_api_call(url,endpoint,parameters=None):
@@ -61,24 +65,26 @@ def run():
     for platform in platforms.keys():
         print(f"# {platform}:")
         platform_name = platform.replace(' ','_')
+        pmid = platforms[platform]
+        parameters = f'{platform}&pmid={pmid}'
 
         # Plot file
         print(f"\t- Plot data")
-        plot_data = rest_api_call(plot_url_root, platform)
-        with open(f'{default_path}/{platform_name}_plot.json', mode="w") as f:
+        plot_data = rest_api_call(plot_url_root, parameters)
+        with open(f'{default_path}/{platform_name}_{pmid}_plot.json', mode="w") as f:
             # f.write(json.dumps(plot_data, indent=4))
             f.write(json.dumps(plot_data))
 
         # Plot Score file
         print(f"\t- Plot Score data")
-        plot_score_data = rest_api_call(plot_score_url_root, platform)
-        with open(f'{default_path}/{platform_name}_plot_score.json', mode="w") as f:
+        plot_score_data = rest_api_call(plot_score_url_root, parameters)
+        with open(f'{default_path}/{platform_name}_{pmid}_plot_score.json', mode="w") as f:
             # f.write(json.dumps(plot_score_data, indent=4))
             f.write(json.dumps(plot_score_data))
 
-        # Table file
-        print(f"\t- Table data")
-        table_data = rest_api_call(table_url_root+platforms[platform]+'/', platform)
-        with open(f'{default_path}/{platform_name}_table.json', mode="w") as f:
-            # f.write(json.dumps(table_data, indent=4))
-            f.write(json.dumps(table_data))
+        # # Table file
+        # print(f"\t- Table data")
+        # table_data = rest_api_call(table_url_root+platforms[platform]+'/', platform)
+        # with open(f'{default_path}/{platform_name}_table.json', mode="w") as f:
+        #     # f.write(json.dumps(table_data, indent=4))
+        #     f.write(json.dumps(table_data))

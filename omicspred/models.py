@@ -2,6 +2,16 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import datetime
 
+
+box_shared_url = 'https://app.box.com/shared/static/'
+
+class Species(models.Model):
+    """ Class for species information """
+    taxonomy_id = models.IntegerField('NCBI Taxonomy ID', primary_key=True)
+    name = models.CharField('Common name', max_length=100)
+    name_latin = models.CharField('Latin name', max_length=100)
+
+
 class Publication(models.Model):
     """ Class for publications with OmicsPred """
     pmid = models.IntegerField('PubMed ID (PMID)', null=False)
@@ -278,6 +288,16 @@ class PlatformAdditional(models.Model):
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
     samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_platform')
     samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_platform')
+    species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_platform', verbose_name='Species', null=False) # Associated species
+    # Dir ID
+    files_ids = models.JSONField('Files IDs on Box', default=dict)
+
+    @property
+    def scoring_files_urls(self):
+        urls = {}
+        for file_type in self.files_ids.keys():
+           urls[file_type] = f'{box_shared_url}{self.files_ids[file_type]}'
+        return urls
 
     @property
     def cohorts_training(self):
@@ -393,15 +413,16 @@ class Score(models.Model):
     # Links to related models
     publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
     platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
+    species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_score', verbose_name='Species', null=False) # Associated species
     # efos = models.ManyToManyField(EFO, verbose_name='EFO', related_name='associated_scores')
 
-    ## Omics entities
+    # Omics entities
     genes = models.ManyToManyField(Gene, related_name='gene_score', verbose_name='Gene(s)')
     transcripts = models.ManyToManyField(Transcript, related_name='transcript_score', verbose_name='Transcript(s)')
     proteins = models.ManyToManyField(Protein, related_name='protein_score', verbose_name='Protein(s)')
     metabolites = models.ManyToManyField(Metabolite, related_name='metabolite_score', verbose_name='Metabolite(s)')
 
-    # # LICENSE information/text
+    # LICENSE information/text
     license = models.TextField('License/Terms of Use', default='Creative Commons Attribution 4.0 International (CC BY 4.0)')
 
 

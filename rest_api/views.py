@@ -950,15 +950,23 @@ class RestPlotSearch(generics.RetrieveAPIView):
     Retrieve performance metrics for a given platform.
     """
 
+    serializer_class = ScorePlotSerializer
+
     def get(self,request):
 
-        queryset = Performance.objects.only('score_id','platform_id','platform__id','platform__name','cohort_label').select_related('platform').all().prefetch_related('performance_metric').order_by('score_id')
+        queryset = Performance.objects.only('score_id','platform_id','platform__id','platform__name','publication__pmid','cohort_label').select_related('platform','publication').all().prefetch_related('performance_metric').order_by('score_id')
         params = 0
 
         # Search by platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
             queryset = queryset.filter(platform__name__iexact=platform)
+            params += 1
+
+        # Search by Publication
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid is not None:
+            queryset = queryset.filter(publication__pmid__iexact=pmid)
             params += 1
 
         if params == 0:
@@ -1016,13 +1024,19 @@ class RestPlotScoreSearch(generics.ListAPIView):
     serializer_class = ScorePlotSerializer
 
     def get_queryset(self):
-        queryset = Score.objects.all().prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
+        queryset = Score.objects.select_related('publication','platform').all().prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
         params = 0
 
         # Search by platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
             queryset = queryset.filter(platform__name__iexact=platform)
+            params += 1
+
+        # Search by Publication
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid is not None:
+            queryset = queryset.filter(publication__pmid__iexact=pmid)
             params += 1
 
         if params == 0:
