@@ -1,50 +1,47 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
-from search.analyzers import id_analyzer, name_delimiter_analyzer
-from applications.models import Phecode
+from search_es.analyzers import name_delimiter_analyzer
+from omicspred.models import Platform
 
 
 # PGS index analyzer
-id_analyzer = id_analyzer()
 name_delimiter = name_delimiter_analyzer()
 
 
 @registry.register_document
-class PhecodeDocument(Document):
-    """ Phecode elasticsearch document """
-    id = fields.TextField(analyzer=id_analyzer)
+class PlatformDocument(Document):
+    """ Platform elasticsearch document """
     name = fields.TextField(
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
-    category = fields.TextField(
+    full_name = fields.TextField(
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
+    version = fields.TextField()
+    technic = fields.TextField(
+        analyzer=name_delimiter,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
+    type = fields.TextField()
     scores_count = fields.IntegerField()
-    platform_name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    omics_type = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
 
-    def prepare_platform_name(self, instance):
-        return instance.platforms
+    def prepare_full_name(self, instance):
+       return instance.platform_master.full_name
 
-    def prepare_omics_type(self, instance):
-        return instance.omics_types
+    def prepare_technic(self, instance):
+       return instance.platform_master.technic
+
+    def prepare_type(self, instance):
+       return instance.platform_master.type
 
 
     class Index:
@@ -54,7 +51,6 @@ class PhecodeDocument(Document):
     class Django:
         """Inner nested class Django."""
 
-        model = Phecode # The model associated with this Document
-        db = 'applications'
+        model = Platform # The model associated with this Document
         # Extra fields to store and return
         # fields = []

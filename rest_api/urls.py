@@ -26,6 +26,7 @@ rest_urls = {
     'proteomics':           'rest/proteomics/',
     'publication':          'rest/publication/',
     'sample':               'rest/sample/',
+    'es_search':            'rest/es_search/',
     'score':                'rest/score/',
     'transcriptomics':      'rest/transcriptomics/',
     # 'table':               'rest/table/',
@@ -38,11 +39,13 @@ urlpatterns = [
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
     # Proteins
     re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
+    # Pathways
+    re_path(r'^'+rest_urls['pathway']+'all'+slash, RestListPathways.as_view(), name="getAllPathways"),
+    re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
     # Omics - single entry
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
     re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
-    re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
     # Omics - platform entry
     re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="getMetabolomicsScores"),
     re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="getProteomicsScores"),

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
-from search.analyzers import id_analyzer, name_delimiter_analyzer
+from search_es.analyzers import id_analyzer, name_delimiter_analyzer
 from omicspred.models import Score
 
 
@@ -21,23 +21,7 @@ class ScoreDocument(Document):
             'raw': fields.KeywordField()
         }
     )
-    # publication = fields.ObjectField(
-    #     properties={
-    #         'id': fields.TextField()
-    #     }
-    # )
-    # trait_reported = fields.TextField(
-    #     fields={
-    #         'raw': fields.KeywordField()
-    #     }
-    # )
-    # trait_efo = fields.ObjectField(
-    #     properties={
-    #         'id': fields.TextField(),
-    #         'label': fields.TextField()
-    #     }
-    # )
-    variants_number = fields.IntegerField()
+    # variants_number = fields.IntegerField()
     platform_name = fields.TextField(
         analyzer=name_delimiter,
         fields={
@@ -48,6 +32,38 @@ class ScoreDocument(Document):
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
+        }
+    )
+    publication = fields.ObjectField(
+        properties={
+            'title': fields.TextField(),
+            'pmid': fields.TextField(analyzer=id_analyzer),
+            'doi': fields.TextField(analyzer=id_analyzer),
+            'firstauthor': fields.KeywordField(),
+        }
+    )
+    trait_reported = fields.TextField(
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
+    trait_reported_id = fields.TextField(analyzer=id_analyzer)
+    genes = fields.ObjectField(
+        properties={
+            'id': fields.TextField(),
+            'name': fields.TextField()
+        }
+    )
+    proteins = fields.ObjectField(
+        properties={
+            'id': fields.TextField(),
+            'name': fields.TextField()
+        }
+    )
+    metabolites = fields.ObjectField(
+        properties={
+            'id': fields.TextField(),
+            'name': fields.TextField()
         }
     )
 
@@ -68,6 +84,9 @@ class ScoreDocument(Document):
         model = Score  # The model associated with this Document
         # Extra fields to store and return
         fields = [
-            "trait_reported",
-            "trait_reported_id"
+            "variants_number"
         ]
+        # fields = [
+        #     "trait_reported",
+        #     "trait_reported_id"
+        # ]

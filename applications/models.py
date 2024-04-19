@@ -28,7 +28,7 @@ class Phecode(models.Model):
     @property
     def scores_count(self):
         # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
-        scores = self.phecode_score.count()
+        scores = self.phecode_score.select_related(self).count()
         return scores
 
 
