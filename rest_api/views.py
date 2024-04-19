@@ -4,11 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
-from django.db.models import Prefetch, Q, FloatField
+from django.db.models import Prefetch, Q, FloatField, DecimalField
 from django.db.models.functions import Cast
 from omicspred.models import *
 from applications.models import *
 from .serializers import *
+# from search_es.search import get_search
 
 
 generic_defer = ['curation_notes']
@@ -36,6 +37,28 @@ related_dict = {
     'search_by_select': ['publication','platform','platform__platform_master']
 }
 missing_index = 0
+
+
+def sort_data_list(request,type,queryset,default_col='num'):
+    # Sort data
+    sort_field = request.query_params.get('sort_field')
+    if sort_field:
+        if sort_field == f'{type}_id':
+            sort_field = 'id'
+        elif sort_field == f'{type}_name':
+            sort_field = 'name'
+        elif sort_field.endswith(f'_name') and not sort_field.endswith(f'__name'):
+            sort_field = sort_field.replace('_name','__name')
+    sort = request.query_params.get('sort')
+    if sort_field and sort_field is not None and sort and sort is not None:
+        if sort == 'desc':
+            sort_field = '-'+sort_field
+        queryset = queryset.order_by(sort_field)
+    else:
+        queryset = queryset.order_by(default_col)
+    print(f"SORTING: {sort_field} | {sort}")
+    return queryset
+
 
 def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first,
@@ -111,6 +134,46 @@ class RestListCohorts(generics.ListAPIView):
         return queryset
 
 
+## Pathways ##
+
+class RestListPathways(generics.ListAPIView):
+    """
+    Retrieve all the Pathways
+    """
+    # queryset = PathwayNew.objects.all().prefetch_related('superpathways','pathway_genes','pathway_metabolites')#.order_by('name')
+    # queryset = PathwayNew.objects.all().prefetch_related('superpathways','pathway_genes','pathway_metabolites','pathway_metabolites__pathway_group','pathway_metabolites__pathway_subgroup').order_by('id')
+    serializer_class = PathwaySerializerNewExtended
+
+    def get_queryset(self):
+        # Fetch all the Pathways
+        queryset = PathwayNew.objects.all().prefetch_related('superpathways','pathway_genes','pathway_metabolites').order_by('name')
+
+        # Filter data
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__iexact=filter_term) |
+                                       Q(pathway_genes__external_id__iexact=filter_term) | Q(pathway_genes__name__iexact=filter_term) |
+                                       Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
+                                       Q(superpathways__id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term)).distinct()
+        # Sort data
+        queryset = sort_data_list(self.request,'pathway',queryset,'name')
+        return queryset
+
+
+class RestPathway(generics.RetrieveAPIView):
+    """
+    Retrieve one Pathway
+    """
+
+    def get(self, request, pathway_id):
+        try:
+            queryset = PathwayNew.objects.prefetch_related('superpathways','pathway_genes','pathway_metabolites').get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+        except Gene.DoesNotExist:
+            queryset = None
+        serializer = PathwaySerializerNewExtended(queryset,many=False)
+        return Response(serializer.data)
+
+
 ## Biological features ##
 class RestMetabolite(generics.RetrieveAPIView):
     """
@@ -180,20 +243,6 @@ class RestSearchProtein(generics.ListAPIView):
         return queryset
 
 
-class RestPathway(generics.RetrieveAPIView):
-    """
-    Retrieve one Pathway
-    """
-
-    def get(self, request, pathway_id):
-        try:
-            queryset = PathwayNew.objects.prefetch_related('superpathways','pathway_genes','pathway_metabolites').get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
-        except Gene.DoesNotExist:
-            queryset = None
-        serializer = PathwaySerializerNewExtended(queryset,many=False)
-        return Response(serializer.data)
-
-
 ## Omics by platform ##
 
 class RestMetabolomics(generics.ListAPIView):
@@ -208,6 +257,16 @@ class RestMetabolomics(generics.ListAPIView):
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
+        # Sort data
+        queryset = sort_data_list(self.request,'score',queryset)
+        # sort_field = self.request.query_params.get('sort_field')
+        # sort = self.request.query_params.get('sort')
+        # if sort_field and sort_field is not None and sort and sort is not None:
+        #     if sort == 'desc':
+        #         sort_field = '-'+sort_field
+        #     queryset = queryset.order_by(sort_field)
+        # else:
+        #     queryset = queryset.order_by('num')
         return queryset
 
 
@@ -229,14 +288,15 @@ class RestProteomics(generics.ListAPIView):
             platform_versions_list = platform_versions.split(';')
             queryset = queryset.filter(platform__version__in=platform_versions_list)
         # Sort data
-        sort_field = self.request.query_params.get('sort_field')
-        sort = self.request.query_params.get('sort')
-        if sort_field and sort_field is not None and sort and sort is not None:
-            if sort == 'desc':
-                sort_field = '-'+sort_field
-            queryset = queryset.order_by(sort_field)
-        else:
-            queryset = queryset.order_by('num')
+        queryset = sort_data_list(self.request,'score',queryset)
+        # sort_field = self.request.query_params.get('sort_field')
+        # sort = self.request.query_params.get('sort')
+        # if sort_field and sort_field is not None and sort and sort is not None:
+        #     if sort == 'desc':
+        #         sort_field = '-'+sort_field
+        #     queryset = queryset.order_by(sort_field)
+        # else:
+        #     queryset = queryset.order_by('num')
 
         return queryset
 
@@ -253,6 +313,8 @@ class RestTranscriptomics(generics.ListAPIView):
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+        # Sort data
+        queryset = sort_data_list(self.request,'score',queryset)
         return queryset
 
 
@@ -460,7 +522,8 @@ class RestListScores(generics.ListAPIView):
                                        Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
                                        Q(platform__name__iexact=filter_term) | Q(publication__firstauthor__iexact=filter_term))
-
+         # Sort data
+        queryset = sort_data_list(self.request,'score',queryset)
         return queryset
 
 
@@ -1076,7 +1139,7 @@ class RestListPhecodeScore(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
 
         # Filter data
         filter_term = self.request.query_params.get('filter')
@@ -1084,7 +1147,8 @@ class RestListPhecodeScore(generics.ListAPIView):
             queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) |
                                        Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term) |
                                        Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
-
+        # Sort data
+        queryset = sort_data_list(self.request,'score_application',queryset,'phecode_as_float')
         return queryset
 
 
@@ -1144,11 +1208,13 @@ class RestListPhecodeSample(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField())).order_by('phecode_as_float')
+        queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
 
         # Filter data
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term))
+        # Sort data
+        queryset = sort_data_list(self.request,'sample_application',queryset,'phecode_as_float')
 
         return queryset

@@ -18,17 +18,17 @@ Including another URLconf
 # from django.urls import include, path, re_path
 from django.urls import include, path
 
-
-urlpatterns = [
-    path('', include('rest_api.urls')),
-]
-
 # Settings-specific configuration
 from django.conf import settings
 
 # Allow to build search indexes by importing the module
 if settings.OP_ON_GAE == 0:
-    from search import indexes
+    from search_es import indexes
+
+urlpatterns = [
+    path('', include('rest_api.urls')),
+    path('', include('search_es.urls'))
+]
 
 # Debug SQL queries
 if settings.DEBUG:

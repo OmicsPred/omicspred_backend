@@ -69,6 +69,7 @@ else:
 INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
+    'search_es.apps.SearchESConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -77,8 +78,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    # 'search.apps.SearchConfig',
-    # 'django_elasticsearch_dsl',
+    'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
@@ -88,8 +88,6 @@ if OP_ON_GAE == 0:
         'django_extensions',
         'imports.apps.ImportsConfig',
         'misc.apps.MiscConfig',
-        'search.apps.SearchConfig',
-        'django_elasticsearch_dsl'
     ]
     INSTALLED_APPS.extend(local_apps)
 
@@ -263,7 +261,7 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_api.pagination.CustomPagination',
     'PAGE_SIZE': 250,
@@ -277,6 +275,9 @@ REST_FRAMEWORK = {
         'user': '100/min'
     }
 }
+
+if DEBUG == True:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append('rest_framework.renderers.BrowsableAPIRenderer')
 
 
 #--------------------------#
@@ -298,12 +299,12 @@ ELASTICSEARCH_INDEX_SETTINGS = {
 
 # Name of the Elasticsearch index
 ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents.gene': 'gene',
-    'search.documents.metabolite': 'metabolite',
-    'search.documents.phecode': 'phecode',
-    'search.documents.platform': 'platform',
-    'search.documents.protein': 'protein',
-    'search.documents.score': 'score'
+    'search_es.documents.gene': 'gene',
+    'search_es.documents.metabolite': 'metabolite',
+    'search_es.documents.phecode': 'phecode',
+    'search_es.documents.platform': 'platform',
+    'search_es.documents.protein': 'protein',
+    'search_es.documents.score': 'score'
 }
 
 
@@ -313,6 +314,6 @@ ELASTICSEARCH_INDEX_NAMES = {
 # CORS_ALLOWED_ORIGIN_REGEXES = [
 #     r"^https:\/\/\w+\.ebi\.ac\.uk$"
 # ]
-CORS_URLS_REGEX = r'^/rest/.*$'
+CORS_URLS_REGEX = r'^/(rest|es_search)/.*$'
 CORS_ALLOW_METHODS = ['GET']
 CORS_ALLOW_ALL_ORIGINS = True

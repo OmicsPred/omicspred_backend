@@ -214,20 +214,42 @@ class ProteinSerializer(serializers.ModelSerializer):
 
 class ProteinSerializerExtended(ProteinSerializer):
     gene = GeneSerializer(many=False, read_only=True)
+    pathways = serializers.SerializerMethodField('get_pathways')
 
     class Meta(ProteinSerializer.Meta):
-        meta_fields = ('gene',)
+        meta_fields = ('gene','pathways')
         fields = ProteinSerializer.Meta.fields + meta_fields
         read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
 
+    def get_pathways(self, obj):
+        pathways = []
+        # Pathways
+        for pathway in obj.gene.pathways.prefetch_related('superpathways').all():
+            pathway_entry = {}
+            for field in PathwayNewSerializer.Meta.fields:
+                # Superpathways
+                if field == 'superpathways':
+                    sp_pathways = []
+                    superpathways = getattr(pathway, field)
+                    for superpathway in superpathways.all():
+                        sp_pathway_entry = {}
+                        for sp_field in SuperPathwaySerializer.Meta.fields:
+                            sp_pathway_entry[sp_field] = getattr(superpathway, sp_field)
+                        sp_pathways.append(sp_pathway_entry)
+                    pathway_entry[field] = sp_pathways
+                else:
+                    pathway_entry[field] = getattr(pathway, field)
+            pathways.append(pathway_entry)
+        return pathways
+
 
 class MetaboliteSerializer(serializers.ModelSerializer):
-    pathway_group = PathwaySerializer(many=False, read_only=True)
-    pathway_subgroup = PathwaySerializer(many=False, read_only=True)
+    # pathway_group = PathwaySerializer(many=False, read_only=True)
+    # pathway_subgroup = PathwaySerializer(many=False, read_only=True)
 
     class Meta:
         model = Metabolite
-        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs','pathway_group', 'pathway_subgroup')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs') #,'pathway_group', 'pathway_subgroup')
         fields = meta_fields
         read_only_fields = meta_fields
 

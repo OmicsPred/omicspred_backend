@@ -405,7 +405,6 @@ class Score(models.Model):
     variants_interactions = models.IntegerField('Number of Interaction Terms', default=0)
     variants_genomebuild = models.CharField('Original Genome Build', max_length=10, default='NR')
 
-
     # Curation/release information
     date_released = models.DateField('OmicsPred Release Date', null=True, db_index=True)
     curation_notes = models.TextField('Curation Notes', default='')
