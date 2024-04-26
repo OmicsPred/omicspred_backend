@@ -27,12 +27,13 @@ tags:
     description: "Platform metadata (name, label, technic, ...)"
   - name: "Omics endpoints"
     description: "Omics metadata (metabolomics, proteomics, transcriptomics, ...)"
-  - name: "Biological feature endpoints"
-    description: "Feature metadata (metabolite, protein, gene)"
+  - name: "Molecular trait endpoints"
+    description: "Molecular trait metadata (metabolite, protein, gene)"
 
 components:
   schemas:
 
+    # Cohort #
     Cohort:
       type: object
       description: "Structure containing information about a Cohort."
@@ -50,6 +51,7 @@ components:
           description: "URL of the Cohort project"
           example: "https://www.intervalstudy.org.uk/"
 
+    # Trait #
     EFO:
       type: object
       description: "Structure containing information about a Trait. Mainly extracted from the Experimental Factor Ontology (EFO)."
@@ -75,6 +77,7 @@ components:
           description: "Type of trait"
           example: "tissue"
 
+
     # Gene #
     Gene:
       type: object
@@ -92,12 +95,56 @@ components:
           type: string
           description: "Source of the Gene ID"
           example: "Ensembl"
+
+    GeneDesc:
+      description: "Based on the **Gene** schema, with the addition of the '**synonyms**', '**description**' and '**biotype**'."
+      allOf:
+        - $ref: '#/components/schemas/Gene'
+      properties:
+        synonyms:
+          type: array
+          description: "Gene synonym(s)"
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: 'IL27B'
+        description:
+          type: string
+          description: "Gene description/definition"
+          example: 'serpin family A member 12'
         biotype:
           type: string
           description: "Biotype of the gene"
           example: "protein_coding"
 
+    Gene_extended:
+      description: "Based on the **GeneDesc** schema, with the addition of the '**pathways**'."
+      allOf:
+        - $ref: '#/components/schemas/GeneDesc'
+        - type: object
+          properties:
+            pathways:
+              type: array
+              description: "List of pathways associated with the gene."
+              items:
+                $ref: '#/components/schemas/Pathway'
+
+    GeneScoresCount:
+      description: "Based on the **GeneDesc** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/GeneDesc'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores associated with the gene."
+              example: 10
+
+
     # Metabolite #
+
     Metabolite:
       type: object
       description: "Structure containing information about a Metabolite."
@@ -105,19 +152,111 @@ components:
         name:
           type: string
           description: "Metabolite name"
-          example: "ibuprofen"
+          example: "leucine"
         external_id:
           type: string
           description: "Metabolite ID"
-          example: "M17799"
+          example: "CHEBI_25017"
         external_id_source:
           type: string
           description: "Source of the Metabolite ID"
-          example: "Metabolon"
-        pathway_group:
-          $ref: '#/components/schemas/Pathway'
-        pathway_subgroup:
-          $ref: '#/components/schemas/Pathway'
+          example: "ChEBI"
+        synonyms:
+          type: array
+          description: "Metabolite synonym(s)"
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Hleu"
+              source:
+                type: string
+                example: "IUPAC"
+        xrefs:
+          type: array
+          description: "Metabolite external reference(s)"
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "C16439"
+              source:
+                type: string
+                example: "KEGG COMPOUND"
+        # pathway_group:
+        #   $ref: '#/components/schemas/Pathway'
+        # pathway_subgroup:
+        #   $ref: '#/components/schemas/Pathway'
+
+    Metabolite_extended:
+      description: "Based on the **Metabolite** schema, with the addition of the '**description**' and '**pathways**'."
+      allOf:
+        - $ref: '#/components/schemas/Metabolite'
+        - type: object
+          properties:
+            description:
+              type: string
+              description: "Metabolite description/definition"
+              example: 'A branched-chain amino acid that consists of glycine ...'
+            pathways:
+              type: array
+              description: "List of pathways associated with the gene."
+              items:
+                $ref: '#/components/schemas/Pathway'
+
+    MetaboliteScoresCount:
+      description: "Based on the **Metabolite** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Metabolite'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores associated with the metabolite."
+              example: 10
+
+
+    # Pathway #
+
+    SuperPathway:
+      type: object
+      description: "Structure containing information about a top level pathway."
+      properties:
+        name:
+          type: string
+          description: "Pathway name"
+          example: "Disease"
+        external_id:
+          type: string
+          description: "Pathway ID"
+          example: "R-HSA-1643685"
+        external_id_source:
+          type: string
+          description: "Source of the Pathway ID"
+          example: "Reactome"
+        # synonyms:
+        #   type: array
+        #   description: "Pathway synonym(s)"
+        #   items:
+        #     type: object
+        #     properties:
+        #       name:
+        #         type: string
+        #         example: "disease"
+        # xrefs:
+        #   type: array
+        #   description: "Pathway external reference(s)"
+        #   items:
+        #     type: object
+        #     properties:
+        #       name:
+        #         type: string
+        #         example: "DOID:4"
+        #       source:
+        #         type: string
+        #         example: "Human Disease Ontology"
 
     Pathway:
       type: object
@@ -126,19 +265,47 @@ components:
         name:
           type: string
           description: "Pathway name"
-          example: "Amino Acid"
+          example: "Induction of Cell-Cell Fusion"
         external_id:
           type: string
           description: "Pathway ID"
-          example: "R-HSA-71291"
+          example: "R-HSA-9733458"
         external_id_source:
           type: string
           description: "Source of the Pathway ID"
           example: "Reactome"
+        synonyms:
+          type: array
+          description: "Pathway synonym(s)"
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "2019-nCoV infection"
+        xrefs:
+          type: array
+          description: "Pathway external reference(s)"
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "DOID:0080600"
+              source:
+                type: string
+                example: "Human Disease Ontology"
+        superpathways:
+          type: array
+          description: "Associated top level pathway(s)"
+          items:
+            $ref: '#/components/schemas/SamSuperPathwaypleSet'
+
 
     # Performance Metrics #
     Performance:
       type: object
+      description: "Performance Metric of a score"
       properties:
         id:
           type: integer
@@ -157,7 +324,10 @@ components:
         efo:
           $ref: '#/components/schemas/EFO'
         performance_metrics:
-          $ref: '#/components/schemas/Performance_Metrics'
+          type: array
+          description: "List of associated performance metrics"
+          items:
+            $ref: '#/components/schemas/Metrics'
         cohort_label:
           type: string
           description: "Name of the cohort used to calculate the performance metric"
@@ -174,26 +344,52 @@ components:
           description: "Covariates used in the prediction model to evaluate the PGS."
           example: "Age, sex and the first 10 genetic principal components"
 
-    Performance_Metrics:
+    Performance_light:
       type: object
-      description: "Structure containing information about a Performance Metrics."
+      description: "Performance Metric of a score (lighter version)"
       properties:
-        type:
+        performance_metrics:
+          type: array
+          description: "List of associated performance metrics"
+          items:
+            $ref: '#/components/schemas/Metrics'
+        cohort_label:
           type: string
-          description: "Type of metrics"
-          example: "Pearson's correlation"
-        name_long:
+          description: "Name of the cohort used to calculate the performance metric"
+          example: "INTERVAL"
+        evaluation_type:
           type: string
-          description: "Long notation of the metric "
+          description: "Type of evaluation performed"
+          example: "Training"
+        performance_additional:
+          description: "Additional information about the performance metric"
+          example: "Performed on 308 genes"
+        covariates:
+          type: string
+          description: "Covariates used in the prediction model to evaluate the PGS."
+          example: "Age, sex and the first 10 genetic principal components"
+
+    ## Metric ##
+    Metric:
+      type: object
+      description: "Structure containing information about a Performance Metric."
+      properties:
+        name:
+          type: string
+          description: "Metric name"
           example: "Proportion of the variance explained"
         name_short:
           type: string
-          description: "Short notation of the metric"
+          description: "Metric short notation"
           example: "R2"
+        performance_type:
+          type: string
+          description: "Type of metrics"
+          example: "Pearson's correlation"
         estimate:
           type: number
           example: 0.33
-        p_value:
+        pvalue:
           type: number
           example: 2.66e-77
 
@@ -214,6 +410,23 @@ components:
           type: string
           description: "Phenotype category"
           example: "infectious diseases"
+        scores_count:
+          type: integer
+          description: "Number of scores associated with the phecode."
+          example: 10
+
+    Phecode_extended:
+      description: "Based on the **Phecode** schema, with the addition of the '**child_phecode**'."
+      allOf:
+        - $ref: '#/components/schemas/Phecode'
+        - type: object
+          properties:
+            child_phecode:
+              type: array
+              description: "List of child phecode(s)."
+              items:
+                $ref: '#/components/schemas/Phecode'
+
 
     # Platform #
     Platform:
@@ -252,66 +465,66 @@ components:
               description: "Number of scores associated with the platform"
               example: 2384
 
-    PlatformMaster:
-      type: object
-      description: "Structure containing grouped information about a Plaform."
-      properties:
-        name:
-          type: string
-          description: "Name of the platform"
-          example: "Olink"
-        full_name:
-          type: string
-          description: "Full name of the platform"
-          example: "Olink Target"
-        versions:
-          type: array
-          description: "List of platform versions"
-          items:
-              type: string
-          example: "[1.0, 3.0]"
-        technic:
-          type: string
-          description: "Technic used by the platform"
-          example: "aptamer-based multiplex protein assay"
-        type:
-          type: string
-          description: "Type of Omics"
-          example: "Proteomics"
-        scores_count:
-            type: interger
-            description: "Total number of scores associated with the platform"
-            example: 2384
 
-    PlatformAdditional:
+    # Platform - Additional #
+    PlatformAdditional_light:
       type: object
-      description: "Structure containing information about a Plaform + Additional data (EXCEPT the associated Publication information)"
+      description: "Structure containing information about a Platform + Additional data (EXCEPT the associated Publication information)"
       properties:
         platform:
-          $ref: '#/components/schemas/Platform_extended'
+          $ref: '#/components/schemas/Platform'
+        scores_count:
+          type: interger
+          description: "Number of scores associated with the platform"
+          example: 2384
         omics_type:
           type: string
-          description: "Type of biological feature detected by the platform"
+          description: "Type of molecular trait detected by the platform"
           example: "protein"
         omics_count:
           type: integer
-          description: "Number of biological feature detected by the platform"
-          example: 308
+          description: "Number of molecular trait detected by the platform"
+          example: 2384
         tissue:
           $ref: '#/components/schemas/EFO'
-        cohorts:
-          description: "List of cohorts associated with the platform"
+        samples_training:
+          type: array
           items:
-            $ref: '#/components/schemas/Cohort'
+            $ref: '#/components/schemas/Sample'
+        samples_validation:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+        scoring_files_urls:
+          type: object
+          properties:
+            type: array
+            items:
+              gwas_sumstats:
+                type: string
+                example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
+              scoring_files:
+                type: string
+                example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
+              score_variant_info:
+                type: string
+                example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
+              validation_results:
+                type: string
+                example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
+              scoring_files_pgsc_calc:
+                type: string
+                example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
 
-    PlatformAdditional_extended:
-      description: "Structure containing information about a Plaform + Additional data (INCLUDING the associated Publication information)"
+    PlatformAdditional:
+      description: "Structure containing information about a Platform + Publication + Additional data"
       allOf:
-        - $ref: '#/components/schemas/PlatformAdditional'
+        - $ref: '#/components/schemas/PlatformAdditional_light'
         - type: object
           properties:
             publication:
               $ref: '#/components/schemas/Publication'
+
 
     # Protein #
     Protein:
@@ -332,13 +545,18 @@ components:
           example: "UniProt"
 
     Protein_extended:
-      description: "Based on the **Protein** schema, with the addition of the '**gene**'."
+      description: "Based on the **Protein** schema, with the addition of the '**gene**' and '**pathways**'."
       allOf:
         - $ref: '#/components/schemas/Protein'
         - type: object
           properties:
             gene:
               $ref: '#/components/schemas/Gene'
+            pathways:
+              type: array
+              items:
+                $ref: '#/components/schemas/Pathway'
+
 
     # Publication #
     Publication:
@@ -372,16 +590,28 @@ components:
           example: "2023-03-29"
 
     Publication_extended:
-      description: "Based on the **Publication** schema, with the addition of the '**platforms**'."
+      description: "Based on the **Publication** schema, with the addition of the '**date_release**', '**authors**' and '**platforms**'."
       allOf:
         - $ref: '#/components/schemas/Publication'
         - type: object
           properties:
+            date_release:
+              type: string
+              description: "Release date in OmicsPred (format YYYY-MM-DD)"
+              format: date
+              example: "2023-03-29"
+            authors:
+              type: string
+              description: "Concatenated list of all the publication authors"
+              example: "Xu Y, ... , Inouye M."
             platforms:
               type: array
               description: "List of platform + additional data"
               items:
                 $ref: '#/components/schemas/PlatformAdditional'
+
+
+    # Sample #
 
     Sample:
       type: object
@@ -440,15 +670,18 @@ components:
           type: string
           description: "Any additional description about the samples and what they were used for that is not captured by the structured categories (e.g. sub-cohort information)."
           example: "Phase 1"
+        # tissue_name:
+        #   type: string
+        #   description: "Name of the sample tissue (if available)."
+        #   example: "Blood"
+
+
+    # Sample Applications
 
     SampleApplication:
       type: object
       description: "Structure containing information about a SampleAppliction."
       properties:
-        id:
-          type: integer
-          description: "Internal ID"
-          example: 1
         sample_number:
           type: integer
           description: "Number of participants in the sample"
@@ -457,9 +690,9 @@ components:
           type: integer
           description: "Number of cases in the sample"
           example: 723
-        sample_percent_male:
+        sample_percent_female:
           type: number
-          description: "Percentage of male participants"
+          description: "Percentage of female participants"
           example: 54.0
         sample_age:
           type: integer
@@ -495,12 +728,12 @@ components:
           example: "CLEC12A.11187.11.3"
         trait_reported:
           type: string
-          description: "The author-reported trait that the PGS has been developed to predict."
-          example: "Breast Cancer"
-        trait_additional:
+          description: "The author-reported molecular trait that the PGS has been developed to predict."
+          example: "C-type lectin domain family 12 member A"
+        trait_reported_id:
           type: string
-          description: "Any additional description not captured in the structured data"
-          example: "PheCode 174.1"
+          description: "The author-reported molecular trait ID hat the PGS has been developed to predict"
+          example: "Q5QGZ9"
         method_name:
           type: string
           description: "The name or description of the method or computational algorithm used to develop the PGS."
@@ -541,15 +774,120 @@ components:
           type: string
           description: "The version of the genome assembly that the variants present in the PGS are associated with. Listed as NR (Not Reported) if unknown."
           example: "GRCh38"
+        license:
+          type: string
+          description: "License applied to the score"
+          example: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
-    ScoreApplication:
+
+    Score_MolecularTrait:
       type: object
-      description: "Structure containing ScoreApplicatio information (Score + Phecode)."
+      description: "Structure containing Score information with its associated performance metrics."
       properties:
         id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        variants_number:
           type: integer
-          description: "Internal ID"
-          example: 1
+        performance_data:
+          type: array
+          description: "Simplified structure containing information about a Performance Metrics for a Cohort."
+          items:
+            additionalProperties:
+              type: object
+              properties:
+                estimate:
+                  type: integer
+                  description: "Numeric value of the performance metrics"
+                  example: 0.345
+
+    ScoreMetabolite:
+      description: "Structure containing Score information with its associated performance metrics for a given metabolomics platform."
+      allOf:
+        - $ref: '#/components/schemas/Score_MolecularTrait'
+        - type: object
+          properties:
+            trait_reported:
+              type: string
+              description: "The author-reported molecular trait that the PGS has been developed to predict."
+              example: "orotidine"
+            trait_reported_id:
+              type: string
+              description: "The author-reported molecular trait ID hat the PGS has been developed to predict"
+              example: "M35172"
+            metabolites:
+              type: array
+              items:
+                $ref: '#/components/schemas/Metabolite'
+
+    ScoreProtein:
+      description: "Structure containing Score information with its associated performance metrics for a given proteomics platform."
+      allOf:
+        - $ref: '#/components/schemas/Score_MolecularTrait'
+        - type: object
+          properties:
+            genes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gene'
+            proteins:
+              type: array
+              items:
+                $ref: '#/components/schemas/Protein'
+
+    ScoreTranscript:
+      description: "Structure containing Score information with its associated performance metrics for a given transcriptomics platform."
+      allOf:
+        - $ref: '#/components/schemas/Score_MolecularTrait'
+        - type: object
+          properties:
+            transcripts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gene'
+
+    Transcript:
+      type: object
+      description: "Structure containing information about a Transcript."
+      properties:
+        name:
+          type: string
+          description: "Transcript name/symbol"
+          example: "SERPINA12-201"
+        external_id:
+          type: string
+          description: "Transcript ID"
+          example: "ENST00000341228"
+        external_id_source:
+          type: string
+          description: "Source of the Transcript ID"
+          example: "Ensembl"
+
+
+    ##### Applications objects #####
+
+    MolecularTraitApplications:
+      description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Protein name"
+          example: "Serpin A12"
+        external_id:
+          type: string
+          description: "Protein ID"
+          example: "Q8IW75"
+        type:
+          type: string
+          description: "Type of molecular trait"
+          example: "protein"
+
+    ScoreApplications:
+      type: object
+      description: "Structure containing ScoreApplications information (Score + Phecode)."
+      properties:
         score_id:
           type: string
           description: "OmicsPred Score ID"
@@ -588,82 +926,13 @@ components:
               type: number
               description: "False Discovery Rate adjusted P-value"
               example: 0.0404
-
-    ScoreOmics:
-      type: object
-      description: "Structure containing Score information with its associated performance metrics."
-      properties:
-        id:
-          type: string
-          description: "OmicsPred Score ID"
-          example: "OPGS002402"
-        variants_number:
-          type: integer
-        performance_data:
+        molecular_traits:
           type: array
-          description: "Simplified structure containing information about a Performance Metrics for a Cohort."
           items:
-            additionalProperties:
-              type: object
-              properties:
-                estimate:
-                  type: integer
-                  description: "Numeric value of the performance metrics"
-                  example: 0.345
+            $ref: '#/components/schemas/MolecularTraitApplications'
 
-    ScoreMetabolite:
-      description: "Structure containing Score information with its associated performance metrics for a given metabolomics platform."
-      allOf:
-        - $ref: '#/components/schemas/ScoreOmics'
-        - type: object
-          properties:
-            metabolites:
-              type: array
-              items:
-                $ref: '#/components/schemas/Metabolite'
 
-    ScoreProtein:
-      description: "Structure containing Score information with its associated performance metrics for a given proteomics platform."
-      allOf:
-        - $ref: '#/components/schemas/ScoreOmics'
-        - type: object
-          properties:
-            genes:
-              type: array
-              items:
-                $ref: '#/components/schemas/Gene'
-            proteins:
-              type: array
-              items:
-                $ref: '#/components/schemas/Protein'
-
-    ScoreTranscript:
-      description: "Structure containing Score information with its associated performance metrics for a given transcriptomics platform."
-      allOf:
-        - $ref: '#/components/schemas/ScoreOmics'
-        - type: object
-          properties:
-            transcripts:
-              type: array
-              items:
-                $ref: '#/components/schemas/Gene'
-
-    Transcript:
-      type: object
-      description: "Structure containing information about a Transcript."
-      properties:
-        name:
-          type: string
-          description: "Transcript name/symbol"
-          example: "SERPINA12-201"
-        external_id:
-          type: string
-          description: "Transcript ID"
-          example: "ENST00000341228"
-        external_id_source:
-          type: string
-          description: "Source of the Transcript ID"
-          example: "Ensembl"
+    ##### Generic #####
 
     Pagination:
       type: object
@@ -696,7 +965,7 @@ components:
           example: "This REST endpoint does not exist"
 
 #############################################################
-
+# =====> TODO
 paths:
 
   ## Sample/Cohort endpoints ##
@@ -776,11 +1045,11 @@ paths:
           description: 'List of Sample data'
 
 
-  ## Biological feature endpoints ##
+  ## Molecular trait endpoints ##
   /rest/protein/search:
     get:
       tags:
-        - "Biological feature endpoints"
+        - "Molecular trait endpoints"
       operationId: searchProteins
       description: Search proteins by gene name/symbol/ID
       parameters:
@@ -820,7 +1089,7 @@ paths:
   /rest/metabolite/{metabolite_id}:
     get:
       tags:
-        - "Biological feature endpoints"
+        - "Molecular trait endpoints"
       operationId: getMetabolite
       description: Retrieve one Metabolite
       parameters:
@@ -852,7 +1121,7 @@ paths:
   /rest/protein/{protein_id}:
     get:
       tags:
-        - "Biological feature endpoints"
+        - "Molecular trait endpoints"
       operationId: getProtein
       description: Retrieve one Protein
       parameters:
@@ -884,7 +1153,7 @@ paths:
   /rest/gene/{gene_id}:
     get:
       tags:
-        - "Biological feature endpoints"
+        - "Molecular trait endpoints"
       operationId: getGene
       description: Retrieve one Gene
       parameters:
@@ -1736,7 +2005,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ScoreApplication'
+                      $ref: '#/components/schemas/ScoreApplications'
           description: 'All the Phecode Score Applications'
         '4XX':
           content:
@@ -1768,7 +2037,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScoreApplication'
+                $ref: '#/components/schemas/ScoreApplications'
           description: 'Phecode Score Applications'
         '4XX':
           content:
@@ -1820,7 +2089,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ScoreApplication'
+                      $ref: '#/components/schemas/ScoreApplications'
           description: 'Phecode Score Applications entry(ies)'
         '4XX':
           content:
