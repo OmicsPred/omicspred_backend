@@ -28,7 +28,7 @@ class Phecode(models.Model):
     @property
     def scores_count(self):
         # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
-        scores = self.phecode_score.select_related(self).count()
+        scores = self.phecode_score.count()
         return scores
 
 
@@ -120,7 +120,6 @@ class MolecularTraitApplications(models.Model):
 class ScoreApplications(models.Model):
     """ Class for score association for the application """
     score_id = models.CharField('Omicspred ID', max_length=30, db_index=True)
-    omics_name = models.CharField('Omics Entity ID/Name', max_length=150, null=True)
     phecode = models.ForeignKey(Phecode, on_delete=models.PROTECT, related_name='phecode_score', verbose_name='Phecode')
     platform = models.ForeignKey(PlatformApplications, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     cohort = models.ForeignKey(CohortApplications, on_delete=models.PROTECT, related_name='cohort_score', verbose_name='Cohort')

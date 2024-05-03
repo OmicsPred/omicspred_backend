@@ -37,21 +37,20 @@ urlpatterns = [
     path('rest/', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
-    # Proteins
-    re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
     # Pathways
     re_path(r'^'+rest_urls['pathway']+'all'+slash, RestListPathways.as_view(), name="getAllPathways"),
     re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
-    # Omics - single entry
+    # Molecular trait
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
+    re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
     re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
-    # Omics - platform entry
+    # Omics by platform
     re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="getMetabolomicsScores"),
     re_path(r'^'+rest_urls['proteomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestProteomics.as_view()), name="getProteomicsScores"),
     re_path(r'^'+rest_urls['transcriptomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestTranscriptomics.as_view()), name="getTranscriptomicsScores"),
     # Performance metrics
-    re_path(r'^'+rest_urls['performance']+'all'+slash, cache_page(cache_time)(RestListPerformances.as_view()), name="getAllPerformanceMetrics"),
+    # re_path(r'^'+rest_urls['performance']+'all'+slash, cache_page(cache_time)(RestListPerformances.as_view()), name="getAllPerformanceMetrics"),
     re_path(r'^'+rest_urls['performance']+'search'+slash, RestPerformanceSearch.as_view(), name="searchPerformanceMetrics"),
     # Publication
     re_path(r'^'+rest_urls['publication']+'all'+slash, cache_page(cache_time)(RestListPublications.as_view()), name="getAllPublications"),
@@ -61,11 +60,8 @@ urlpatterns = [
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
     # Scores
     re_path(r'^'+rest_urls['score']+'all'+slash, cache_page(cache_time)(RestListScores.as_view()), name="getAllScores"),
-    re_path(r'^'+rest_urls['score']+'performance/searchbyprotein/(?P<protein>[^/]+)'+slash, RestScoreSearchByProteinWithPerformance.as_view(), name="searchScoresByProteinWithPerformance"),
     re_path(r'^'+rest_urls['score']+'performance/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScoreWithPerformance.as_view()), name="getScoreWithPerformance"),
-    re_path(r'^'+rest_urls['score']+'searchbygene/(?P<gene>[^/]+)'+slash, RestScoreSearchByGene.as_view(), name="searchScoresByGene"),
-    re_path(r'^'+rest_urls['score']+'searchbyprotein/(?P<protein>[^/]+)'+slash, RestScoreSearchByProtein.as_view(), name="searchScoresByProtein"),
-    re_path(r'^'+rest_urls['score']+'searchbymetabolite/(?P<metabolite>[^/]+)'+slash, RestScoreSearchByMetabolite.as_view(), name="searchScoresByMetabolite"),
+    re_path(r'^'+rest_urls['score']+'search/(?P<type>[^/]+)/(?P<molecular_trait>[^/]+)'+slash, RestScoreSearchByMolecularTrait.as_view(), name="searchScoresByMolecularTrait"),
     re_path(r'^'+rest_urls['score']+'search'+slash, RestScoreSearch.as_view(), name="searchScores"),
     re_path(r'^'+rest_urls['score']+'(?P<opgs_id>[^/]+)'+slash, RestScore.as_view(), name="getScore"),
     # Platform_additional

@@ -329,15 +329,15 @@ class MolecularTrait(models.Model):
         abstract = True
 
 
-class Pathway(MolecularTrait):
-    """ Class to describe a SuperPathway entity """
+class PathwayOld(MolecularTrait):
+    """ Class to describe an Old Pathway entity """
 
 
 class SuperPathway(MolecularTrait):
     """ Class to describe a SuperPathway entity """
 
 
-class PathwayNew(MolecularTrait):
+class Pathway(MolecularTrait):
     """ Class to describe a Pathway entity """
     superpathways = models.ManyToManyField(SuperPathway, related_name='subpathway', verbose_name='SuperPathway(s)')
 
@@ -346,7 +346,7 @@ class Gene(MolecularTrait):
     """ Class to describe a Gene entity """
     biotype = models.CharField('Gene biotype', max_length=100, null=True)
     retired_gene_model = models.BooleanField('Retired Gene ID/model', default=False)
-    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_genes', verbose_name='Pathway(s)')
+    pathways = models.ManyToManyField(Pathway, related_name='pathway_genes', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):
@@ -366,7 +366,7 @@ class Transcript(MolecularTrait):
 class Protein(MolecularTrait):
     """ Class to describe a Protein entity """
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, verbose_name='Associated Gene', related_name="gene_protein", null=True)
-    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_proteins', verbose_name='Pathway(s)')
+    pathways = models.ManyToManyField(Pathway, related_name='pathway_proteins', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):
@@ -375,9 +375,9 @@ class Protein(MolecularTrait):
 
 class Metabolite(MolecularTrait):
     """ Class to describe Metabolite entity """
-    pathway_group = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Group', related_name="pathway_group_metabolite", null=True)
-    pathway_subgroup = models.ForeignKey(Pathway, on_delete=models.CASCADE, verbose_name='Associated Pathway Subgroup', related_name="pathway_subgroup_metabolite", null=True)
-    pathways = models.ManyToManyField(PathwayNew, related_name='pathway_metabolites', verbose_name='Pathway(s)')
+    pathway_group = models.ForeignKey(PathwayOld, on_delete=models.CASCADE, verbose_name='Associated Pathway Group', related_name="pathway_group_metabolite", null=True)
+    pathway_subgroup = models.ForeignKey(PathwayOld, on_delete=models.CASCADE, verbose_name='Associated Pathway Subgroup', related_name="pathway_subgroup_metabolite", null=True)
+    pathways = models.ManyToManyField(Pathway, related_name='pathway_metabolites', verbose_name='Pathway(s)')
 
     @property
     def scores_count(self):
@@ -492,7 +492,7 @@ class Performance(models.Model):
                 # print(f"> {m.name_short}: {m.estimate}")
                 # if type(m.estimate) == 'int':
                 metric_data = {
-                    'type': m.get_performance_type_display(),
+                    'type': m.get_type_display(),
                     'name_long': m.name,
                     'name_short': m.name_short,
                     'estimate': m.display_value(m.estimate)
@@ -526,9 +526,9 @@ class Metric(models.Model):
         ('PC', "Pearson's correlation"),
         ('SC', "Spearman's rank correlation")
     ]
-    performance_type = models.CharField(max_length=40,
+    type = models.CharField(max_length=40,
         choices=TYPE_CHOICES,
-        default='Performance Type',
+        default='Metric Type',
         db_index=True
     )
     name = models.CharField(verbose_name='Performance Metric Name', max_length=100, null=False) # ex: " Rho score"
