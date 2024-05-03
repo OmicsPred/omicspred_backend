@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 servers:
   - url: http://127.0.0.1:7000/
 info:
@@ -9,7 +9,7 @@ info:
     name: 'Apache 2.0'
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   contact:
-    email: add_email
+    email: omicspred@gmail.com
     name: OmicsPred
     url: https://www.omicspred.org
 tags:
@@ -29,6 +29,8 @@ tags:
     description: "Omics metadata (metabolomics, proteomics, transcriptomics, ...)"
   - name: "Molecular trait endpoints"
     description: "Molecular trait metadata (metabolite, protein, gene)"
+  - name: "Pathway endpoints"
+    description: "Pathway metadata (Reactome)"
 
 components:
   schemas:
@@ -78,6 +80,19 @@ components:
           example: "tissue"
 
 
+    # Error message #
+    Error_4XX:
+      type: object
+      description: "Error message for the response status code in the 4XX."
+      properties:
+        error_status:
+          type: number
+          example: 404
+        message:
+          type: string
+          example: "This REST endpoint does not exist"
+
+
     # Gene #
     Gene:
       type: object
@@ -95,12 +110,6 @@ components:
           type: string
           description: "Source of the Gene ID"
           example: "Ensembl"
-
-    GeneDesc:
-      description: "Based on the **Gene** schema, with the addition of the '**synonyms**', '**description**' and '**biotype**'."
-      allOf:
-        - $ref: '#/components/schemas/Gene'
-      properties:
         synonyms:
           type: array
           description: "Gene synonym(s)"
@@ -120,9 +129,9 @@ components:
           example: "protein_coding"
 
     Gene_extended:
-      description: "Based on the **GeneDesc** schema, with the addition of the '**pathways**'."
+      description: "Based on the **Gene** schema, with the addition of the '**pathways**'."
       allOf:
-        - $ref: '#/components/schemas/GeneDesc'
+        - $ref: '#/components/schemas/Gene'
         - type: object
           properties:
             pathways:
@@ -132,9 +141,9 @@ components:
                 $ref: '#/components/schemas/Pathway'
 
     GeneScoresCount:
-      description: "Based on the **GeneDesc** schema, with the addition of the '**scores_count**'."
+      description: "Based on the **Gene** schema, with the addition of the '**scores_count**'."
       allOf:
-        - $ref: '#/components/schemas/GeneDesc'
+        - $ref: '#/components/schemas/Gene'
         - type: object
           properties:
             scores_count:
@@ -144,7 +153,6 @@ components:
 
 
     # Metabolite #
-
     Metabolite:
       type: object
       description: "Structure containing information about a Metabolite."
@@ -218,46 +226,73 @@ components:
               example: 10
 
 
-    # Pathway #
-
-    SuperPathway:
+    # Metric #
+    Metric:
       type: object
-      description: "Structure containing information about a top level pathway."
+      description: "Structure containing information about a Performance Metric."
+      properties:
+        type:
+          type: string
+          description: "Type of metrics"
+          example: "Pearson's correlation"
+        name:
+          type: string
+          description: "Metric name"
+          example: "Proportion of the variance explained"
+        name_short:
+          type: string
+          description: "Metric short notation"
+          example: "R2"
+        estimate:
+          type: number
+          example: 0.33
+        pvalue:
+          type: number
+          example: 2.66e-77
+
+
+    #  Molecular Trait #
+    MolecularTraitApplications:
+      description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
+      type: object
       properties:
         name:
           type: string
-          description: "Pathway name"
-          example: "Disease"
+          description: "Protein name"
+          example: "Serpin A12"
         external_id:
           type: string
-          description: "Pathway ID"
-          example: "R-HSA-1643685"
-        external_id_source:
+          description: "Protein ID"
+          example: "Q8IW75"
+        type:
           type: string
-          description: "Source of the Pathway ID"
-          example: "Reactome"
-        # synonyms:
-        #   type: array
-        #   description: "Pathway synonym(s)"
-        #   items:
-        #     type: object
-        #     properties:
-        #       name:
-        #         type: string
-        #         example: "disease"
-        # xrefs:
-        #   type: array
-        #   description: "Pathway external reference(s)"
-        #   items:
-        #     type: object
-        #     properties:
-        #       name:
-        #         type: string
-        #         example: "DOID:4"
-        #       source:
-        #         type: string
-        #         example: "Human Disease Ontology"
+          description: "Type of molecular trait"
+          example: "protein"
 
+
+    # Pagination #
+    Pagination:
+      type: object
+      properties:
+        size:
+          type: integer
+          description: "Number of results in the current page"
+          example: 50
+        count:
+          type: integer
+          description: "Total count of results from the query"
+          example: 137
+        next:
+          type: string
+          description: "URL to the next page of results"
+          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50&offset=100"
+        previous:
+          type: string
+          description: "URL to the previous page of results"
+          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50"
+
+
+    # Pathway #
     Pathway:
       type: object
       description: "Structure containing information about a Pathway."
@@ -299,7 +334,24 @@ components:
           type: array
           description: "Associated top level pathway(s)"
           items:
-            $ref: '#/components/schemas/SamSuperPathwaypleSet'
+            $ref: '#/components/schemas/SuperPathway'
+
+    Pathway_extended:
+      description: "Based on the **Pathway** schema, with the addition of the '**genes**' and '**metabolites**'."
+      allOf:
+        - $ref: '#/components/schemas/Pathway'
+        - type: object
+          properties:
+            genes:
+              type: array
+              description: "Associated gene(s)"
+              items:
+                $ref: '#/components/schemas/Gene'
+            metabolites:
+              type: array
+              description: "Associated metabolite(s)"
+              items:
+                $ref: '#/components/schemas/Metabolite'
 
 
     # Performance Metrics #
@@ -307,36 +359,21 @@ components:
       type: object
       description: "Performance Metric of a score"
       properties:
-        id:
-          type: integer
-          description: "Internal ID"
-          example: 1
-        associated_opgs_id:
-          type: string
-          description: "Associated OmicsPred Score ID"
-          example: "OPGS002402"
-        publication:
-          $ref: '#/components/schemas/Publication'
-        sample:
-          $ref: '#/components/schemas/Sample'
-        platform:
-          $ref: '#/components/schemas/Platform'
-        efo:
-          $ref: '#/components/schemas/EFO'
         performance_metrics:
           type: array
           description: "List of associated performance metrics"
           items:
-            $ref: '#/components/schemas/Metrics'
+            $ref: '#/components/schemas/Metric'
         cohort_label:
           type: string
           description: "Name of the cohort used to calculate the performance metric"
-          example: "INTERVAL"
+          example: 'MEC-CN'
         evaluation_type:
           type: string
-          description: "Type of evaluation performed"
-          example: "Training"
+          description: 'Type of evaluation'
+          example: 'External Validation'
         performance_additional:
+          type: string
           description: "Additional information about the performance metric"
           example: "Performed on 308 genes"
         covariates:
@@ -344,54 +381,97 @@ components:
           description: "Covariates used in the prediction model to evaluate the PGS."
           example: "Age, sex and the first 10 genetic principal components"
 
-    Performance_light:
-      type: object
-      description: "Performance Metric of a score (lighter version)"
-      properties:
-        performance_metrics:
-          type: array
-          description: "List of associated performance metrics"
-          items:
-            $ref: '#/components/schemas/Metrics'
-        cohort_label:
-          type: string
-          description: "Name of the cohort used to calculate the performance metric"
-          example: "INTERVAL"
-        evaluation_type:
-          type: string
-          description: "Type of evaluation performed"
-          example: "Training"
-        performance_additional:
-          description: "Additional information about the performance metric"
-          example: "Performed on 308 genes"
-        covariates:
-          type: string
-          description: "Covariates used in the prediction model to evaluate the PGS."
-          example: "Age, sex and the first 10 genetic principal components"
+    Performance_extended:
+      description: "Based on the **Performance** schema, with the addition of the '**id**','**associated_opgs_id**','**publication**','**sample**','**platform**' and '**efo**'."
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: "Internal ID"
+              example: 1
+            associated_opgs_id:
+              type: string
+              description: "Associated OmicsPred Score ID"
+              example: "OPGS002402"
+            publication:
+              $ref: '#/components/schemas/Publication'
+            sample:
+              $ref: '#/components/schemas/Sample'
+            platform:
+              $ref: '#/components/schemas/Platform'
+            efo:
+              $ref: '#/components/schemas/EFO'
+        - $ref: '#/components/schemas/Performance'
 
-    ## Metric ##
-    Metric:
-      type: object
-      description: "Structure containing information about a Performance Metric."
-      properties:
-        name:
-          type: string
-          description: "Metric name"
-          example: "Proportion of the variance explained"
-        name_short:
-          type: string
-          description: "Metric short notation"
-          example: "R2"
-        performance_type:
-          type: string
-          description: "Type of metrics"
-          example: "Pearson's correlation"
-        estimate:
-          type: number
-          example: 0.33
-        pvalue:
-          type: number
-          example: 2.66e-77
+      # type: object
+      # description: "Performance Metric of a score"
+      # properties:
+      #   id:
+      #     type: integer
+      #     description: "Internal ID"
+      #     example: 1
+      #   associated_opgs_id:
+      #     type: string
+      #     description: "Associated OmicsPred Score ID"
+      #     example: "OPGS002402"
+      #   publication:
+      #     $ref: '#/components/schemas/Publication'
+      #   sample:
+      #     $ref: '#/components/schemas/Sample'
+      #   platform:
+      #     $ref: '#/components/schemas/Platform'
+      #   efo:
+      #     $ref: '#/components/schemas/EFO'
+      #   performance_metrics:
+      #     type: array
+      #     description: "List of associated performance metrics"
+      #     items:
+      #       $ref: '#/components/schemas/Metrics'
+      #   cohort_label:
+      #     type: string
+      #     description: "Name of the cohort used to calculate the performance metric"
+      #     example: "INTERVAL"
+      #   evaluation_type:
+      #     type: string
+      #     description: "Type of evaluation performed"
+      #     example: "Training"
+      #   performance_additional:
+      #     description: "Additional information about the performance metric"
+      #     example: "Performed on 308 genes"
+      #   covariates:
+      #     type: string
+      #     description: "Covariates used in the prediction model to evaluate the PGS."
+      #     example: "Age, sex and the first 10 genetic principal components"
+
+    # Performance:
+    #   type: object
+    #   description: "Performance Metric of a score (lighter version)"
+    #   properties:
+    #     performance_metrics:
+    #       type: array
+    #       description: "List of associated performance metrics"
+    #       items:
+    #         $ref: '#/components/schemas/Metric'
+    #     cohort_label:
+    #       type: string
+    #       description: "Name of the cohort used to calculate the performance metric"
+    #       examples: 
+    #         - 'INTERVAL'
+    #         - 'MEC-CN'
+    #     evaluation_type:
+    #       type: string
+    #       description: 'Type of evaluation'
+    #       example: 'External Validation'
+    #     performance_additional:
+    #       type: string
+    #       description: "Additional information about the performance metric"
+    #       example: "Performed on 308 genes"
+    #     covariates:
+    #       type: string
+    #       description: "Covariates used in the prediction model to evaluate the PGS."
+    #       example: "Age, sex and the first 10 genetic principal components"
+
 
     # Phecode #
     Phecode:
@@ -401,31 +481,42 @@ components:
         id:
           type: string
           description: "Phecode ID"
-          example: "70.3"
+          example: "250.2"
         name:
           type: string
           description: "Phenotype name"
-          example: "Viral hepatitis C"
+          example: "Type 2 diabetes"
         category:
           type: string
           description: "Phenotype category"
-          example: "infectious diseases"
+          example: "endocrine/metabolic"
         scores_count:
           type: integer
           description: "Number of scores associated with the phecode."
           example: 10
 
     Phecode_extended:
-      description: "Based on the **Phecode** schema, with the addition of the '**child_phecode**'."
+      description: "Based on the **PhecodeScoresCount** schema, with the addition of the '**child_phecode**'."
       allOf:
-        - $ref: '#/components/schemas/Phecode'
+        - $ref: '#/components/schemas/PhecodeScoresCount'
         - type: object
           properties:
             child_phecode:
               type: array
               description: "List of child phecode(s)."
               items:
-                $ref: '#/components/schemas/Phecode'
+                $ref: '#/components/schemas/PhecodeScoresCount'
+
+    PhecodeScoresCount:
+      description: "Based on the **Phecode** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Phecode'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores associated with the phecode."
+              example: 10
 
 
     # Platform #
@@ -461,20 +552,20 @@ components:
         - type: object
           properties:
             scores_count:
-              type: interger
+              type: integer
               description: "Number of scores associated with the platform"
               example: 2384
 
 
     # Platform - Additional #
-    PlatformAdditional_light:
+    PlatformAdditional:
       type: object
       description: "Structure containing information about a Platform + Additional data (EXCEPT the associated Publication information)"
       properties:
         platform:
           $ref: '#/components/schemas/Platform'
         scores_count:
-          type: interger
+          type: integer
           description: "Number of scores associated with the platform"
           example: 2384
         omics_type:
@@ -496,30 +587,35 @@ components:
           items:
             $ref: '#/components/schemas/Sample'
         scoring_files_urls:
-          type: object
-          properties:
-            type: array
-            items:
+          type: array
+          items:
+            type: object
+            properties:
               gwas_sumstats:
                 type: string
+                description: "GWAS summary stats file"
                 example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
               scoring_files:
                 type: string
+                description: "Scoring files"
                 example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
               score_variant_info:
                 type: string
+                description: "Variant information file"
                 example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
               validation_results:
                 type: string
+                description: "PGS performance metrics"
                 example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
               scoring_files_pgsc_calc:
                 type: string
+                description: "Scoring files - pgsc_calc compatible"
                 example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
 
-    PlatformAdditional:
+    PlatformAdditional_extended:
       description: "Structure containing information about a Platform + Publication + Additional data"
       allOf:
-        - $ref: '#/components/schemas/PlatformAdditional_light'
+        - $ref: '#/components/schemas/PlatformAdditional'
         - type: object
           properties:
             publication:
@@ -573,7 +669,7 @@ components:
           example: "10.1038/s41586-023-05844-9"
         pmid:
           type: integer
-          description: "PubMed idenfier"
+          description: "PubMed identifier"
           example: 36991119
         journal:
           type: string
@@ -590,6 +686,7 @@ components:
           example: "2023-03-29"
 
     Publication_extended:
+      type: object
       description: "Based on the **Publication** schema, with the addition of the '**date_release**', '**authors**' and '**platforms**'."
       allOf:
         - $ref: '#/components/schemas/Publication'
@@ -612,7 +709,6 @@ components:
 
 
     # Sample #
-
     Sample:
       type: object
       description: "Structure containing information about a study Sample."
@@ -675,10 +771,8 @@ components:
         #   description: "Name of the sample tissue (if available)."
         #   example: "Blood"
 
-
-    # Sample Applications
-
-    SampleApplication:
+    # Sample Applications #
+    SampleApplications:
       type: object
       description: "Structure containing information about a SampleAppliction."
       properties:
@@ -712,6 +806,7 @@ components:
           example:
             SomaScan: 1
             Olink: 1
+
 
     # Score #
     Score:
@@ -779,7 +874,7 @@ components:
           description: "License applied to the score"
           example: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
-
+    # Score - Molecular Trait Applications #
     Score_MolecularTrait:
       type: object
       description: "Structure containing Score information with its associated performance metrics."
@@ -790,6 +885,7 @@ components:
           example: "OPGS002402"
         variants_number:
           type: integer
+          example: 182
         performance_data:
           type: array
           description: "Simplified structure containing information about a Performance Metrics for a Cohort."
@@ -802,6 +898,64 @@ components:
                   description: "Numeric value of the performance metrics"
                   example: 0.345
 
+    # Score with Performance data #
+    Score_Performance:
+      description: "Based on the **Score** schema, with the addition of the '*score_performance**'."
+      allOf:
+        - $ref: '#/components/schemas/Score'
+        - type: object
+          properties:
+            score_performance:
+              type: array
+              items:
+                $ref: '#/components/schemas/Performance'
+
+    # Score Applications #
+    ScoreApplications:
+      type: object
+      description: "Structure containing ScoreApplications information (Score + Phecode)."
+      properties:
+        score_id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        phecode:
+          $ref: '#/components/schemas/Phecode'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        cohort:
+          $ref: '#/components/schemas/Cohort'
+        data_values:
+          type: object
+          description: "Measurements of the association between the Score and Phecode."
+          properties:
+            R2:
+               type: number
+               description: "Coefficient of determination"
+               example: 0.269
+            HR:
+              type: number
+              description: "Hazard Ratio"
+              example: 1.13,
+            HR_lower:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Lower"
+              example: 1.07,
+            HR_upper:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Upper"
+              example: 1.19,
+            FDR:
+              type: number
+              description: "False Discovery Rate adjusted P-value"
+              example: 0.0404
+        molecular_traits:
+          type: array
+          items:
+            $ref: '#/components/schemas/MolecularTraitApplications'
+
+
+    # Score - Molecular Trait #
     ScoreMetabolite:
       description: "Structure containing Score information with its associated performance metrics for a given metabolomics platform."
       allOf:
@@ -847,6 +1001,46 @@ components:
               items:
                 $ref: '#/components/schemas/Gene'
 
+
+    # Super Pathway #
+    SuperPathway:
+      type: object
+      description: "Structure containing information about a top level pathway."
+      properties:
+        name:
+          type: string
+          description: "Pathway name"
+          example: "Disease"
+        external_id:
+          type: string
+          description: "Pathway ID"
+          example: "R-HSA-1643685"
+        external_id_source:
+          type: string
+          description: "Source of the Pathway ID"
+          example: "Reactome"
+        # synonyms:
+        #   type: array
+        #   description: "Pathway synonym(s)"
+        #   items:
+        #     type: object
+        #     properties:
+        #       name:
+        #         type: string
+        #         example: "disease"
+        # xrefs:
+        #   type: array
+        #   description: "Pathway external reference(s)"
+        #   items:
+        #     type: object
+        #     properties:
+        #       name:
+        #         type: string
+        #         example: "DOID:4"
+        #       source:
+        #         type: string
+        #         example: "Human Disease Ontology"
+
     Transcript:
       type: object
       description: "Structure containing information about a Transcript."
@@ -865,107 +1059,12 @@ components:
           example: "Ensembl"
 
 
-    ##### Applications objects #####
-
-    MolecularTraitApplications:
-      description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
-      type: object
-      properties:
-        name:
-          type: string
-          description: "Protein name"
-          example: "Serpin A12"
-        external_id:
-          type: string
-          description: "Protein ID"
-          example: "Q8IW75"
-        type:
-          type: string
-          description: "Type of molecular trait"
-          example: "protein"
-
-    ScoreApplications:
-      type: object
-      description: "Structure containing ScoreApplications information (Score + Phecode)."
-      properties:
-        score_id:
-          type: string
-          description: "OmicsPred Score ID"
-          example: "OPGS002402"
-        omics_name:
-           type: string
-           description: "Name/ID of the biological feature"
-           example: "TCF19"
-        phecode:
-          $ref: '#/components/schemas/Phecode'
-        platform:
-          $ref: '#/components/schemas/Platform'
-        cohort:
-          $ref: '#/components/schemas/Cohort'
-        data_values:
-          type: object
-          description: "Measurements of the association between the Score and Phecode."
-          properties:
-            R2:
-               type: number
-               description: "Coefficient of determination"
-               example: 0.269
-            HR:
-              type: number
-              description: "Hazard Ratio"
-              example: 1.13,
-            HR_lower:
-              type: number
-              description: "Hazard Ratio - Confidence interval - Lower"
-              example: 1.07,
-            HR_upper:
-              type: number
-              description: "Hazard Ratio - Confidence interval - Upper"
-              example: 1.19,
-            FDR:
-              type: number
-              description: "False Discovery Rate adjusted P-value"
-              example: 0.0404
-        molecular_traits:
-          type: array
-          items:
-            $ref: '#/components/schemas/MolecularTraitApplications'
+    ##### Generic ####
 
 
-    ##### Generic #####
-
-    Pagination:
-      type: object
-      properties:
-        size:
-          type: integer
-          description: "Number of results in the current page"
-          example: 50
-        count:
-          type: integer
-          description: "Total count of results from the query"
-          example: 137
-        next:
-          type: string
-          description: "URL to the next page of results"
-          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50&offset=100"
-        previous:
-          type: string
-          description: "URL to the previous page of results"
-          example: "https://www.omicspred.org/rest/<endpoint>/<endpoint-subtype>?limit=50"
-
-    Error_4XX:
-      type: object
-      properties:
-        error_status:
-          type: number
-          example: 404
-        message:
-          type: string
-          example: "This REST endpoint does not exist"
 
 #############################################################
-# =====> TODO
+
 paths:
 
   ## Sample/Cohort endpoints ##
@@ -976,8 +1075,10 @@ paths:
       operationId: getAllCohorts
       description: |
         Retrieve all Cohorts, including for each of them:
+          * Cohort short name
           * Cohort full name
           * Cohort Project URL
+
         Example of request:
         ```
         https://www.omicspred.org/rest/cohort/all
@@ -1005,21 +1106,21 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of OmicsPred Cohorts"
+                    description: "List of Cohorts in OmicsPred"
                     type: array
                     items:
                       $ref: '#/components/schemas/Cohort'
           description: |
-                  All OmicsPred Cohorts
+            All Cohorts in OmicsPred
 
-                  ---
+            ---
 
-                  __Notes:__ This endpoint uses pagination.
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   /rest/sample/all:
@@ -1027,7 +1128,17 @@ paths:
       tags:
         - "Sample endpoints"
       operationId: getAllSamples
-      description: Retrieve all the Samples
+      description: | 
+        Retrieve all the Samples, including for each of them:
+          * Sample number, age, percentage of male
+          * Sample ancestry
+          * Source PubMed ID, DOI, NHGRI GWAS Catalog ID
+          * Cohort information
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/sample/all
+        ```
       responses:
         '200':
           content:
@@ -1042,28 +1153,37 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Sample'
-          description: 'List of Sample data'
+          description: |
+            List of Sample data
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
 
-  ## Molecular trait endpoints ##
-  /rest/protein/search:
+  ## Pathway endpoints ##
+  /rest/pathway/all:
     get:
       tags:
-        - "Molecular trait endpoints"
-      operationId: searchProteins
-      description: Search proteins by gene name/symbol/ID
-      parameters:
-      - name: gene_id
-        required: true
-        in: query
-        description: Gene name/symbol/ID.
-        examples:
-          COL1A1:
-            value: "COL1A1"
-          ENSG00000165953:
-            value: "ENSG00000165953"
-        schema:
-          type: string
+        - "Pathway endpoints"
+      operationId: getAllPathways
+      description: |
+        Retrieve all Pathways, including for each of them:
+          * Pathway name and ID
+          * Top level pathway(s)
+          * Associated genes
+          * Associated metabolites
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/pathway/all
+        ```
       responses:
         '200':
           content:
@@ -1074,11 +1194,16 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: 'List of proteins'
+                    description: 'List all the Pathways'
                     type: array
                     items:
-                      $ref: '#/components/schemas/Protein'
-          description: 'List of proteins associated with the gene name/ID provided'
+                      $ref: '#/components/schemas/Pathway_extended'
+          description: |
+            List all the Platforms
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1086,20 +1211,81 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /rest/pathway/{pathway_id}:
+    get:
+      tags:
+        - "Pathway endpoints"
+      operationId: getPathway
+      description: |
+        Retrieve a Pathway, including:
+          * Pathway name and ID
+          * Top level pathway(s)
+          * Associated genes
+          * Associated metabolites
+
+        The `pathway_id` corresponds to a Reactome ID.
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/pathway/R-HSA-9733458
+        ```
+      parameters:
+      - name: pathway_id
+        in: path
+        required: true
+        description: 'Reactome ID'
+        examples:
+          R-HSA-9733458:
+            value: 'R-HSA-9733458'
+          R-HSA-352230:
+            value: 'R-HSA-352230'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pathway_extended'
+          description: 'Pathway information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Molecular trait endpoints ##
   /rest/metabolite/{metabolite_id}:
     get:
       tags:
         - "Molecular trait endpoints"
       operationId: getMetabolite
-      description: Retrieve one Metabolite
+      description: |
+        Retrieve the Metabolite, including:
+          * Metabolite name
+          * Metabolite ID
+          * Metabolite source (e.g. ChEBI)
+          * Metabolite synonyms
+          * Metabolite external references
+          * Metabolite description
+          * Associated pathways
+
+        The `pathway_id` corresponds to a Reactome ID.
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/metabolite/CHEBI_25017
+        ```
       parameters:
       - name: metabolite_id
         in: path
         required: true
-        description: 'Metabolite name/ID'
+        description: 'Metabolite name or ID'
         examples:
-          M17799:
-            value: 'M17799'
+          CHEBI_25017:
+            value: 'CHEBI_25017'
           methionylalanine:
             value: 'methionylalanine'
         schema:
@@ -1109,7 +1295,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Metabolite'
+                $ref: '#/components/schemas/Metabolite_extended'
           description: 'Metabolite information'
         '4XX':
           content:
@@ -1123,12 +1309,21 @@ paths:
       tags:
         - "Molecular trait endpoints"
       operationId: getProtein
-      description: Retrieve one Protein
+      description: |
+        Retrieve the Protein, including:
+          * Protein name
+          * Protein ID
+          * Protein source (e.g. UniProt)
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/protein/P08887
+        ```
       parameters:
       - name: protein_id
         in: path
         required: true
-        description: 'Protein name/ID'
+        description: 'Protein name or UniProt ID'
         examples:
           P08887:
             value: 'P08887'
@@ -1150,17 +1345,26 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /rest/gene/{gene_id}:
+  /rest/protein/search:
     get:
       tags:
         - "Molecular trait endpoints"
-      operationId: getGene
-      description: Retrieve one Gene
+      operationId: searchProteins
+      description: | 
+        Search proteins by gene name/symbol or ID, including for each of the results:
+          * Protein name
+          * Protein ID
+          * Protein source (e.g. UniProt)
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/protein/search?gene_id=COL1A1
+        ```
       parameters:
       - name: gene_id
-        in: path
         required: true
-        description: 'Gene name/symbol/ID'
+        in: query
+        description: Gene name/symbol or ID.
         examples:
           COL1A1:
             value: "COL1A1"
@@ -1173,7 +1377,64 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Gene'
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of proteins'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Protein'
+          description: |
+            List of proteins associated with the gene name/symbol or ID provided
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/gene/{gene_id}:
+    get:
+      tags:
+        - "Molecular trait endpoints"
+      operationId: getGene
+      description: |
+        Retrieve the Gene, including:
+          * Gene name
+          * Gene ID
+          * Gene source (e.g. Ensembl)
+          * Gene synonyms
+          * Gene description
+          * Associated pathways
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/gene/COL1A1
+        ```
+      parameters:
+      - name: gene_id
+        in: path
+        required: true
+        description: 'Gene name/symbol or Ensembl Gene ID'
+        examples:
+          COL1A1:
+            value: "COL1A1"
+          ENSG00000165953:
+            value: "ENSG00000165953"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gene_extended'
           description: 'Gene information'
         '4XX':
           content:
@@ -1189,7 +1450,18 @@ paths:
       tags:
         - "Omics endpoints"
       operationId: getMetabolomicsScores
-      description: 'Retrieve all the Scores associated with the given Petabolomics platform'
+      description: |
+        Retrieve all the Scores associated with the given metabolomics platform, including for each of the scores:
+          * OmicsPred Score ID
+          * Variants number
+          * Performance Metrics data
+          * Trait reported
+          * Associated Metabolites
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/metabolomics/Metabolon
+        ```
       parameters:
       - name: platform
         in: path
@@ -1216,7 +1488,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ScoreMetabolite'
-          description: 'List all the score associated with the given Metabolomics platform'
+          description: |
+            List all the score associated with the given metabolomics platform
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1229,7 +1506,18 @@ paths:
       tags:
         - "Omics endpoints"
       operationId: getProteomicsScores
-      description: 'Retrieve all the Scores associated with the given Proteomics platform'
+      description: |
+        Retrieve all the Scores associated with the given proteomics platform, including for each of the scores:
+          * OmicsPred Score ID
+          * Variants number
+          * Performance Metrics data
+          * Trait reported
+          * Associated Proteins
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/proteomics/Olink
+        ```
       parameters:
       - name: platform
         in: path
@@ -1256,7 +1544,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ScoreProtein'
-          description: 'List all the scores associated with the given Proteomics platform'
+          description: |
+            List all the scores associated with the given proteomics platform
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1269,15 +1562,29 @@ paths:
       tags:
         - "Omics endpoints"
       operationId: getTranscriptomicsScores
-      description: 'Retrieve all the Scores associated with the given Transcriptomics platform'
+      description: |
+        Retrieve all the Scores associated with the given transcriptomics platform, including for each of the scores:
+          * OmicsPred Score ID
+          * Variants number
+          * Performance Metrics data
+          * Trait reported
+          * Associated Genes
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/transcriptomics/Illumina RNAseq
+        ```
+      
       parameters:
       - name: platform
         in: path
         required: true
-        description: ''
+        description: 'Platform name'
         examples:
-          Illumina_RNAseq:
-            value: 'Illumina_RNAseq'
+          Illumina RNAseq:
+            value: 'Illumina RNAseq'
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -1292,8 +1599,19 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ScoreTranscript'
-          description: 'List all the scores associated with the given Transcriptomics platform'
+          description: |
+            List all the scores associated with the given transcriptomics platform
+        
+            ---
 
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+#=> TODO
   ## Performance metrics endpoints ##
 
   # /rest/performance/all:
@@ -1384,8 +1702,13 @@ paths:
                     description: 'List of Performance Metrics'
                     type: array
                     items:
-                      $ref: '#/components/schemas/ScoreTranscript'
-          description: 'List of Performance Metrics'
+                      $ref: '#/components/schemas/Performance_extended'
+          description: |
+            List of Performance Metrics
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1400,7 +1723,7 @@ paths:
       tags:
         - "Publication endpoints"
       operationId: getAllPublications
-      description: Retrieve all the PGS Publications
+      description: Retrieve all the Publications
       parameters:
         - in: query
           name: filter_ids
@@ -1424,11 +1747,16 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Publications"
+                    description: "List all the Publications"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Publication'
-          description: 'All Publication information'
+                      $ref: '#/components/schemas/Publication_extended'
+          description: |
+            List all the Publications
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1452,19 +1780,19 @@ paths:
             summary: 'PMID: 36991119'
             value: 36991119
         schema:
-          type: int
+          type: integer
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
-          description: 'Publication'
+                $ref: '#/components/schemas/Publication_extended'
+          description: 'Publication information'
         '4XX':
           content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   /rest/publication/search:
@@ -1525,8 +1853,13 @@ paths:
                     description: "List of Publications"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Publication'
-          description: 'All Publication information'
+                      $ref: '#/components/schemas/Publication_extended'
+          description: |
+            List all the Publications associated with the request
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1540,7 +1873,7 @@ paths:
       tags:
         - "Score endpoints"
       operationId: getAllScores
-      description: Retrieve the Polygenic Scores
+      description: Retrieve the all Polygenic Scores
       parameters:
         - in: query
           name: filter_ids
@@ -1564,11 +1897,16 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Polygenic Scores"
+                    description: "List all the OmicsPred Polygenic Scores"
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
-          description: 'All Polygenic Scores'
+          description: |
+            List all the OmicsPred Polygenic Scores
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1666,7 +2004,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
-          description: 'All Polygenic Scores'
+          description: |
+            List all the Polygenic Scores associated with the request
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1674,22 +2017,43 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /rest/score/searchbygene/{gene}:
+  /rest/score/search/{type}/{molecular_trait}:
     get:
       tags:
         - "Score endpoints"
-      operationId: searchScoresByGene
-      description: Search the Polygenic Score(s) using gene name/ID
+      operationId: searchScoresByMolecularTrait
+      description: |
+        Search the Polygenic Score(s) using a molecular trait name/symbol or ID.
+
+        The molecular trait types are:
+          * gene
+          * protein
+          * metabolite
+        
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/score/search/gene/COL1A1
+        ```
+      
       parameters:
-        - name: gene
+        - name: type
           in: path
           required: true
-          description: 'Gene name/symbol/ID'
+          description: 'Molecular trait type'
+          schema:
+            type: string
+            enum: [gene, protein, metabolite]
+        - name: molecular_trait
+          in: path
+          required: true
+          description: 'Molecular Trait name/symbol or ID'
           examples:
-            COL1A1:
+            Gene COL1A1:
               value: "COL1A1"
-            ENSG00000165953:
-              value: "ENSG00000165953"
+            Protein Q8IW75:
+              value: "Q8IW75"
+            Metabolite CHEBI_25017:
+              value: "CHEBI_25017"
           schema:
             type: string
       responses:
@@ -1702,11 +2066,16 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Polygenic Scores"
+                    description: "List of Polygenic Scores associated with the molecular trait"
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
-          description: 'All Polygenic Scores'
+          description: |
+            List all the Polygenic Scores associated with the molecular trait
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1714,22 +2083,157 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /rest/score/searchbyprotein/{protein}:
+  # /rest/score/searchbygene/{gene}:
+  #   get:
+  #     tags:
+  #       - "Score endpoints"
+  #     operationId: searchScoresByGene
+  #     description: Search the Polygenic Score(s) using gene name/symbol or ID
+  #     parameters:
+  #       - name: gene
+  #         in: path
+  #         required: true
+  #         description: 'Gene name/symbol or ID'
+  #         examples:
+  #           COL1A1:
+  #             value: "COL1A1"
+  #           ENSG00000165953:
+  #             value: "ENSG00000165953"
+  #         schema:
+  #           type: string
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               allOf:
+  #                 - $ref: '#/components/schemas/Pagination'
+  #               properties:
+  #                 results:
+  #                   description: "List of Polygenic Scores associated with the gene"
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/Score'
+  #         description: |
+  #           List all the Polygenic Scores associated with the gene
+        
+  #           ---
+
+  #           __Notes:__ This endpoint uses pagination.
+  #       '4XX':
+  #         content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Error_4XX'
+  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  # /rest/score/searchbyprotein/{protein}:
+  #   get:
+  #     tags:
+  #       - "Score endpoints"
+  #     operationId: searchScoresByProtein
+  #     description: Search the Polygenic Score(s) using protein name/ID
+  #     parameters:
+  #     - name: protein
+  #       in: path
+  #       required: true
+  #       description: 'Protein name/ID'
+  #       examples:
+  #         P08887:
+  #           value: 'P08887'
+  #         Vitronectin:
+  #           value: 'Vitronectin'
+  #       schema:
+  #         type: string
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               allOf:
+  #                 - $ref: '#/components/schemas/Pagination'
+  #               properties:
+  #                 results:
+  #                   description: "List of Polygenic Scores associated with the protein"
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/Score'
+  #         description: |
+  #           List all the Polygenic Scores associated with the protein
+        
+  #           ---
+
+  #           __Notes:__ This endpoint uses pagination.
+  #       '4XX':
+  #         content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Error_4XX'
+  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  # /rest/score/searchbymetabolite/{metabolite}:
+  #   get:
+  #     tags:
+  #       - "Score endpoints"
+  #     operationId: searchScoresByMetabolite
+  #     description: Search the Polygenic Score(s) using metabolite name/ID
+  #     parameters:
+  #     - name: metabolite
+  #       in: path
+  #       required: true
+  #       description: 'Metabolite name/ID'
+  #       examples:
+  #         M17799:
+  #           value: 'M17799'
+  #         methionylalanine:
+  #           value: 'methionylalanine'
+  #       schema:
+  #         type: string
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               allOf:
+  #                 - $ref: '#/components/schemas/Pagination'
+  #               properties:
+  #                 results:
+  #                   description: "List of Polygenic Scores associated with the metabolite"
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/Score'
+  #         description: |
+  #           List all the Polygenic Scores associated with the metabolite
+        
+  #           ---
+
+  #           __Notes:__ This endpoint uses pagination.
+  #       '4XX':
+  #         content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Error_4XX'
+  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /rest/score/performance/{opgs_id}:
     get:
       tags:
         - "Score endpoints"
-      operationId: searchScoresByProtein
-      description: Search the Polygenic Score(s) using protein name/ID
+      operationId: getScorePerformance
+      description: Retrieve a Polygenic Score (PGS) with its performance metrics
       parameters:
-      - name: protein
+      - name: opgs_id
         in: path
         required: true
-        description: 'Protein name/ID'
+        description: 'OmicsPred Score ID'
         examples:
-          P08887:
-            value: 'P08887'
-          Vitronectin:
-            value: 'Vitronectin'
+          OPGS002402:
+            value: 'OPGS002402'
+          OPGS003423:
+            value: 'OPGS003423'
         schema:
           type: string
       responses:
@@ -1737,49 +2241,14 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                allOf:
-                  - $ref: '#/components/schemas/Pagination'
-                properties:
-                  results:
-                    description: "List of Polygenic Scores"
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Score'
-          description: 'All Polygenic Scores'
+                $ref: '#/components/schemas/Score_Performance'
+          description: 'OmicsPred Score with Performance Metrics'
         '4XX':
           content:
               application/json:
                 schema:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
-
-  /rest/score/searchbymetabolite/{metabolite}:
-    get:
-      tags:
-        - "Score endpoints"
-      operationId: searchScoresByMetabolite
-      description: Search the Polygenic Score(s) using metabolite name/ID
-      parameters:
-      - name: metabolite
-        in: path
-        required: true
-        description: 'Metabolite name/ID'
-        examples:
-          M17799:
-            value: 'M17799'
-          methionylalanine:
-            value: 'methionylalanine'
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Score'
-          description: ''
-
 
   ## Platform endpoints ##
   /rest/platform/all:
@@ -1798,11 +2267,16 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Platforms"
+                    description: 'List all the Platforms'
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlatformMaster'
-          description: 'List of Platform data'
+                      $ref: '#/components/schemas/Platform_extended'
+          description: |
+            List all the Platforms
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1828,8 +2302,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlatformMaster'
-          description: 'Platform data'
+                $ref: '#/components/schemas/Platform_extended'
+          description: 'Information about the platform'
         '4XX':
           content:
               application/json:
@@ -1842,21 +2316,39 @@ paths:
       tags:
         - "Platform endpoints"
       operationId: getAllPlatformAdditionals
-      description: Retrieve all the PlatformAdditional
-      parameters:
+      description: |
+        Retrieve all the Platform Additional data, including for each of them:
+          * Platform information
+          * Publication information
+          * Tissue information
+          * Training Samples and Cohorts
+          * Validation Samples and Cohorts
+          * URLs to the data files
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/platform/additional/all
+        ```
       responses:
         '200':
           content:
             application/json:
               schema:
                 type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Platform Additional data"
+                    description: "List all the Platform Additional data"
                     type: array
                     items:
                       $ref: '#/components/schemas/PlatformAdditional_extended'
-          description: "List of Platform Additional data"
+          description: |
+            List all the Platform Additional data
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1869,7 +2361,19 @@ paths:
       tags:
         - "Platform endpoints"
       operationId: getPlatformAdditionals
-      description: Retrieve the Platform Additional information
+      description: |
+        Retrieve a Platform Additional data, including for each of them:
+          * Platform information
+          * Publication information
+          * Tissue information
+          * Training Samples and Cohorts
+          * Validation Samples and Cohorts
+          * URLs to the data files
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/platform/additional/Olink
+        ```
       parameters:
       - name: platform
         in: path
@@ -1884,12 +2388,19 @@ paths:
             application/json:
               schema:
                 type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/PlatformAdditional_extended'
-          description: "List of Platform Additional data from the given platform"
+          description: |
+            List of Platform Additional data from the given platform
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -1971,7 +2482,7 @@ paths:
           in: path
           required: true
           description: 'Phecode ID'
-          example: "70.3"
+          example: "250.2"
           schema:
             type: string
       responses:
@@ -1979,7 +2490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Phecode'
+                $ref: '#/components/schemas/PhecodeScoresCount'
           description: 'Phecode information'
         '4XX':
           content:
@@ -1988,25 +2499,33 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+
   ## Score Application
   /rest/applications_score/all:
     get:
       tags:
         - "Trait endpoints (Applications)"
       operationId: getAllPhecodeScores
-      description: Retrieve all the Phecode Score Applications
+      description: Retrieve all the Phecode Score associations
       responses:
         '200':
           content:
             application/json:
               schema:
                 type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/ScoreApplications'
-          description: 'All the Phecode Score Applications'
+          description: |
+            All the Phecode Score associations
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -2085,12 +2604,19 @@ paths:
             application/json:
               schema:
                 type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
                     type: array
                     items:
                       $ref: '#/components/schemas/ScoreApplications'
-          description: 'Phecode Score Applications entry(ies)'
+          description: |
+           Phecode Score associations related to the request
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -2098,7 +2624,7 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-
+  ## Sample Application
   /rest/applications_sample/all:
     get:
       tags:
@@ -2115,7 +2641,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/SampleApplication'
+                      $ref: '#/components/schemas/SampleApplications'
           description: 'All the Phecode Sample Applications'
         '4XX':
           content:

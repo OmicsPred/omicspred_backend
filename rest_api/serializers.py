@@ -106,7 +106,7 @@ class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
 class PlatformAdditionalSerializer(PlatformAdditionalLightSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
 
-    class Meta(PlatformAdditionalLightSerializer):
+    class Meta(PlatformAdditionalLightSerializer.Meta):
         meta_fields = ('publication',)
         fields = meta_fields + PlatformAdditionalLightSerializer.Meta.fields
         read_only_fields = meta_fields + PlatformAdditionalLightSerializer.Meta.fields
@@ -129,7 +129,7 @@ class PublicationExtendedSerializer(PublicationSerializer):
 #### Pathway ####
 class PathwaySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Pathway
+        model = PathwayOld
         meta_fields = ('name', 'external_id', 'external_id_source')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -143,11 +143,11 @@ class SuperPathwaySerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
-class PathwayNewSerializer(serializers.ModelSerializer):
+class PathwaySerializer(serializers.ModelSerializer):
     superpathways = SuperPathwaySerializer(many=True, read_only=True)
 
     class Meta:
-        model = PathwayNew
+        model = Pathway
         meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs', 'superpathways')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -157,32 +157,25 @@ class PathwayNewSerializer(serializers.ModelSerializer):
 class GeneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gene
-        meta_fields = ('name','external_id','external_id_source')
+        meta_fields = ('name','external_id','external_id_source','synonyms', 'description', 'biotype')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
-class GeneSerializerDesc(GeneSerializer):
+class GeneSerializerExtended(GeneSerializer):
+    pathways = PathwaySerializer(many=True, read_only=True)
+
     class Meta(GeneSerializer.Meta):
-        meta_fields = ('synonyms', 'description', 'biotype')
+        meta_fields = ('pathways',)
         fields = GeneSerializer.Meta.fields + meta_fields
         read_only_fields = GeneSerializer.Meta.read_only_fields + meta_fields
 
 
-class GeneSerializerExtended(GeneSerializerDesc):
-    pathways = PathwayNewSerializer(many=True, read_only=True)
-
-    class Meta(GeneSerializerDesc.Meta):
-        meta_fields = ('pathways',)
-        fields = GeneSerializerDesc.Meta.fields + meta_fields
-        read_only_fields = GeneSerializerDesc.Meta.read_only_fields + meta_fields
-
-
-class GeneSerializerScoresCount(GeneSerializerDesc):
-    class Meta(GeneSerializerDesc.Meta):
+class GeneSerializerScoresCount(GeneSerializer):
+    class Meta(GeneSerializer.Meta):
         meta_fields = ('scores_count',)
-        fields = GeneSerializerDesc.Meta.fields + meta_fields
-        read_only_fields = GeneSerializerDesc.Meta.read_only_fields + meta_fields
+        fields = GeneSerializer.Meta.fields + meta_fields
+        read_only_fields = GeneSerializer.Meta.read_only_fields + meta_fields
 
 
 #### Transcript ####
@@ -204,7 +197,7 @@ class ProteinSerializer(serializers.ModelSerializer):
 
 
 class ProteinSerializerExtended(ProteinSerializer):
-    gene = GeneSerializerDesc(many=False, read_only=True)
+    gene = GeneSerializer(many=False, read_only=True)
     pathways = serializers.SerializerMethodField('get_pathways')
 
     class Meta(ProteinSerializer.Meta):
@@ -215,22 +208,23 @@ class ProteinSerializerExtended(ProteinSerializer):
     def get_pathways(self, obj):
         pathways = []
         # Pathways
-        for pathway in obj.gene.pathways.prefetch_related('superpathways').all():
-            pathway_entry = {}
-            for field in PathwayNewSerializer.Meta.fields:
-                # Superpathways
-                if field == 'superpathways':
-                    sp_pathways = []
-                    superpathways = getattr(pathway, field)
-                    for superpathway in superpathways.all():
-                        sp_pathway_entry = {}
-                        for sp_field in SuperPathwaySerializer.Meta.fields:
-                            sp_pathway_entry[sp_field] = getattr(superpathway, sp_field)
-                        sp_pathways.append(sp_pathway_entry)
-                    pathway_entry[field] = sp_pathways
-                else:
-                    pathway_entry[field] = getattr(pathway, field)
-            pathways.append(pathway_entry)
+        if obj.gene:
+            for pathway in obj.gene.pathways.prefetch_related('superpathways').all():
+                pathway_entry = {}
+                for field in PathwaySerializer.Meta.fields:
+                    # Superpathways
+                    if field == 'superpathways':
+                        sp_pathways = []
+                        superpathways = getattr(pathway, field)
+                        for superpathway in superpathways.all():
+                            sp_pathway_entry = {}
+                            for sp_field in SuperPathwaySerializer.Meta.fields:
+                                sp_pathway_entry[sp_field] = getattr(superpathway, sp_field)
+                            sp_pathways.append(sp_pathway_entry)
+                        pathway_entry[field] = sp_pathways
+                    else:
+                        pathway_entry[field] = getattr(pathway, field)
+                pathways.append(pathway_entry)
         return pathways
 
 
@@ -269,7 +263,7 @@ class MetaboliteSerializer(serializers.ModelSerializer):
 
 
 class MetaboliteSerializerExtended(MetaboliteSerializer):
-    pathways = PathwayNewSerializer(many=True, read_only=True)
+    pathways = PathwaySerializer(many=True, read_only=True)
 
     class Meta(MetaboliteSerializer.Meta):
         meta_fields = ('description', 'pathways',)
@@ -285,15 +279,15 @@ class MetaboliteSerializerScoresCount(MetaboliteSerializer):
 
 
 #### Pathway - Extended (with genes and metabolites) ####
-class PathwaySerializerNewExtended(PathwayNewSerializer):
+class PathwaySerializerNewExtended(PathwaySerializer):
     # superpathways = SuperPathwaySerializer(many=True, read_only=True)
     genes = GeneSerializerScoresCount(source='pathway_genes', many=True, read_only=True)
     metabolites = MetaboliteSerializerScoresCount(source='pathway_metabolites', many=True, read_only=True)
-    class Meta(PathwayNewSerializer.Meta):
+    class Meta(PathwaySerializer.Meta):
         meta_fields = ('genes', 'metabolites')
         # meta_fields = ('superpathways', 'genes', 'metabolites')
-        fields = PathwayNewSerializer.Meta.fields + meta_fields
-        read_only_fields = PathwayNewSerializer.Meta.read_only_fields + meta_fields
+        fields = PathwaySerializer.Meta.fields + meta_fields
+        read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
 
 
 #### Score ####
@@ -301,7 +295,7 @@ class ScoreSerializer(serializers.ModelSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
     platform = PlatformSerializer(many=False, read_only=True)
 
-    genes = GeneSerializerDesc(many=True, read_only=True)
+    genes = GeneSerializer(many=True, read_only=True)
     transcripts = TranscriptSerializer(many=True, read_only=True)
     proteins = ProteinSerializer(many=True, read_only=True)
     metabolites = MetaboliteSerializer(many=True, read_only=True)
@@ -331,7 +325,7 @@ class ScorePathwaySerializer(ScoreSerializer):
 
 
 class ScorePlotSerializer(serializers.ModelSerializer):
-    genes = GeneSerializerDesc(many=True, read_only=True)
+    genes = GeneSerializer(many=True, read_only=True)
     transcripts = TranscriptSerializer(many=True, read_only=True)
     proteins = ProteinSerializer(many=True, read_only=True)
     metabolites = MetaboliteSerializer(many=True, read_only=True)
@@ -439,20 +433,27 @@ class ScoreTranscriptSerializer(ScoreMolecularTraitSerializer):
 class PhecodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phecode
-        meta_fields = ('id','name','category','scores_count')
+        meta_fields = ('id','name','category')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
-class PhecodeSerializerExtended(PhecodeSerializer):
+class PhecodeSerializerScoresCount(PhecodeSerializer):
+    class Meta(PhecodeSerializer.Meta):
+        meta_fields = ('scores_count',)
+        fields = PhecodeSerializer.Meta.fields + meta_fields
+        read_only_fields = PhecodeSerializer.Meta.read_only_fields + meta_fields
+
+
+class PhecodeSerializerExtended(PhecodeSerializerScoresCount):
 
     # child_phecode = PhecodeSerializer(many=True,read_only=True)
     child_phecode = serializers.SerializerMethodField()
 
-    class Meta(PhecodeSerializer.Meta):
+    class Meta(PhecodeSerializerScoresCount.Meta):
         meta_fields = ('child_phecode',)
-        fields = PhecodeSerializer.Meta.fields + meta_fields
-        read_only_fields = PhecodeSerializer.Meta.read_only_fields + meta_fields
+        fields = PhecodeSerializerScoresCount.Meta.fields + meta_fields
+        read_only_fields = PhecodeSerializerScoresCount.Meta.read_only_fields + meta_fields
 
     def get_child_phecode(self, obj):
         ''' Sort phecode child terms by their IDs '''
@@ -490,7 +491,7 @@ class ScoreApplicationsSerializer(serializers.ModelSerializer):
     data_values = serializers.SerializerMethodField('get_data_values')
     class Meta:
         model = ScoreApplications
-        meta_fields = ('score_id','omics_name','phecode','platform','cohort','data_values','molecular_traits')
+        meta_fields = ('score_id','phecode','platform','cohort','data_values','molecular_traits')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -499,7 +500,7 @@ class ScoreApplicationsSerializer(serializers.ModelSerializer):
 
 
 class SampleApplicationsSerializer(serializers.ModelSerializer):
-    phecode = PhecodeSerializer(many=False,read_only=True)
+    phecode = PhecodeSerializerScoresCount(many=False,read_only=True)
     class Meta:
         model = SampleApplications
         meta_fields = ('sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phecode','platform_counts')

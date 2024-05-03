@@ -1,26 +1,38 @@
-<header style="position:fixed;top:0;left:0;width:100%;z-index:10">
+{% load static %}
+{% with op_root_url="https://www.omicspred.org" %}
+  <header style="position:fixed;top:0;left:0;width:100%;z-index:10">
     <nav position="fixed" class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
       <div class="container">
-        <a href="/" class="navbar-brand"><i class="fa-solid fa-code" style="font-size:22px;color:#0d6efd;padding-left:6px"></i><img class="pe-2" src="/images/OmicsPred_logo.png" height="30" alt="" loading="lazy"><span style="font-weight:500">OmicsPred</span></a>
+        {% comment %} <a href="{{ op_root_url }}/" class="navbar-brand"><i class="fa-solid fa-code" style="font-size:22px;color:#0d6efd;padding-left:6px"></i><img class="pe-2" src="{% static 'rest_api/images/OmicsPred_logo.png' %}" height="30" alt="" loading="lazy"><span style="font-weight:500">OmicsPred</span></a> {% endcomment %}
+        <a href="{{ op_root_url }}/" class="navbar-brand"><i class="fa-solid fa-code" style="font-size:22px;color:#0d6efd;padding-left:6px"></i><i class="bi bi-code-slash pe-2"></i><span style="font-weight:500">OmicsPred</span></a>
         <button aria-controls="basic-navbar-nav" type="button" aria-label="Toggle navigation" class="navbar-toggler collapsed"><span class="navbar-toggler-icon"></span></button>
         <div class="navbar-collapse collapse" id="basic-navbar-nav">
           <div class="me-auto navbar-nav">
-            <a href="/" data-rr-ui-event-key="/" class="nav-link">Home</a>
-            <a href="/scores" data-rr-ui-event-key="/scores" class="nav-link">Scores</a>
+            <a href="{{ op_root_url }}/" data-rr-ui-event-key="/" class="nav-link">Home</a>
+            <a href="{{ op_root_url }}/scores" data-rr-ui-event-key="/scores" class="nav-link">Scores</a>
             <div class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Metadata</a>
               <div class="dropdown-menu">
-                <a href="/publications" class="dropdown-item">Publications</a>
-                <a href="/platforms" class="dropdown-item">Platforms</a>
+                <a href="{{ op_root_url }}/scores" data-rr-ui-dropdown-item="" class="dropdown-item">Scores</a>
+                <a href="{{ op_root_url }}/publications" data-rr-ui-dropdown-item="" class="dropdown-item">Publications</a>
+                <a href="{{ op_root_url }}/platforms" data-rr-ui-dropdown-item="" class="dropdown-item">Platforms</a>
+                <a href="{{ op_root_url }}/pathways" data-rr-ui-dropdown-item="" class="dropdown-item">Pathways</a>
               </div>
             </div>
-            <a href="/applications" data-rr-ui-event-key="/applications" class="nav-link">Applications</a>
+            <div class="nav-item dropdown">
+              <a id="basic-nav-dropdown" aria-expanded="false" role="button" class="dropdown-toggle nav-link" tabindex="0" href="#">PheWAS</a>
+              <div data-bs-popper="static" class="dropdown-menu" aria-labelledby="basic-nav-dropdown">
+                <a href="{{ op_root_url }}/applications/phecode/sum" data-rr-ui-dropdown-item="" class="dropdown-item">Summary</a>
+                <a href="{{ op_root_url }}/applications/phecode/full" data-rr-ui-dropdown-item="" class="dropdown-item">All Associations</a>
+              </div>
+            </div>
             <a href="https://forms.gle/KLZGbvurrftF5vo46" target="_blank" data-rr-ui-event-key="https://forms.gle/KLZGbvurrftF5vo46" class="nav-link">Submit Score</a>
-            <a href="/faqs" data-rr-ui-event-key="/faqs" class="nav-link">FAQs</a>
-            <a href="/cohorts" data-rr-ui-event-key="/cohorts" class="nav-link">Cohorts</a>
-            <a href="/about" data-rr-ui-event-key="/about" class="nav-link">About</a>
+            <a href="{{ op_root_url }}/faqs" data-rr-ui-event-key="/faqs" class="nav-link">FAQs</a>
+            <a href="{{ op_root_url }}/cohorts" data-rr-ui-event-key="/cohorts" class="nav-link">Cohorts</a>
+            <a href="{{ op_root_url }}/about" data-rr-ui-event-key="/about" class="nav-link">About</a>
           </div>
         </div>
       </div>
     </nav>
   </header>
+{% endwith %}

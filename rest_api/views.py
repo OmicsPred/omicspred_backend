@@ -1,4 +1,5 @@
-import re
+import re, operator
+from functools import reduce
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -14,7 +15,7 @@ from .serializers import *
 
 generic_defer = ['curation_notes']
 only_dict = {
-    'scores_table': ['id','variants_number','platform__id','platform__name','publication__id','publication__pmid','publication__doi'],
+    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','platform__id','platform__name','publication__id','publication__pmid','publication__doi'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -140,13 +141,11 @@ class RestListPathways(generics.ListAPIView):
     """
     Retrieve all the Pathways
     """
-    # queryset = PathwayNew.objects.all().prefetch_related('superpathways','pathway_genes','pathway_metabolites')#.order_by('name')
-    # queryset = PathwayNew.objects.all().prefetch_related('superpathways','pathway_genes','pathway_metabolites','pathway_metabolites__pathway_group','pathway_metabolites__pathway_subgroup').order_by('id')
     serializer_class = PathwaySerializerNewExtended
 
     def get_queryset(self):
         # Fetch all the Pathways
-        queryset = PathwayNew.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by('name')
+        queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by('name')
 
         # Filter data
         filter_term = self.request.query_params.get('filter')
@@ -167,7 +166,7 @@ class RestPathway(generics.RetrieveAPIView):
 
     def get(self, request, pathway_id):
         try:
-            queryset = PathwayNew.objects.prefetch_related(*related_dict['pathway_prefetch']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+            queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
         except Gene.DoesNotExist:
             queryset = None
         serializer = PathwaySerializerNewExtended(queryset,many=False)
@@ -228,17 +227,12 @@ class RestSearchProtein(generics.ListAPIView):
     serializer_class = ProteinSerializer
 
     def get_queryset(self):
-        queryset = Protein.objects.select_related('gene').all().order_by('id')
-        params = 0
+        queryset = []
 
         # Search by Gene
         gene_id = self.request.query_params.get('gene_id')
         if gene_id and gene_id is not None:
-            queryset = queryset.filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id))
-            params += 1
-
-        if params == 0:
-            queryset = []
+            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id)).order_by('id')
 
         return queryset
 
@@ -324,12 +318,12 @@ class RestTranscriptomics(generics.ListAPIView):
 
 ## Performance metrics ##
 
-class RestListPerformances(generics.ListAPIView):
-    """
-    Retrieve all the Performance Metrics
-    """
-    queryset = Performance.objects.select_related(*related_dict['perf_select']).all().prefetch_related('sample__cohorts','performance_metric').order_by('id')
-    serializer_class = PerformanceSerializer
+# class RestListPerformances(generics.ListAPIView):
+#     """
+#     Retrieve all the Performance Metrics
+#     """
+#     queryset = Performance.objects.select_related(*related_dict['perf_select']).all().prefetch_related('sample__cohorts','performance_metric').order_by('id')
+#     serializer_class = PerformanceSerializer
 
 
 class RestPerformanceSearch(generics.ListAPIView):
@@ -569,68 +563,25 @@ class RestScoreWithPerformance(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
-class RestScoreSearchByGene(generics.ListAPIView):
+class RestScoreSearchByMolecularTrait(generics.ListAPIView):
     """
-    Search the Polygenic Score(s) using gene name/id
-    """
-    serializer_class = ScoreSerializer
-
-    def get_queryset(self):
-        try:
-            gene = self.kwargs['gene']
-            # Database filtering
-            queryset = Score.objects.select_related('publication','platform').filter(Q(genes__name__iexact=gene) | Q(genes__external_id__iexact=gene)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
-        except Score.DoesNotExist:
-            queryset = []
-        return queryset
-
-
-class RestScoreSearchByProtein(generics.ListAPIView):
-    """
-    Search the Polygenic Score(s) using protein name/id
+    Search the Polygenic Score(s) using molecular trait name/id
     """
     serializer_class = ScoreSerializer
 
     def get_queryset(self):
-        try:
-            protein = self.kwargs['protein']
-            # Database filtering
-            queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(Q(proteins__name__iexact=protein) | Q(proteins__external_id__iexact=protein)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
-        except Score.DoesNotExist:
-            queryset = []
-        return queryset
+        molecular_trait_type = self.kwargs['type']
+        molecular_trait = self.kwargs['molecular_trait']
+        query_list = []
+        queryset = []
 
-
-class RestScoreSearchByProteinWithPerformance(generics.ListAPIView):
-    """
-    Search the Polygenic Score(s) using protein name/id
-    """
-    serializer_class = ScorePerformanceSerializer
-
-    def get_queryset(self):
-        try:
-            protein = self.kwargs['protein']
-            # Database filtering
-            # queryset = Score.objects.select_related('publication','platform').filter(Q(proteins__name__iexact=protein) | Q(proteins__external_id__iexact=protein)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
-
-            queryset = Score.objects.defer('transcripts','metabolites').select_related(*related_dict['search_by_select']).filter(Q(proteins__name__iexact=protein) | Q(proteins__external_id__iexact=protein)).prefetch_related('genes','proteins','score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').order_by('num')
-        except Score.DoesNotExist:
-            queryset = []
-        return queryset
-
-
-class RestScoreSearchByMetabolite(generics.ListAPIView):
-    """
-    Search the Polygenic Score(s) using metabolite name/id
-    """
-    serializer_class = ScoreSerializer
-
-    def get_queryset(self):
-        try:
-            metabolite = self.kwargs['metabolite']
-            # Database filtering
-            queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(Q(metabolites__name__iexact=metabolite) | Q(metabolites__external_id__iexact=metabolite)).prefetch_related('genes','transcripts','proteins','metabolites','metabolites__pathway_group','metabolites__pathway_subgroup').order_by('num')
-        except Score.DoesNotExist:
+        if molecular_trait_type and molecular_trait_type in ('gene','protein','metabolite') and molecular_trait:
+            query_name_filter = {f'{molecular_trait_type}s__name__iexact': molecular_trait}
+            query_id_filter = {f'{molecular_trait_type}s__external_id__iexact': molecular_trait}
+            query_list = [Q(**query_name_filter), Q(**query_id_filter)]
+        if query_list:
+            queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
+        else:
             queryset = []
         return queryset
 
@@ -1131,7 +1082,7 @@ class RestPhecode(generics.RetrieveAPIView):
         if (param_inc_children and str(param_inc_children)=='1'):
             serializer = PhecodeSerializerExtended(queryset,many=False)
         else:
-            serializer = PhecodeSerializer(queryset,many=False)
+            serializer = PhecodeSerializerScoresCount(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -1212,7 +1163,7 @@ class RestListPhecodeSample(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = SampleApplications.objects.using(applications_db).select_related('phecode').all().annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
+        queryset = SampleApplications.objects.using(applications_db).select_related('phecode',).all().prefetch_related('phecode__phecode_score').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
 
         # Filter data
         filter_term = self.request.query_params.get('filter')
