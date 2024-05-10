@@ -14,21 +14,21 @@ info:
     url: https://www.omicspred.org
 tags:
   - name: "Score endpoints"
-    description: Polygenic Score metadata with associated traits, publications, samples and cohorts
+    description: Genetic Score metadata with associated molecular traits (genes, transcripts, proteins, metabolites), publications and platforms
   - name: "Publication endpoints"
-    description: Publication metadata (PubMed IDs, doi, authors, associated Polygenic Scores, ...)
+    description: Publication metadata (PubMed IDs, doi, authors, associated platforms, ...)
   - name: "Trait endpoints (Applications)"
-    description: Trait metadata (PheCode [ID, label, description, ...], associated Polygenic Scores, ...)
+    description: Trait metadata (PheCode [ID, label, description, ...], associated Genetic Scores, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
   - name: "Sample endpoints"
     description: Sample metadata (number of individuals, ancestry, cohorts)
   - name: "Platform endpoints"
-    description: "Platform metadata (name, label, technic, ...)"
+    description: "Platform metadata (name, type, version, technic, ...)"
   - name: "Omics endpoints"
     description: "Omics metadata (metabolomics, proteomics, transcriptomics, ...)"
   - name: "Molecular trait endpoints"
-    description: "Molecular trait metadata (metabolite, protein, gene)"
+    description: "Molecular trait metadata (metabolite, transcript, protein, gene)"
   - name: "Pathway endpoints"
     description: "Pathway metadata (Reactome)"
 
@@ -819,15 +819,15 @@ components:
           example: "OPGS002402"
         name:
           type: string
-          description: This may be the name that the authors describe the PGS with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a PGS ID has been given)
+          description: This may be the name that the authors describe the genetic score with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a Genetic Score ID has been given)
           example: "CLEC12A.11187.11.3"
         trait_reported:
           type: string
-          description: "The author-reported molecular trait that the PGS has been developed to predict."
+          description: "The author-reported molecular trait that the genetic score has been developed to predict."
           example: "C-type lectin domain family 12 member A"
         trait_reported_id:
           type: string
-          description: "The author-reported molecular trait ID hat the PGS has been developed to predict"
+          description: "The author-reported molecular trait ID hat the genetic score has been developed to predict"
           example: "Q5QGZ9"
         method_name:
           type: string
@@ -835,7 +835,7 @@ components:
           example: "Bayesian Ridge regression"
         method_params:
           type: string
-          description: "A description of the relevant inputs and parameters relevant to the PGS development method/process."
+          description: "A description of the relevant inputs and parameters relevant to the genetic score development method/process."
           example: "P<5x10-8"
         variants_number:
           type: integer
@@ -867,7 +867,7 @@ components:
           example: 0
         variants_genomebuild:
           type: string
-          description: "The version of the genome assembly that the variants present in the PGS are associated with. Listed as NR (Not Reported) if unknown."
+          description: "The version of the genome assembly that the variants present in the genetic score are associated with. Listed as NR (Not Reported) if unknown."
           example: "GRCh38"
         license:
           type: string
@@ -964,11 +964,11 @@ components:
           properties:
             trait_reported:
               type: string
-              description: "The author-reported molecular trait that the PGS has been developed to predict."
+              description: "The author-reported molecular trait that the genetic score has been developed to predict."
               example: "orotidine"
             trait_reported_id:
               type: string
-              description: "The author-reported molecular trait ID hat the PGS has been developed to predict"
+              description: "The author-reported molecular trait ID hat the genetic score has been developed to predict"
               example: "M35172"
             metabolites:
               type: array
@@ -1611,7 +1611,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
-#=> TODO
+
   ## Performance metrics endpoints ##
 
   # /rest/performance/all:
@@ -1649,7 +1649,20 @@ paths:
       tags:
         - "Performance Metrics endpoints"
       operationId: searchPerformanceMetrics
-      description: Retrieve the Performance Metric(s) using query
+      description: |
+        Search Performance Metric(s) by OmicsPred Score ID, PubMed ID and/or Platform.
+
+        Each result includes:
+          * Associated OmicsPred Score ID(s)
+          * Publication information
+          * Sample information
+          * Platform information
+          * EFO/Trait information 
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/performance/search?opgs_id=OPGS002402
+        ```
       parameters:
         - name: opgs_id
           required: false
@@ -1723,7 +1736,32 @@ paths:
       tags:
         - "Publication endpoints"
       operationId: getAllPublications
-      description: Retrieve all the Publications
+      description: |
+        Retrieve all the Publications, including for each of them:
+          * Pubmed ID and doi
+          * Publication title, journal, date and authors
+          * Associated Platform(s)
+          * Biological tissue
+          * Sample training information
+          * Sample validation information
+          * URLs to the data files
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/publication/all
+        ```
+        ---
+        ###### **Filtering**
+
+        You can choose to filter the results of this endpoint to a specified list of studies by providing a list of PubMed IDs (pmid) in one of two ways:
+        1. A comma-seperated list of PubMed IDs in the request URL (this will not work for larger queries), e.g.:
+        ```
+        https://www.omicspred.org/rest/publication/all?filter_ids=36991119,35202437
+        ```
+        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["36991119","35202437"] }`. Example with curl:
+        ```
+        curl -X GET 'https://www.omicspred.org/rest/publication/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["36991119", "35202437"] }'
+        ```
       parameters:
         - in: query
           name: filter_ids
@@ -1769,7 +1807,20 @@ paths:
       tags:
         - "Publication endpoints"
       operationId: getPublication
-      description: Retrieve one Publication
+      description: |
+        Retrieve a Publication, including:
+          * Pubmed ID and doi
+          * Publication title, journal, date and authors
+          * Associated Platform(s)
+          * Biological tissue
+          * Sample training information
+          * Sample validation information
+          * URLs to the data files
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/publication/36991119
+        ```
       parameters:
       - name: pmid
         in: path
@@ -1800,7 +1851,22 @@ paths:
       tags:
           - "Publication endpoints"
       operationId: searchPublications
-      description: Retrieve the Publication(s) using query
+      description: |
+        Search Publication(s) by OmicsPred Score ID, PubMed ID and/or author.
+
+        Each result includes:
+          * Pubmed ID and doi
+          * Publication title, journal, date and authors
+          * Associated Platform(s)
+          * Biological tissue
+          * Sample training information
+          * Sample validation information
+          * URLs to the data files
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/publication/search?pmid=36991119
+        ```
       parameters:
         - in: query
           name: opgs_id
@@ -1873,7 +1939,34 @@ paths:
       tags:
         - "Score endpoints"
       operationId: getAllScores
-      description: Retrieve the all Polygenic Scores
+      description: |
+        Retrieve all the OmicsPred Genetic Scores, including for each of them:
+          * OmicsPred Genetic Score (OPGS) ID and name
+          * Method used
+          * Publication information
+          * Platform information
+          * Reported molecular trait(s)
+          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+          * Variants number
+          * Variants genome build
+          * Score license
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/score/all
+        ```
+        ---
+        ###### **Filtering**
+
+        You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
+        1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
+        ```
+        https://www.omicspred.org/rest/score/all?filter_ids=OPGS002402,OPGS003423
+        ```
+        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
+        ```
+        curl -X GET 'https://www.omicspred.org/rest/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
+        ```
       parameters:
         - in: query
           name: filter_ids
@@ -1897,12 +1990,12 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List all the OmicsPred Polygenic Scores"
+                    description: "List all the OmicsPred Genetic Scores"
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
           description: |
-            List all the OmicsPred Polygenic Scores
+            List all the OmicsPred Genetic Scores
         
             ---
 
@@ -1919,7 +2012,22 @@ paths:
       tags:
         - "Score endpoints"
       operationId: getScore
-      description: Retrieve one Polygenic Score (PGS)
+      description: |
+        Retrieve an OmicsPred Genetic Score, including:
+          * Score ID and name
+          * Method used
+          * Publication information
+          * Platform information
+          * Reported molecular trait(s)
+          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+          * Variants number
+          * Variants genome build
+          * Score license
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/score/OPGS002402
+        ```
       parameters:
       - name: opgs_id
         in: path
@@ -1951,7 +2059,24 @@ paths:
       tags:
         - "Score endpoints"
       operationId: searchScores
-      description: Search the Polygenic Score(s) using query
+      description: |
+        Search OmicsPred Genetic Score(s) by OmicsPred Score ID, PubMed ID and/or platform.
+
+        Each result includes:
+          * Score ID and name
+          * Method used
+          * Publication information
+          * Platform information
+          * Reported molecular trait(s)
+          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+          * Variants number
+          * Variants genome build
+          * Score license
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/score/search?pmid=36991119
+        ```
       parameters:
         - name: opgs_ids
           required: false
@@ -2000,12 +2125,12 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Polygenic Scores"
+                    description: "List of Genetic Scores"
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
           description: |
-            List all the Polygenic Scores associated with the request
+            List all the Genetic Scores associated with the request
         
             ---
 
@@ -2023,12 +2148,23 @@ paths:
         - "Score endpoints"
       operationId: searchScoresByMolecularTrait
       description: |
-        Search the Polygenic Score(s) using a molecular trait name/symbol or ID.
+        Search the Genetic Score(s) using a molecular trait name/symbol or ID.
 
         The molecular trait types are:
           * gene
           * protein
           * metabolite
+
+        Each result includes:
+          * Score ID and name
+          * Method used
+          * Publication information
+          * Platform information
+          * Reported molecular trait(s)
+          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+          * Variants number
+          * Variants genome build
+          * Score license
         
         Example of request:
         ```
@@ -2043,6 +2179,7 @@ paths:
           schema:
             type: string
             enum: [gene, protein, metabolite]
+            readOnly: true
         - name: molecular_trait
           in: path
           required: true
@@ -2066,12 +2203,12 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List of Polygenic Scores associated with the molecular trait"
+                    description: "List of Genetic Scores associated with the molecular trait"
                     type: array
                     items:
                       $ref: '#/components/schemas/Score'
           description: |
-            List all the Polygenic Scores associated with the molecular trait
+            List all the Genetic Scores associated with the molecular trait
         
             ---
 
@@ -2088,7 +2225,7 @@ paths:
   #     tags:
   #       - "Score endpoints"
   #     operationId: searchScoresByGene
-  #     description: Search the Polygenic Score(s) using gene name/symbol or ID
+  #     description: Search the Genetic Score(s) using gene name/symbol or ID
   #     parameters:
   #       - name: gene
   #         in: path
@@ -2111,12 +2248,12 @@ paths:
   #                 - $ref: '#/components/schemas/Pagination'
   #               properties:
   #                 results:
-  #                   description: "List of Polygenic Scores associated with the gene"
+  #                   description: "List of Genetic Scores associated with the gene"
   #                   type: array
   #                   items:
   #                     $ref: '#/components/schemas/Score'
   #         description: |
-  #           List all the Polygenic Scores associated with the gene
+  #           List all the Genetic Scores associated with the gene
         
   #           ---
 
@@ -2133,7 +2270,7 @@ paths:
   #     tags:
   #       - "Score endpoints"
   #     operationId: searchScoresByProtein
-  #     description: Search the Polygenic Score(s) using protein name/ID
+  #     description: Search the Genetic Score(s) using protein name/ID
   #     parameters:
   #     - name: protein
   #       in: path
@@ -2156,12 +2293,12 @@ paths:
   #                 - $ref: '#/components/schemas/Pagination'
   #               properties:
   #                 results:
-  #                   description: "List of Polygenic Scores associated with the protein"
+  #                   description: "List of Genetic Scores associated with the protein"
   #                   type: array
   #                   items:
   #                     $ref: '#/components/schemas/Score'
   #         description: |
-  #           List all the Polygenic Scores associated with the protein
+  #           List all the Genetic Scores associated with the protein
         
   #           ---
 
@@ -2178,7 +2315,7 @@ paths:
   #     tags:
   #       - "Score endpoints"
   #     operationId: searchScoresByMetabolite
-  #     description: Search the Polygenic Score(s) using metabolite name/ID
+  #     description: Search the Genetic Score(s) using metabolite name/ID
   #     parameters:
   #     - name: metabolite
   #       in: path
@@ -2201,12 +2338,12 @@ paths:
   #                 - $ref: '#/components/schemas/Pagination'
   #               properties:
   #                 results:
-  #                   description: "List of Polygenic Scores associated with the metabolite"
+  #                   description: "List of Genetic Scores associated with the metabolite"
   #                   type: array
   #                   items:
   #                     $ref: '#/components/schemas/Score'
   #         description: |
-  #           List all the Polygenic Scores associated with the metabolite
+  #           List all the Genetic Scores associated with the metabolite
         
   #           ---
 
@@ -2223,7 +2360,24 @@ paths:
       tags:
         - "Score endpoints"
       operationId: getScorePerformance
-      description: Retrieve a Polygenic Score (PGS) with its performance metrics
+      description: |
+        Retrieve an OmicsPred Genetic Score (OPGS) with its performance metrics, including:
+          * Score ID and name
+          * Method used
+          * Publication information
+          * Platform information
+          * Reported molecular trait(s)
+          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+          * Variants number
+          * Variants genome build
+          * Score license
+          * Score performance metric(s) 
+          * Cohort(s) associated with the performance metric(s)
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/score/performance/OPGS002402
+        ```
       parameters:
       - name: opgs_id
         in: path
@@ -2256,7 +2410,18 @@ paths:
       tags:
         - "Platform endpoints"
       operationId: getAllPlatforms
-      description: Retrieve all the Platforms
+      description: |
+        Retrieve all the Platforms, including for each of them:
+          * Name
+          * Versions
+          * Technic
+          * Type (Transcriptomics, Proteomics, Metabolomics)
+          * Number of associated Genetic Scores
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/platform/all
+        ```
       responses:
         '200':
           content:
@@ -2289,12 +2454,24 @@ paths:
       tags:
         - "Platform endpoints"
       operationId: getPlatform
-      description: Retrieve one Platform
+      description:  |
+        Retrieve a Platform, including:
+          * Name
+          * Versions
+          * Technic
+          * Type (Transcriptomics, Proteomics, Metabolomics)
+          * Number of associated Genetic Scores
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/platform/Olink
+        ```
       parameters:
       - name: platform
         in: path
         required: true
         description: 'Platform name'
+        example: 'Olink'
         schema:
           type: string
       responses:
@@ -2362,7 +2539,7 @@ paths:
         - "Platform endpoints"
       operationId: getPlatformAdditionals
       description: |
-        Retrieve a Platform Additional data, including for each of them:
+        Retrieve a Platform Additional data, including:
           * Platform information
           * Publication information
           * Tissue information
@@ -2428,7 +2605,7 @@ paths:
   # /rest/plot/score/search:
   #   get:
   #     operationId: listScorePlots
-  #     description: Search the Polygenic Score(s) using query
+  #     description: Search the Genetic Score(s) using query
   #     parameters:
   #     - name: limit
   #       required: false
@@ -2476,7 +2653,16 @@ paths:
       tags:
         - "Trait endpoints (Applications)"
       operationId: getPhecode
-      description: Retrieve the Phecode information
+      description: |
+        Retrieve the Phecode information, including:
+          * Phecode ID and name
+          * Trait category
+          * Number of associated Genetic Scores
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/phecode/250.2
+        ```
       parameters:
         - name: phecode_id
           in: path
@@ -2506,7 +2692,31 @@ paths:
       tags:
         - "Trait endpoints (Applications)"
       operationId: getAllPhecodeScores
-      description: Retrieve all the Phecode Score associations
+      description: |
+        Retrieve all the Phecode Score associations, including for each of them:
+          * OmicsPred Genetic Score (OPGS) ID
+          * Associated phecode information
+          * Associated molecular trait(s)
+          * Platform information
+          * Cohort information
+          * Association values
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/applications_score/all
+        ``` 
+        ---
+        ###### **Filtering**
+
+        You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
+        1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
+        ```
+        https://www.omicspred.org/rest/applications_score/all?filter_ids=OPGS002402,OPGS003423
+        ```
+        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
+        ```
+        curl -X GET 'https://www.omicspred.org/rest/applications_score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
+        ```
       responses:
         '200':
           content:
@@ -2538,7 +2748,19 @@ paths:
       tags:
         - "Trait endpoints (Applications)"
       operationId: getPhecodeScore
-      description: Retrieve one Phecode Score Application
+      description: |
+        Retrieve a Phecode Score association, including:
+          * OmicsPred Genetic Score (OPGS) ID
+          * Associated phecode information
+          * Associated molecular trait(s)
+          * Platform information
+          * Cohort information
+          * Association values
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/applications_score/OPGS002402
+        ```
       parameters:
       - name: opgs_id
         in: path
@@ -2570,7 +2792,21 @@ paths:
       tags:
         - "Trait endpoints (Applications)"
       operationId: searchPhecodeScores
-      description: Search the Phecode Score Application using query
+      description: |
+        Search Phecode Score associations by OmicsPred Score ID or Phecode ID.
+
+        Each result includes:
+          * OmicsPred Genetic Score (OPGS) ID
+          * Associated phecode information
+          * Associated molecular trait(s)
+          * Platform information
+          * Cohort information
+          * Association values
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/applications_score/search?phecode_id=250.2
+        ```
       parameters:
         - name: opgs_id
           required: false
@@ -2630,7 +2866,28 @@ paths:
       tags:
         - "Sample endpoints"
       operationId: getAllPhecodeSamples
-      description: Retrieve all the Phecode Sample Applications
+      description: |
+        Retrieve all the Phecode Sample associations, including for each of them:
+          * Phecode information
+          * Sample information (number, age, percentage of female, ...)
+          * Number of associated scores per platform 
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/applications_sample/all
+        ``` 
+        ---
+        ###### **Filtering**
+
+        You can choose to filter the results of this endpoint to a specified list of Phecode IDs by providing a list of IDs in one of two ways:
+        1. A comma-seperated list of Phecode IDs in the request URL (this will not work for larger queries), e.g.:
+        ```
+        https://www.omicspred.org/rest/applications_sample/all?filter_ids=250.2,557.1
+        ```
+        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["250.2","557.1"] }`. Example with curl:
+        ```
+        curl -X GET 'https://www.omicspred.org/rest/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
+        ```
       responses:
         '200':
           content:
