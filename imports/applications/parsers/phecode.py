@@ -12,7 +12,6 @@ class PhecodeFullParser():
         }
         self.score_application = {
             'score_id': data_info['OMICSPRED ID'],
-            'omics_name': data_info['Description'],
             'r2': data_info['Internal R2'],
             'fdr': data_info['FDR adjusted P-value']
         }

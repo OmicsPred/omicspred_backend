@@ -1113,19 +1113,17 @@ class RestListPhecodeScore(generics.ListAPIView):
         return queryset
 
 
-class RestPhecodeScore(generics.RetrieveAPIView):
+class RestPhecodeScore(generics.ListAPIView):
     """
-    Retrieve one Phecode Score Application
+    Retrieve all the Phecode Score Application for a given Score ID
     """
 
-    def get(self, request, opgs_id):
-        opgs_id = opgs_id.upper()
-        try:
-            queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').get(score_id=opgs_id)
-        except ScoreApplications.DoesNotExist:
-            queryset = None
-        serializer = ScoreApplicationsSerializer(queryset,many=False)
-        return Response(serializer.data)
+    serializer_class = ScoreApplicationsSerializer
+
+    def get_queryset(self):
+        opgs_id = self.kwargs['opgs_id'].upper()
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').filter(score_id=opgs_id)
+        return queryset
 
 
 class RestPhecodeScoreSearch(generics.ListAPIView):
@@ -1184,3 +1182,26 @@ class RestListPhecodeSample(generics.ListAPIView):
         queryset = sort_data_list(self.request,'sample_application',queryset,'phecode_as_float')
 
         return queryset
+
+
+class RestInfo(generics.RetrieveAPIView):
+    """
+    Return diverse information related to the REST API and the PGS Catalog
+    """
+
+    def get(self, request):
+
+        data = {
+            'rest_api': {
+                "version": "1.0"
+            },
+            'data_count': {
+                'scores': Score.objects.count(),
+                'phewas': ScoreApplications.objects.using(applications_db).count(),
+                'pathways': Pathway.objects.count(),
+                'platforms': PlatformMaster.objects.count(),
+                'publications': Publication.objects.count()
+            }
+        }
+
+        return Response(data)

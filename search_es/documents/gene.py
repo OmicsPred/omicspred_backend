@@ -1,12 +1,13 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
-from search_es.analyzers import id_analyzer, name_delimiter_analyzer
+from search_es.analyzers import id_analyzer, name_delimiter_analyzer, html_strip_analyzer
 from omicspred.models import Gene
 
 
 # PGS index analyzer
 id_analyzer = id_analyzer()
+html_strip = html_strip_analyzer()
 name_delimiter = name_delimiter_analyzer()
 
 
@@ -25,6 +26,12 @@ class GeneDocument(Document):
     #         'raw': fields.KeywordField()
     #     }
     # )
+    description = fields.TextField(
+        analyzer=html_strip,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
     scores_count = fields.IntegerField()
     platform_name = fields.TextField(
         analyzer=name_delimiter,

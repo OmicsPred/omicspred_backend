@@ -8,13 +8,17 @@ from elasticsearch_dsl import Search
 
 # No need to redeclare "custom_exception_handler" as it is already used in rest_api.views
 
+result_size = 25
+
 def query_fields():
     return ['id^3','name^2','platform_name','omics_type','category','full_name',
-            'genes.id','genes.name','proteins.id','proteins.names','metabolites.id','metabolites.name']
+            'genes.id','genes.name','genes.description',
+            'proteins.id','proteins.names','proteins.description',
+            'metabolites.id','metabolites.name','metabolites.description']
 
 
 def get_search(query):
-    s = Search(index="*").extra(size=20).query("multi_match", query=query, fields=query_fields())
+    s = Search(index="*").extra(size=result_size).query("multi_match", query=query, fields=query_fields())
     response = s.execute()
 
     data = []
