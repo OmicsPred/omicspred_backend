@@ -31,6 +31,9 @@ tags:
     description: "Molecular trait metadata (metabolite, transcript, protein, gene)"
   - name: "Pathway endpoints"
     description: "Pathway metadata (Reactome)"
+  - name: "Other endpoints"
+    description: "Extra endpoints: **/rest/info** (REST API version, data counts, ...)"
+
 
 components:
   schemas:
@@ -119,10 +122,12 @@ components:
               name:
                 type: string
                 example: 'IL27B'
-        description:
-          type: string
-          description: "Gene description/definition"
-          example: 'serpin family A member 12'
+        descriptions:
+          type: array
+          items:
+            type: string
+          description: "Gene descriptions/definitions"
+          example: ['serpin family A member 12.']
         biotype:
           type: string
           description: "Biotype of the gene"
@@ -204,10 +209,12 @@ components:
         - $ref: '#/components/schemas/Metabolite'
         - type: object
           properties:
-            description:
-              type: string
-              description: "Metabolite description/definition"
-              example: 'A branched-chain amino acid that consists of glycine ...'
+            descriptions:
+              type: array
+              items:
+                type: string
+              description: "Metabolite descriptions/definitions"
+              example: ['A branched-chain amino acid that consists of glycine ...']
             pathways:
               type: array
               description: "List of pathways associated with the gene."
@@ -639,6 +646,12 @@ components:
           type: string
           description: "Source of the Protein ID"
           example: "UniProt"
+        descriptions:
+          type: array
+          items:
+            type: string
+          description: "Protein descriptions/definitions"
+          example: ['Adipokine that modulates insulin action by specifically inhibiting its target protease KLK7 in white adipose tissues.']
 
     Protein_extended:
       description: "Based on the **Protein** schema, with the addition of the '**gene**' and '**pathways**'."
@@ -2732,7 +2745,7 @@ paths:
                       $ref: '#/components/schemas/ScoreApplications'
           description: |
             All the Phecode Score associations
-        
+
             ---
 
             __Notes:__ This endpoint uses pagination.
@@ -2749,7 +2762,7 @@ paths:
         - "Trait endpoints (Applications)"
       operationId: getPhecodeScore
       description: |
-        Retrieve a Phecode Score association, including:
+        Retrieve all the Phecode Score associations for a given Score ID, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phecode information
           * Associated molecular trait(s)
@@ -2778,8 +2791,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScoreApplications'
-          description: 'Phecode Score Applications'
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScoreApplications'
+          description: |
+            All the Phecode Score associations for a given Score ID
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -2900,6 +2925,71 @@ paths:
                     items:
                       $ref: '#/components/schemas/SampleApplications'
           description: 'All the Phecode Sample Applications'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Other ##
+  /rest/info:
+    get:
+      tags:
+        - "Other endpoints"
+      operationId: getInfo
+      description: |
+        Return diverse information related to the REST API and OmicsPred, including:
+        * REST API version
+        * Data count (scores, PheWAS associations, ...)
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/info/
+        ```
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: "OmicsPred information such as REST API version, data counts, ..."
+                type: object
+                properties:
+                  rest_api:
+                    type: object
+                    description: "Information about the current version of the REST API"
+                    properties:
+                      version:
+                        type: string
+                        description: "REST API version"
+                        example: "1.0"
+                  data_count:
+                    type: object
+                    description: "Counts of the different type of data in OmicsPred"
+                    properties:
+                      scores:
+                        type: number
+                        description: "Number of Genetic Scores in OmicsPred"
+                        example: 20805
+                      phewas:
+                        type: number
+                        description: "Number of PheWAS associations in OmicsPred"
+                        example: 18404
+                      pathways:
+                        type: number
+                        description: "Number of Pathways (Reactome) in OmicsPred"
+                        example: 202
+                      platforms:
+                        type: number
+                        description: "Number of different Platforms in OmicsPred"
+                        example: 5
+                      publications:
+                        type: number
+                        description: "Number of Publications/Studies in OmicsPred"
+                        example: 10
+            description: 'Diverse information about the project, such as REST API version, data counts, ...'
         '4XX':
           content:
               application/json:

@@ -50,20 +50,23 @@ class ScoreDocument(Document):
     trait_reported_id = fields.TextField(analyzer=id_analyzer)
     genes = fields.ObjectField(
         properties={
-            'id': fields.TextField(),
-            'name': fields.TextField()
+            'external_id': fields.TextField(),
+            'name': fields.TextField(),
+            'description': fields.TextField()
         }
     )
     proteins = fields.ObjectField(
         properties={
-            'id': fields.TextField(),
-            'name': fields.TextField()
+            'external_id': fields.TextField(),
+            'name': fields.TextField(),
+            'description': fields.TextField()
         }
     )
     metabolites = fields.ObjectField(
         properties={
-            'id': fields.TextField(),
-            'name': fields.TextField()
+            'external_id': fields.TextField(),
+            'name': fields.TextField(),
+            'description': fields.TextField()
         }
     )
 

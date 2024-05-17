@@ -328,6 +328,13 @@ class MolecularTrait(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def description_list(self):
+        if self.description:
+            return self.description.split(' | ')
+        else:
+            return []
+
 
 class PathwayOld(MolecularTrait):
     """ Class to describe an Old Pathway entity """
@@ -444,6 +451,50 @@ class Score(models.Model):
                 data[cohort] = perf.cohort_metrics[cohort]
         return data
 
+    # TEST #
+    @property
+    def performance_range(self):
+        data = {}
+        performance_range_data = {}
+        print(f'# {self.id}:')
+        for perf in self.score_performance.all():
+            eval_type = perf.get_eval_type_display()
+
+            if eval_type not in data.keys():
+                data[eval_type] = {}
+                performance_range_data[eval_type] = {}
+
+            for cohort_label in perf.sample_metrics.keys():
+                cohort_entry = perf.sample_metrics[cohort_label]
+                metric_name = cohort_entry['metric_name']
+                for ancestry in cohort_entry['ancestries']:
+                    if metric_name not in data[eval_type].keys():
+                        data[eval_type][metric_name] = {}
+                        performance_range_data[eval_type][metric_name] = []
+
+                    if ancestry in data[eval_type][metric_name].keys():
+                        data_entry = data[eval_type][metric_name][ancestry]
+                        if cohort_entry['estimate'] < data_entry['range']['lower']:
+                            data_entry['range']['lower'] = cohort_entry['estimate']
+                        if cohort_entry['estimate'] > data_entry['range']['upper']:
+                            data_entry['range']['upper'] = cohort_entry['estimate']
+                    else:
+                        data[eval_type][metric_name][ancestry] = {
+                            'ancestry': ancestry,
+                            'range': {
+                                'lower': cohort_entry['estimate'],
+                                'upper': cohort_entry['estimate']
+                            },
+                            'cohorts': set()
+                        }
+                    data[eval_type][metric_name][ancestry]['cohorts'].add(cohort_entry['cohort'])
+       # Build performance range data structure
+        for e_type in data.keys():
+            for m_name in data[e_type].keys():
+                new_anc_data = [ data[eval_type][metric_name][x] for x in data[eval_type][metric_name].keys()]
+                performance_range_data[e_type][m_name].append(new_anc_data)
+        return performance_range_data
+
 
 class SourceAnnotations(models.Model):
     """ Class to store original annotations """
@@ -516,6 +567,24 @@ class Performance(models.Model):
                     'estimate': m.display_value(m.estimate)
                 }
         return cohort_metrics
+
+    # TEST #
+    @property
+    def sample_metrics(self):
+        sample_data = {}
+        #cohort_label = '_'.join([x.name_short for x in self.sample.cohorts.all()])
+        cohort_label = self.cohort_label
+        ancestries = self.sample.ancestry_broad
+        metrics = self.performance_metric.all()
+        if metrics:
+            for m in metrics:
+                sample_data[f'{cohort_label}_{m.name_short}'] = {
+                    'cohort': cohort_label,
+                    'metric_name': m.name_short,
+                    'ancestries': ancestries.split(','),
+                    'estimate': m.display_value(m.estimate)
+                }
+        return sample_data
 
 
 class Metric(models.Model):

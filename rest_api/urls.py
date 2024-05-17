@@ -15,6 +15,7 @@ rest_urls = {
     'applications_sample':  'rest/applications_sample/',
     'cohort':               'rest/cohort/',
     'gene':                 'rest/gene/',
+    'info':                 'rest/info',
     'metabolite':           'rest/metabolite/',
     'metabolomics':         'rest/metabolomics/',
     'pathway':              'rest/pathway/',
@@ -75,7 +76,7 @@ urlpatterns = [
     # re_path(r'^'+rest_urls['table']+'protein/search'+slash, cache_page(cache_time)(RestProteinTableSearch.as_view()), name="searchProteinTables"),
     # re_path(r'^'+rest_urls['table']+'transcript/search'+slash, cache_page(cache_time)(RestTranscriptTableSearch.as_view()), name="searchEnsemblTables"),
 
-    # # Plot
+    # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
@@ -85,4 +86,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhecodeScoreSearch.as_view(), name="searchPhecodeScores"),
     re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhecodeScore.as_view(), name="getPhecodeScore"),
     re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhecodeSample.as_view()), name="getAllPhecodeSamples"),
+
+    re_path(r'^'+rest_urls['info']+slash, RestInfo.as_view(), name="getInfo"),
+
 ]
