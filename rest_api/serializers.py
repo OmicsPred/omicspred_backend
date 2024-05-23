@@ -408,6 +408,13 @@ class ScorePerformanceSerializer(ScoreSerializer):
         read_only_fields = ScoreSerializer.Meta.read_only_fields + meta_fields
 
 
+class ScorePerformanceDataSerializer(ScoreSerializer):
+    class Meta(ScoreSerializer.Meta):
+        meta_fields = ('performance_data',)
+        fields = ScoreSerializer.Meta.fields + meta_fields
+        read_only_fields = ScoreSerializer.Meta.read_only_fields + meta_fields
+
+
 
 ######## Omics tables ########
 
@@ -477,7 +484,7 @@ class PhecodeSerializerExtended(PhecodeSerializerScoresCount):
     def get_child_phecode(self, obj):
         ''' Sort phecode child terms by their IDs '''
         children = obj.child_phecode.prefetch_related('phecode_score').order_by('id')
-        return PhecodeSerializer(children, many=True).data
+        return PhecodeSerializerScoresCount(children, many=True).data
 
 
 class PlatformApplicationsSerializer(PlatformSerializer):
