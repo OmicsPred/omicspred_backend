@@ -22,8 +22,9 @@ only_dict = {
 performance_metric = [Prefetch('performance_metric', queryset=Metric.objects.only('id','performance_id','name_short','estimate').all())]
 related_dict = {
     'metabolites': [Prefetch('metabolites', queryset=Metabolite.objects.only(*only_dict['metabolite']).select_related('pathway_group','pathway_subgroup').all().order_by('id'))],
-    'proteins': [Prefetch('proteins', queryset=Protein.objects.only('id','name','external_id','external_id_source').all().order_by('id'))],
+    'proteins': [Prefetch('proteins', queryset=Protein.objects.only('id','name','external_id','external_id_source','description').all().order_by('id'))],
     'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description').all().order_by('id'))],
+    'molecular_traits': ['genes','transcripts','proteins','metabolites'],
     'pathway_prefetch': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label').all().prefetch_related(*performance_metric).order_by('id'))],
@@ -195,12 +196,12 @@ class RestProtein(generics.RetrieveAPIView):
     """
 
     def get(self, request, protein_id):
-        param_inc_gene = self.request.query_params.get('include_gene')
+        param_extend_schema = self.request.query_params.get('extend_schema')
         try:
             queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
         except Protein.DoesNotExist:
             queryset = None
-        if (param_inc_gene and str(param_inc_gene)=='1'):
+        if (param_extend_schema and str(param_extend_schema)=='1'):
             serializer = ProteinSerializerExtended(queryset,many=False)
         else:
             serializer = ProteinSerializer(queryset,many=False)
@@ -406,6 +407,10 @@ class RestPlatformAdditional(generics.ListAPIView):
             platform = self.kwargs['platform']
             # Database filtering
             queryset = PlatformAdditional.objects.select_related(*related_dict['platform_add_select']).prefetch_related(*related_dict['platform_add_prefetch']).filter(platform__name__iexact=platform)
+            # Filter by publication
+            pmid = self.request.query_params.get('pmid')
+            if pmid and pmid.isnumeric():
+                queryset = queryset.filter(publication__pmid=pmid)
         except PlatformAdditional.DoesNotExist:
             queryset = []
         return queryset
@@ -541,7 +546,7 @@ class RestScore(generics.RetrieveAPIView):
                 queryset = Score.objects.select_related('publication','platform').get(id=opgs_id)
         except Score.DoesNotExist:
             queryset = None
-        if include_pathway and include_pathway is not None:
+        if include_pathway and str(include_pathway)=='1':
             serializer = ScorePathwaySerializer(queryset,many=False)
         else:
             serializer = ScoreSerializer(queryset,many=False)
@@ -581,7 +586,19 @@ class RestScoreSearchByMolecularTrait(generics.ListAPIView):
             query_id_filter = {f'{molecular_trait_type}s__external_id__iexact': molecular_trait}
             query_list = [Q(**query_name_filter), Q(**query_id_filter)]
         if query_list:
-            queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
+            include_performance_metrics = self.request.query_params.get('include_performance_metrics')
+            include_performance_data = self.request.query_params.get('include_performance_data')
+            # Add the performance metrics data structure
+            if include_performance_metrics and include_performance_metrics is not None:
+                self.serializer_class = ScorePerformanceSerializer
+                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],'score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').distinct().order_by('num')
+            # Add the performance metrics condensed data (for web display on tables) - PRIVATE parameter
+            elif include_performance_data and include_performance_data is not None:
+                self.serializer_class = ScorePerformanceDataSerializer
+                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],*related_dict['performance_cohorts']).distinct().order_by('num')
+            # Metadata without performance metrics information - PUBLIC parameter
+            else:
+                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits']).order_by('num')
         else:
             queryset = []
         return queryset
@@ -984,7 +1001,7 @@ class RestPlotSearch(generics.RetrieveAPIView):
 
         # Search by Publication
         pmid = self.request.query_params.get('pmid')
-        if pmid and pmid is not None:
+        if pmid and pmid.isnumeric():
             queryset = queryset.filter(publication__pmid__iexact=pmid)
             params += 1
 
@@ -1054,7 +1071,7 @@ class RestPlotScoreSearch(generics.ListAPIView):
 
         # Search by Publication
         pmid = self.request.query_params.get('pmid')
-        if pmid and pmid is not None:
+        if pmid and pmid.isnumeric():
             queryset = queryset.filter(publication__pmid__iexact=pmid)
             params += 1
 

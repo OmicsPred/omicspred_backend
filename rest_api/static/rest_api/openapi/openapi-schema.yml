@@ -923,6 +923,22 @@ components:
               items:
                 $ref: '#/components/schemas/Performance'
 
+    # Score with Pathways #
+    Score_Pathway:
+      description: "Based on the **Score** schema, with the addition of the '*genes__pathways**' and '*metabolites__pathways**'."
+      allOf:
+        - $ref: '#/components/schemas/Score'
+        - type: object
+          properties:
+            genes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gene_extended'
+            metabolites:
+              type: array
+              items:
+                $ref: '#/components/schemas/Metabolite_extended'
+
     # Score Applications #
     ScoreApplications:
       type: object
@@ -1344,12 +1360,27 @@ paths:
             value: 'Vitronectin'
         schema:
           type: string
+      - in: query
+        name: extend_schema
+        required: false
+        schema:
+          type: integer
+        description: Include the associated gene and pathway(s)
+        examples:
+          exclude_extended_schema_sel:
+            summary: Use the default schema
+            value: 0
+          include_extended_schema_sel:
+            summary: Use the extended schema (with associated gene and pathway(s))
+            value: 1
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Protein'
+                oneOf:
+                - $ref: '#/components/schemas/Protein'
+                - $ref: '#/components/schemas/Protein_extended'
           description: 'Protein information'
         '4XX':
           content:
@@ -2033,13 +2064,15 @@ paths:
           * Platform information
           * Reported molecular trait(s)
           * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+            * with pathways **[** only when the parameter **include_pathway** is set to **1** **]**
           * Variants number
           * Variants genome build
           * Score license
 
-        Example of request:
+        Examples of request:
         ```
-        https://www.omicspred.org/rest/score/OPGS002402
+        - https://www.omicspred.org/rest/score/OPGS002402
+        - https://www.omicspred.org/rest/score/OPGS002402?include_pathway=1
         ```
       parameters:
       - name: opgs_id
@@ -2053,12 +2086,27 @@ paths:
             value: 'OPGS003423'
         schema:
           type: string
+      - in: query
+        name: include_pathway
+        required: false
+        schema:
+          type: integer
+        description: Include the list of pathways in the genes and metabolites
+        examples:
+          exclude_pathway_sel:
+            summary: Exclude the list of pathways in the genes and metabolites
+            value: 0
+          include_pathway_sel:
+            summary: Include the list of pathways in the genes and metabolites
+            value: 1
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Score'
+                oneOf:
+                - $ref: '#/components/schemas/Score'
+                - $ref: '#/components/schemas/Score_Pathway'
           description: 'OmicsPred Score'
         '4XX':
           content:
@@ -2178,12 +2226,13 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
-        
-        Example of request:
+          * Performance metrics **[** only when the parameter **include_performance_metrics** is set to **1** **]**
+
+        Examples of request:
         ```
-        https://www.omicspred.org/rest/score/search/gene/COL1A1
+        - https://www.omicspred.org/rest/score/search/gene/COL1A1
+        - https://www.omicspred.org/rest/score/search/gene/COL1A1?include_performance_metrics=1
         ```
-      
       parameters:
         - name: type
           in: path
@@ -2206,6 +2255,19 @@ paths:
               value: "CHEBI_25017"
           schema:
             type: string
+        - in: query
+          name: include_performance_metrics
+          required: false
+          schema:
+            type: integer
+          description: Include the list of Performance Metrics
+          examples:
+            exclude_asso_child_sel:
+              summary: Exclude the list of Performance Metrics
+              value: 0
+            include_asso_child_sel:
+              summary: Include the list of Performance Metrics
+              value: 1
       responses:
         '200':
           content:
@@ -2219,7 +2281,9 @@ paths:
                     description: "List of Genetic Scores associated with the molecular trait"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Score'
+                      oneOf:
+                      - $ref: '#/components/schemas/Score'
+                      - $ref: '#/components/schemas/Score_Performance'
           description: |
             List all the Genetic Scores associated with the molecular trait
         
@@ -2560,9 +2624,10 @@ paths:
           * Validation Samples and Cohorts
           * URLs to the data files
 
-        Example of request:
+        Examples of request:
         ```
-        https://www.omicspred.org/rest/platform/additional/Olink
+        - https://www.omicspred.org/rest/platform/additional/Olink
+        - https://www.omicspred.org/rest/platform/additional/Somalogic?pmid=36991119
         ```
       parameters:
       - name: platform
@@ -2572,6 +2637,18 @@ paths:
         example: "Olink"
         schema:
           type: string
+      - name: pmid
+        required: false
+        in: query
+        description: PubMed ID (without the prefix "PMID:") - *optional*
+        schema:
+          type: integer
+        examples:
+            pmid_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
       responses:
         '200':
           content:
@@ -2671,25 +2748,46 @@ paths:
           * Phecode ID and name
           * Trait category
           * Number of associated Genetic Scores
+          * PheCode child entries **[** only when the parameter **include_children** is set to **1** **]**
 
-        Example of request:
+        Examples of request:
         ```
-        https://www.omicspred.org/rest/phecode/250.2
+        - https://www.omicspred.org/rest/phecode/250.2
+        - https://www.omicspred.org/rest/phecode/250?include_children=1
         ```
       parameters:
         - name: phecode_id
           in: path
           required: true
           description: 'Phecode ID'
-          example: "250.2"
+          examples:
+            "250 (Diabetes mellitus)":
+              value: '250'
+            "250.2 (Type 2 diabetes)":
+              value: '250.2'
           schema:
             type: string
+        - in: query
+          name: include_children
+          required: false
+          schema:
+            type: integer
+          description: Include the list of PheCode child traits
+          examples:
+            exclude_asso_child_sel:
+              summary: Exclude the list of PheCode child traits
+              value: 0
+            include_asso_child_sel:
+              summary: Include the list of PheCode child traits
+              value: 1
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhecodeScoresCount'
+                oneOf:
+                  - $ref: '#/components/schemas/PhecodeScoresCount'
+                  - $ref: '#/components/schemas/Phecode_extended'
           description: 'Phecode information'
         '4XX':
           content:
