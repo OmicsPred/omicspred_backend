@@ -6,25 +6,32 @@ from omicspred.models import Performance,EFO
 
 class PerformanceData(GenericData):
 
+    # ancestries = {
+    #     'Additional Asian Ancestries': 'MA',
+    #     'African American or Afro-Caribbean': 'AFA',
+    #     'African American or Afro-Caribbean, East Asian, European, Hispanic or Latin American': 'ALL',
+    #     'East Asian': 'CHN', #'CN'
+    #     'European': 'EUR',
+    #     'Hispanic or Latin American': 'HIS',
+    #     'South Asian': 'IN',
+    # }
     ancestries = {
-        'Additional Asian Ancestries': 'MA',
-        'African American or Afro-Caribbean': 'AFA',
-        'African American or Afro-Caribbean, East Asian, European, Hispanic or Latin American': 'ALL',
-        'East Asian': 'CHN', #'CN'
+        'Ad Mixed American': 'AMR',
+        'African': 'AFR',
+        'East Asian': 'EAS',
         'European': 'EUR',
-        'Hispanic or Latin American': 'HIS',
-        'South Asian': 'IN',
+        'European,Ad Mixed American,African,East Asian,South Asian': 'ALL',
+        'South Asian': 'SAS'
     }
 
-    def __init__(self,score,publication,sample,platform,efo,type,gwas_info,extra=None):
+    def __init__(self,score,dataset,sample,efo,type,gwas_info,extra=None):
         GenericData.__init__(self)
         self.metrics = []
         # self.metric_models = []
         self.data = {
             'score': score,
-            'publication': publication,
+            'dataset': dataset,
             'sample': sample,
-            'platform': platform,
             'eval_type': type
         }
         if efo:
@@ -64,10 +71,10 @@ class PerformanceData(GenericData):
         sample = self.data['sample']
         cohorts = [x.name_short for x in sample.cohorts.all()]
         cohort_label = '_'.join(sorted(cohorts))
-        if cohort_label in ['MEC','MESA']:
+        if cohort_label in ['MEC','MESA','UKB_Withheld']:
             sample_anc = sample.ancestry_broad
             if sample_anc in self.ancestries.keys():
-                cohort_label = f'{cohort_label}-{self.ancestries[sample_anc]}'
+                cohort_label = f'{cohort_label}_{self.ancestries[sample_anc]}'
         self.data['cohort_label'] = cohort_label
 
 

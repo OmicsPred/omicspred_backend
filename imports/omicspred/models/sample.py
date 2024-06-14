@@ -18,7 +18,6 @@ class SampleData(GenericData):
             self.data['sample_age_sd'] = sample_age_sd
 
 
-
     def sample_model_exist(self):
         '''
         Check if a Sample model already exists.
@@ -29,7 +28,7 @@ class SampleData(GenericData):
         s_cohorts = ''
         for field, val in self.data.items():
             if field == 'cohort':
-                s_cohorts = self.data['cohort']
+                s_cohorts = self.data['cohort'].name_short
             elif field not in ['sample_age', 'followup_time']: # 'sample_age' and 'followup_time' not populated by GWAS Catalog
                 sample_data[field] = val
 

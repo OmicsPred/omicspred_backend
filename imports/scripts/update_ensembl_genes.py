@@ -1,15 +1,12 @@
 import requests
 from omicspred.models import Gene, Transcript
 
-input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.110.gtf'
+input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.112.gtf'
 # input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.110_sample.gtf'
 
 ens2hgnc = {}
 hgnc2ens = {}
 transcripts = {}
-
-count_ensg_id_retrieved = 0
-count_hgnc_id_retrieved = 0
 
 gene_id = 'gene_id'
 gene_name = 'gene_name'
@@ -85,10 +82,9 @@ def collect_data():
                         transcripts[enst] = { 'name': trans, 'gene': ensg}
 
 
-def update_genes():
-    ensg_stable_ids = ens2hgnc.keys()
-    ensg_hgncs = hgnc2ens.keys()
-
+def update_genes(ensg_stable_ids,ensg_hgncs,count_ensg_id_retrieved,count_hgnc_id_retrieved):
+    # ensg_stable_ids = ens2hgnc.keys()
+    # ensg_hgncs = hgnc2ens.keys()
     # Update Genes: ENSG and HGNC
     op_genes = Gene.objects.all()
     for op_gene in op_genes:
@@ -158,8 +154,15 @@ def add_transcripts():
 ###############################################################
 
 def run():
+    count_ensg_id_retrieved = 0
+    count_hgnc_id_retrieved = 0
+
     collect_data()
-    update_genes()
+
+    ensg_stable_ids = ens2hgnc.keys()
+    ensg_hgncs = hgnc2ens.keys()
+
+    update_genes(ensg_stable_ids,ensg_hgncs,count_ensg_id_retrieved,count_hgnc_id_retrieved)
     add_transcripts()
 
     print(f'COUNT GENES FROM FILE: {len(ensg_stable_ids)}')
