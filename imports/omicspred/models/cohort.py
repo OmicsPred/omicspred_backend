@@ -35,7 +35,7 @@ class CohortData(GenericData):
                 else:
                     print(f'A existing cohort has been found in the DB with the ID "{self.name}" ({self.name_long}). However the long name differs.')
             except Cohort.DoesNotExist:
-                print(f'New cohort "{self.name}".')
+                print(f'New cohort "{self.name}" / "{self.name_long}".')
                 self.model = None
             except:
                 print(f'ERROR with cohort {self.name} duplicated!')
@@ -60,6 +60,6 @@ class CohortData(GenericData):
                     self.model.save()
         except IntegrityError as e:
             self.model = None
-            print('Error with the creation of the Cohort')
+            print(f'Error with the creation of the Cohort: {e}')
 
         return self.model

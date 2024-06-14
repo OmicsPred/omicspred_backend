@@ -503,27 +503,16 @@ components:
           example: 10
 
     Phecode_extended:
-      description: "Based on the **PhecodeScoresCount** schema, with the addition of the '**child_phecode**'."
+      description: "Based on the **Phecode** schema, with the addition of the '**child_phecode**'."
       allOf:
-        - $ref: '#/components/schemas/PhecodeScoresCount'
+        - $ref: '#/components/schemas/Phecode'
         - type: object
           properties:
             child_phecode:
               type: array
               description: "List of child phecode(s)."
               items:
-                $ref: '#/components/schemas/PhecodeScoresCount'
-
-    PhecodeScoresCount:
-      description: "Based on the **Phecode** schema, with the addition of the '**scores_count**'."
-      allOf:
-        - $ref: '#/components/schemas/Phecode'
-        - type: object
-          properties:
-            scores_count:
-              type: integer
-              description: "Number of scores associated with the phecode."
-              example: 10
+                $ref: '#/components/schemas/Phecode'
 
 
     # Platform #
@@ -2786,7 +2775,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/PhecodeScoresCount'
+                  - $ref: '#/components/schemas/Phecode'
                   - $ref: '#/components/schemas/Phecode_extended'
           description: 'Phecode information'
         '4XX':

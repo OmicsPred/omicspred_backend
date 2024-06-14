@@ -33,7 +33,7 @@ class MetricData(GenericData):
             value = float(value)
         self.name = name.strip()
         self.data = {
-            'performance_type': self.type_choices[self.name],
+            'type': self.type_choices[self.name],
             'estimate': value
         }
         if pvalue:

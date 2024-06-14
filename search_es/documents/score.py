@@ -71,10 +71,10 @@ class ScoreDocument(Document):
     )
 
     def prepare_platform_name(self, instance):
-        return [instance.platform.name]
+        return [instance.dataset.platform.name]
 
     def prepare_omics_type(self, instance):
-        return [instance.platform.platform_master.type]
+        return [instance.dataset.platform.platform_master.type]
 
 
     class Index:

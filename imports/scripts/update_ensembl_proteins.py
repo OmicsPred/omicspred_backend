@@ -1,6 +1,7 @@
+import re
 from omicspred.models import Gene, Protein
 
-input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.110.uniprot.tsv'
+input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.112.uniprot.tsv'
 
 genes = {}
 proteins = {}
@@ -14,15 +15,23 @@ def update_proteins():
     count_op_pr = op_proteins.count()
     count_pr_gene = 0
     pr_ens_list = genes.keys()
+    count_pr = 0
     for pr_obj in op_proteins:
+        count_pr += 1
+        if re.search('00$',str(count_pr)):
+            print(f"- {count_pr}/{len(op_proteins)}")
         if pr_obj.external_id in pr_ens_list:
             ens_gene = genes[pr_obj.external_id]
             if ens_gene in op_genes_list:
-                gene_obj = Gene.objects.get(external_id=ens_gene)
-                # print(f"V - {pr_obj.external_id}: gene '{ens_gene}' found!")
-                pr_obj.gene = gene_obj
-                pr_obj.save()
-                count_pr_gene += 1
+                try:
+                    gene_obj = Gene.objects.get(external_id=ens_gene)
+                    # print(f"V - {pr_obj.external_id}: gene '{ens_gene}' found!")
+                    pr_obj.gene = gene_obj
+                    pr_obj.save()
+                    count_pr_gene += 1
+                except:
+                    print(f"-> {ens_gene}: more than 1 gene found")
+                    exit(0)
             else:
                 print(f"X - {pr_obj.external_id}: gene '{ens_gene}' NOT found!")
     print(f'>> Updated proteins: {count_pr_gene}/{count_op_pr}')

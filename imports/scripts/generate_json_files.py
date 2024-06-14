@@ -11,13 +11,13 @@ import json
 # }
 
 platforms = {
-    'Somalogic': 35202437,
+    'Olink': ['UKB European','UKB Multi-ancestry'],
 }
 
 
 url_root = 'http://127.0.0.1:7000/rest'
-plot_url_root = f'{url_root}/plot/search?format=json&platform='
-plot_score_url_root = f'{url_root}/plot/score/search?format=json&platform='
+plot_url_root = f'{url_root}/plot/search?format=json&dataset='
+plot_score_url_root = f'{url_root}/plot/score/search?format=json&dataset='
 table_url_root = f'{url_root}/'
 
 default_path = '/Users/lg10/Workspace/git/fork/omicspred_frontend/public/data'
@@ -65,22 +65,23 @@ def run():
     for platform in platforms.keys():
         print(f"# {platform}:")
         platform_name = platform.replace(' ','_')
-        pmid = platforms[platform]
-        parameters = f'{platform}&pmid={pmid}'
+        for dataset in platforms[platform]:
+            parameters = dataset
+            dataset_name = dataset.replace(' ','_')
 
-        # Plot file
-        print(f"\t- Plot data")
-        plot_data = rest_api_call(plot_url_root, parameters)
-        with open(f'{default_path}/{platform_name}_{pmid}_plot.json', mode="w") as f:
-            # f.write(json.dumps(plot_data, indent=4))
-            f.write(json.dumps(plot_data))
+            # Plot file
+            print(f"\t- Plot data")
+            plot_data = rest_api_call(plot_url_root, parameters)
+            with open(f'{default_path}/{platform_name}_{dataset_name}_plot.json', mode="w") as f:
+                # f.write(json.dumps(plot_data, indent=4))
+                f.write(json.dumps(plot_data))
 
-        # Plot Score file
-        print(f"\t- Plot Score data")
-        plot_score_data = rest_api_call(plot_score_url_root, parameters)
-        with open(f'{default_path}/{platform_name}_{pmid}_plot_score.json', mode="w") as f:
-            # f.write(json.dumps(plot_score_data, indent=4))
-            f.write(json.dumps(plot_score_data))
+            # Plot Score file
+            print(f"\t- Plot Score data")
+            plot_score_data = rest_api_call(plot_score_url_root, parameters)
+            with open(f'{default_path}/{platform_name}_{dataset_name}_plot_score.json', mode="w") as f:
+                # f.write(json.dumps(plot_score_data, indent=4))
+                f.write(json.dumps(plot_score_data))
 
         # # Table file
         # print(f"\t- Table data")

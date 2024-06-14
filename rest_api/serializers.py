@@ -90,35 +90,35 @@ class PlatformExtendedSerializer(PlatformSerializer):
 
 
 #### Platform Additional ####
-class PlatformAdditionalLightSerializer(serializers.ModelSerializer):
+class DatasetLightSerializer(serializers.ModelSerializer):
     platform = PlatformSerializer(many=False, read_only=True)
     tissue = EFOSerializer(many=False, read_only=True)
     samples_training = SampleSerializer(many=True, read_only=True)
     samples_validation = SampleSerializer(many=True, read_only=True)
 
     class Meta:
-        model = PlatformAdditional
-        meta_fields = ('platform', 'scores_count', 'omics_count', 'omics_type',
+        model = Dataset
+        meta_fields = ('name', 'platform', 'scores_count', 'omics_count', 'omics_type',
                        'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
 
-class PlatformAdditionalSerializer(PlatformAdditionalLightSerializer):
+class DatasetSerializer(DatasetLightSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
 
-    class Meta(PlatformAdditionalLightSerializer.Meta):
+    class Meta(DatasetLightSerializer.Meta):
         meta_fields = ('publication',)
-        fields = meta_fields + PlatformAdditionalLightSerializer.Meta.fields
-        read_only_fields = meta_fields + PlatformAdditionalLightSerializer.Meta.fields
+        fields = meta_fields + DatasetLightSerializer.Meta.fields
+        read_only_fields = meta_fields + DatasetLightSerializer.Meta.fields
 
 
 #### Publication - Extended (with Platform) ####
 class PublicationExtendedSerializer(PublicationSerializer):
     date_release = serializers.SerializerMethodField('get_date_released')
-    platforms = PlatformAdditionalLightSerializer(many=True, read_only=True)
+    datasets = DatasetLightSerializer(many=True, read_only=True)
 
     class Meta(PublicationSerializer.Meta):
-        meta_fields = ('date_release', 'authors', 'platforms')
+        meta_fields = ('date_release', 'authors', 'datasets')
         fields = PublicationSerializer.Meta.fields + meta_fields
         read_only_fields = PublicationSerializer.Meta.read_only_fields + meta_fields
 
@@ -310,8 +310,10 @@ class PathwaySerializerNewExtended(PathwaySerializer):
 
 #### Score ####
 class ScoreSerializer(serializers.ModelSerializer):
-    publication = PublicationSerializer(many=False, read_only=True)
-    platform = PlatformSerializer(many=False, read_only=True)
+    # publication = PublicationSerializer(many=False, read_only=True)
+    # platform = PlatformSerializer(many=False, read_only=True)
+    publication = serializers.SerializerMethodField()
+    platform = serializers.SerializerMethodField()
 
     genes = GeneSerializer(many=True, read_only=True)
     transcripts = TranscriptSerializer(many=True, read_only=True)
@@ -329,8 +331,15 @@ class ScoreSerializer(serializers.ModelSerializer):
         fields = meta_fields
         read_only_fields = meta_fields
 
-    # def get_date_released(self, obj):
-    #     return obj.date_released
+    def get_publication(self, obj):
+        ''' Get Publication model '''
+        publication = obj.dataset.publication
+        return PublicationSerializer(publication, many=False, read_only=True).data
+
+    def get_platform(self, obj):
+        ''' Get Publication model '''
+        platform = obj.dataset.platform
+        return PlatformSerializer(platform, many=False, read_only=True).data
 
 
 class ScorePathwaySerializer(ScoreSerializer):
@@ -367,9 +376,11 @@ class MetricSerializer(serializers.ModelSerializer):
 
 #### Performance ####
 class PerformanceSerializer(serializers.ModelSerializer):
-    publication = PublicationSerializer(many=False, read_only=True)
+    # publication = PublicationSerializer(many=False, read_only=True)
+    # platform = PlatformSerializer(many=False, read_only=True)
+    publication = serializers.SerializerMethodField()
+    platform = serializers.SerializerMethodField()
     sample = SampleSerializer(many=False, read_only=True)
-    platform = PlatformSerializer(many=False, read_only=True)
     efo = EFOSerializer(many=False, read_only=True)
 
     evaluation_type = serializers.SerializerMethodField('get_eval_type_label')
@@ -381,6 +392,17 @@ class PerformanceSerializer(serializers.ModelSerializer):
                        'evaluation_type', 'performance_additional', 'covariates')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_publication(self, obj):
+        ''' Get Publication model '''
+        publication = obj.dataset.publication
+        return PublicationSerializer(publication, many=False, read_only=True).data
+
+    def get_platform(self, obj):
+        ''' Get Publication model '''
+        platform = obj.dataset.platform
+        return PlatformSerializer(platform, many=False, read_only=True).data
+
 
     def get_eval_type_label(self, obj):
         return obj.get_eval_type_display()

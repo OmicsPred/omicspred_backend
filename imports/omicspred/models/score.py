@@ -5,20 +5,13 @@ from omicspred.models import Score
 
 class ScoreData(GenericData):
 
-    def __init__(self,score_id,variants_number,publication,platform,genomebuild,method_name,score_name=None):
+    def __init__(self,score_data):
         GenericData.__init__(self)
-        num = score_id.replace('OPGS','').lstrip('0')
-        self.data = {
-            'num': int(num),
-            'id': score_id,
-            'variants_number': variants_number,
-            'publication': publication,
-            'platform': platform,
-            'method_name': method_name,
-            'variants_genomebuild': genomebuild
-        }
-        if score_name:
-            self.data['name'] = score_name
+        num = score_data['id'].replace('OPGS','').lstrip('0')
+        self.data['num'] = int(num)
+        for item in score_data.keys():
+            if score_data[item]:
+                 self.data[item] = score_data[item]
 
 
     @transaction.atomic
