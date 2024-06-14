@@ -50,13 +50,13 @@ class MetaboliteDocument(Document):
     def prepare_platform_name(self, instance):
         platforms = set()
         for score in instance.metabolite_score.all():
-            platforms.add(score.platform.name)
+            platforms.add(score.dataset.platform.name)
         return list(platforms)
 
     def prepare_omics_type(self, instance):
         types = set()
         for score in instance.metabolite_score.all():
-            types.add(score.platform.platform_master.type)
+            types.add(score.dataset.platform.platform_master.type)
         return list(types)
 
 

@@ -14,6 +14,7 @@ rest_urls = {
     'applications_score':   'rest/applications_score/',
     'applications_sample':  'rest/applications_sample/',
     'cohort':               'rest/cohort/',
+    'dataset':              'rest/dataset/',
     'gene':                 'rest/gene/',
     'info':                 'rest/info',
     'metabolite':           'rest/metabolite/',
@@ -66,8 +67,9 @@ urlpatterns = [
     re_path(r'^'+rest_urls['score']+'search'+slash, RestScoreSearch.as_view(), name="searchScores"),
     re_path(r'^'+rest_urls['score']+'(?P<opgs_id>[^/]+)'+slash, RestScore.as_view(), name="getScore"),
     # Platform_additional
-    re_path(r'^'+rest_urls['platform']+'additional/all'+slash, cache_page(cache_time)(RestListPlatformAdditionals.as_view()), name="getAllPlatformAdditionals"),
-    re_path(r'^'+rest_urls['platform']+'additional/(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestPlatformAdditional.as_view()), name="getPlatformAdditionals"),
+    re_path(r'^'+rest_urls['dataset']+'all'+slash, cache_page(cache_time)(RestListDatasets.as_view()), name="getAllDatasets"),
+    re_path(r'^'+rest_urls['dataset']+'search'+slash, cache_page(cache_time)(RestDatasetSearch.as_view()), name="searchDatasets"),
+    re_path(r'^'+rest_urls['dataset']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestDataset.as_view()), name="getDatasets"),
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),

@@ -15,7 +15,7 @@ from .serializers import *
 
 generic_defer = ['curation_notes']
 only_dict = {
-    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','platform__id','platform__name','publication__id','publication__pmid','publication__doi'],
+    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -29,15 +29,16 @@ related_dict = {
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label').all().prefetch_related(*performance_metric).order_by('id'))],
     # 'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','eval_type','cohort_label','sample__ancestry_broad').select_related('sample').all().prefetch_related(*performance_metric).order_by('id'))],
-    'perf_select': ['score', 'publication', 'platform', 'platform__platform_master', 'sample', 'efo'],
-    'platform_add_select': ['platform','platform__platform_master','publication','tissue'],
-    'platform_add_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts','platform__platform_score'],
-    'platform_prefetch': ['platform_version','platform_version__platform_pp'],
+    'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
+    'dataset_select': ['platform','platform__platform_master','publication','tissue'],
+    'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts','dataset_score'],
+    'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_defer': [*generic_defer,'curation_status'],
-    'publication_platforms': [Prefetch('platforms',queryset=PlatformAdditional.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
+    'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
     'score_applications_select': ['phecode','platform','platform__platform_master','cohort'],
-    'search_by_select': ['publication','platform','platform__platform_master']
+    'score_dataset': ['dataset','dataset__publication','dataset__platform'],
+    'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master']
 }
 missing_index = 0
 
@@ -247,7 +248,7 @@ class RestMetabolomics(generics.ListAPIView):
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform','publication').filter(platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
@@ -257,7 +258,11 @@ class RestMetabolomics(generics.ListAPIView):
          # Filter publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
-            queryset = queryset.filter(Q(publication__pmid__iexact=pmid) | Q(publication__doi__iexact=pmid))
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+        # Filter Dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -271,7 +276,7 @@ class RestProteomics(generics.ListAPIView):
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform','publication').filter(platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
 
         ## Filters ##
         # Filter data - for intern use
@@ -282,11 +287,15 @@ class RestProteomics(generics.ListAPIView):
         platform_versions = self.request.query_params.get('versions')
         if platform_versions and platform_versions is not None:
             platform_versions_list = platform_versions.split(';')
-            queryset = queryset.filter(platform__version__in=platform_versions_list)
+            queryset = queryset.filter(dataset__platform__version__in=platform_versions_list)
         # Filter publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
-            queryset = queryset.filter(Q(publication__pmid__iexact=pmid) | Q(publication__doi__iexact=pmid))
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+        # Filter Dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -300,7 +309,7 @@ class RestTranscriptomics(generics.ListAPIView):
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform','publication').filter(platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
+        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
@@ -310,7 +319,11 @@ class RestTranscriptomics(generics.ListAPIView):
         # Filter publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
-            queryset = queryset.filter(Q(publication__pmid__iexact=pmid) | Q(publication__doi__iexact=pmid))
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+        # Filter Dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -388,30 +401,53 @@ class RestPlatform(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
-class RestListPlatformAdditionals(generics.ListAPIView):
+class RestListDatasets(generics.ListAPIView):
     """
-    Retrieve all the PlatformAdditional
+    Retrieve all the Dataset
     """
-    serializer_class = PlatformAdditionalSerializer
-    queryset = PlatformAdditional.objects.select_related(*related_dict['platform_add_select']).all().prefetch_related(*related_dict['platform_add_prefetch'])
+    serializer_class = DatasetSerializer
+    queryset = Dataset.objects.select_related(*related_dict['dataset_select']).all().prefetch_related(*related_dict['dataset_prefetch'])
 
 
-class RestPlatformAdditional(generics.ListAPIView):
+class RestDataset(generics.ListAPIView):
     """
-    Retrieve the Platform Additional information from a given platform
+    Retrieve the Dataset information from a given platform
     """
-    serializer_class = PlatformAdditionalSerializer
+    serializer_class = DatasetSerializer
 
     def get_queryset(self):
         try:
             platform = self.kwargs['platform']
             # Database filtering
-            queryset = PlatformAdditional.objects.select_related(*related_dict['platform_add_select']).prefetch_related(*related_dict['platform_add_prefetch']).filter(platform__name__iexact=platform)
+            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).filter(platform__name__iexact=platform)
             # Filter by publication
             pmid = self.request.query_params.get('pmid')
             if pmid and pmid.isnumeric():
                 queryset = queryset.filter(publication__pmid=pmid)
-        except PlatformAdditional.DoesNotExist:
+        except Dataset.DoesNotExist:
+            queryset = []
+        return queryset
+
+
+class RestDatasetSearch(generics.ListAPIView):
+    """
+    Retrieve the Dataset information from a given platform and/or PubMed ID
+    """
+    serializer_class = DatasetSerializer
+
+    def get_queryset(self):
+        try:
+            # Database filtering
+            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).all()
+            # Filter by publication
+            pmid = self.request.query_params.get('pmid')
+            if pmid and pmid.isnumeric():
+                queryset = queryset.filter(publication__pmid=pmid)
+            # Filter by platform
+            platform = self.request.query_params.get('platform')
+            if platform and platform != None:
+                queryset = queryset.filter(platform__name__iexact=platform)
+        except Dataset.DoesNotExist:
             queryset = []
         return queryset
 
@@ -426,7 +462,7 @@ class RestListPublications(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Publications
-        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_platforms']).order_by('id')
+        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
         # Filter by list of Publications IDs
         pmids_list = get_ids_list(self)
         if pmids_list:
@@ -443,7 +479,7 @@ class RestPublication(generics.RetrieveAPIView):
     def get(self, request, pmid):
         try:
             # queryset = Publication.objects.get(pmid__iexact=pmid)
-            queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related(*related_dict['publication_platforms']).get(pmid__iexact=pmid)
+            queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related(*related_dict['publication_datasets']).get(pmid__iexact=pmid)
             # queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related('platforms','platforms__platform__platform_master','platforms__tissue','platforms__samples_training','platforms__samples_training__cohorts','platforms__samples_validation','platforms__samples_validation__cohorts').get(pmid__iexact=pmid)
         except Publication.DoesNotExist:
             queryset = None
@@ -459,7 +495,7 @@ class RestPublicationSearch(generics.ListAPIView):
 
     def get_queryset(self):
         # queryset = Publication.objects.defer(*related_dict['publication_defer']).all().order_by('id')
-        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_platforms']).order_by('id')
+        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
 
         params = 0
 
@@ -468,7 +504,7 @@ class RestPublicationSearch(generics.ListAPIView):
         if pgs_id and pgs_id is not None:
             pgs_id = pgs_id.upper()
             try:
-                score = Score.objects.only('id','publication__id').select_related('publication').get(id=pgs_id)
+                score = Score.objects.only('id','publication__id').select_related('dataset','dataset__publication').get(id=pgs_id)
                 queryset = queryset.filter(id=score.publication.id)
                 params += 1
             except Score.DoesNotExist:
@@ -511,7 +547,7 @@ class RestListScores(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Scores
-        queryset = Score.objects.select_related('publication','platform','platform__platform_master').all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
+        queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
@@ -525,7 +561,7 @@ class RestListScores(generics.ListAPIView):
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term) |
                                        Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
-                                       Q(platform__name__iexact=filter_term) | Q(publication__firstauthor__iexact=filter_term))
+                                       Q(dataset__platform__name__iexact=filter_term) | Q(dataset__publication__firstauthor__iexact=filter_term))
          # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
         return queryset
@@ -541,9 +577,9 @@ class RestScore(generics.RetrieveAPIView):
         include_pathway = self.request.query_params.get('include_pathway')
         try:
             if include_pathway and include_pathway is not None:
-                queryset = Score.objects.select_related('publication','platform').prefetch_related('genes__pathways','genes__pathways__superpathways','metabolites__pathways','metabolites__pathways__superpathways').get(id=opgs_id)
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).prefetch_related('genes__pathways','genes__pathways__superpathways','metabolites__pathways','metabolites__pathways__superpathways').get(id=opgs_id)
             else:
-                queryset = Score.objects.select_related('publication','platform').get(id=opgs_id)
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).get(id=opgs_id)
         except Score.DoesNotExist:
             queryset = None
         if include_pathway and str(include_pathway)=='1':
@@ -562,7 +598,7 @@ class RestScoreWithPerformance(generics.RetrieveAPIView):
     def get(self, request, opgs_id):
         opgs_id = opgs_id.upper()
         try:
-            queryset = Score.objects.select_related('publication','platform').prefetch_related('score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').get(id=opgs_id)
+            queryset = Score.objects.select_related(*related_dict['score_dataset_full']).prefetch_related('score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').get(id=opgs_id)
         except Score.DoesNotExist:
             queryset = None
         serializer = ScorePerformanceSerializer(queryset,many=False)
@@ -591,14 +627,14 @@ class RestScoreSearchByMolecularTrait(generics.ListAPIView):
             # Add the performance metrics data structure
             if include_performance_metrics and include_performance_metrics is not None:
                 self.serializer_class = ScorePerformanceSerializer
-                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],'score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').distinct().order_by('num')
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],'score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').distinct().order_by('num')
             # Add the performance metrics condensed data (for web display on tables) - PRIVATE parameter
             elif include_performance_data and include_performance_data is not None:
                 self.serializer_class = ScorePerformanceDataSerializer
-                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],*related_dict['performance_cohorts']).distinct().order_by('num')
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],*related_dict['performance_cohorts']).distinct().order_by('num')
             # Metadata without performance metrics information - PUBLIC parameter
             else:
-                queryset = Score.objects.select_related(*related_dict['search_by_select']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits']).order_by('num')
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits']).order_by('num')
         else:
             queryset = []
         return queryset
@@ -611,7 +647,7 @@ class RestScoreSearch(generics.ListAPIView):
     serializer_class = ScoreSerializer
 
     def get_queryset(self):
-        queryset = Score.objects.select_related('publication','platform').all().order_by('num')
+        queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['molecular_traits']).order_by('num')
         params = 0
 
         # Search by list of Score IDs
@@ -625,13 +661,13 @@ class RestScoreSearch(generics.ListAPIView):
         # Search by Pubmed ID
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid.isnumeric():
-            queryset = queryset.filter(publication__pmid=pmid)
+            queryset = queryset.filter(dataset__publication__pmid=pmid)
             params += 1
 
         # Search by platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
-            queryset = queryset.filter(platform__name__iexact=platform)
+            queryset = queryset.filter(dataset__platform__name__iexact=platform)
             params += 1
 
         # Filter data - for intern use
@@ -990,19 +1026,25 @@ class RestPlotSearch(generics.RetrieveAPIView):
 
     def get(self,request):
 
-        queryset = Performance.objects.only('score_id','platform_id','platform__id','platform__name','publication__pmid','cohort_label').select_related('platform','publication').all().prefetch_related('performance_metric').order_by('score_id')
+        queryset = Performance.objects.only('score_id','dataset__id','dataset__platform__id','dataset__platform__name','dataset__publication__pmid','eval_type','cohort_label').select_related('dataset','dataset__publication','dataset__platform').all().prefetch_related('performance_metric').order_by('score_id')
         params = 0
 
         # Search by platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
-            queryset = queryset.filter(platform__name__iexact=platform)
+            queryset = queryset.filter(dataset__platform__name__iexact=platform)
             params += 1
 
         # Search by Publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid.isnumeric():
-            queryset = queryset.filter(publication__pmid__iexact=pmid)
+            queryset = queryset.filter(dataset__publication__pmid__iexact=pmid)
+            params += 1
+
+        # Search by Dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
             params += 1
 
         if params == 0:
@@ -1026,9 +1068,14 @@ class RestPlotSearch(generics.RetrieveAPIView):
             perf_score_id = perf.score_id
             idx = perf_score_id
             cohort_name = perf.cohort_label
+            if perf.eval_type == 'T':
+                cohort_name += ' (internal validation)'
+            # found_missing_rate = False
             for metric in perf.performance_metrics:
                 metric_name = metric['name_short']
                 metric_type = metric_name.replace(' ','')
+                # if metric_type == 'MissingRate':
+                #     found_missing_rate = True
                 if 'estimate' in metric.keys():
                     estimate = metric['estimate']
                 else:
@@ -1047,7 +1094,8 @@ class RestPlotSearch(generics.RetrieveAPIView):
                 #     if missing_index not in cohort_cols[col]["data"].keys():
                 #         cohort_cols[col]["data"][missing_index] = None
 
-        for colname in sorted(cohort_cols_names):
+        # for colname in sorted(cohort_cols_names):
+        for colname in cohort_cols_names:
             data.append(cohort_cols[colname])
 
         return Response(data)
@@ -1060,19 +1108,25 @@ class RestPlotScoreSearch(generics.ListAPIView):
     serializer_class = ScorePlotSerializer
 
     def get_queryset(self):
-        queryset = Score.objects.select_related('publication','platform').all().prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
+        queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related('genes','transcripts','proteins','metabolites').order_by('num')
         params = 0
 
         # Search by platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
-            queryset = queryset.filter(platform__name__iexact=platform)
+            queryset = queryset.filter(dataset__platform__name__iexact=platform)
             params += 1
 
         # Search by Publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid.isnumeric():
-            queryset = queryset.filter(publication__pmid__iexact=pmid)
+            queryset = queryset.filter(dataset__publication__pmid__iexact=pmid)
+            params += 1
+
+        # Search by Dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
             params += 1
 
         if params == 0:

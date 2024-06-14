@@ -95,7 +95,7 @@ class PlatformMaster(models.Model):
     def scores_count(self):
         total_count = 0
         for p_version in self.platform_version.all():
-            total_count += p_version.scores_count
+            total_count += p_version.platform_dataset.scores_count
         return total_count
 
 
@@ -111,8 +111,8 @@ class Platform(models.Model):
     @property
     def scores_count(self):
         total_count = 0
-        for p_version in self.platform_pp.all():
-            total_count += p_version.scores_count
+        for dataset in self.platform_dataset.all():
+            total_count += dataset.scores_count
         return total_count
 
 
@@ -277,18 +277,19 @@ class Sample(models.Model):
             return '{} <small>({})</small>'.format(self.ancestry_broad, self.ancestry_free)
 
 
-class PlatformAdditional(models.Model):
+class Dataset(models.Model):
     """ Class providing additional information to the Platform """
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='platforms', verbose_name='Publication')
-    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_pp', verbose_name='Platform')
+    name = models.CharField('Dataset name', max_length=150, null=True)
+    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='datasets', verbose_name='Publication')
+    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_dataset', verbose_name='Platform')
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
-    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_platform', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
+    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
     scores_count = models.IntegerField('Associated Scores count', null=False)
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
-    samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_platform')
-    samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_platform')
-    species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_platform', verbose_name='Species', null=False) # Associated species
+    samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_dataset')
+    samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_dataset')
+    species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_dataset', verbose_name='Species', null=False) # Associated species
     # Dir ID
     files_ids = models.JSONField('Files IDs on Box', default=dict)
 
@@ -417,8 +418,9 @@ class Score(models.Model):
     curation_notes = models.TextField('Curation Notes', default='')
 
     # Links to related models
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
-    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_score', verbose_name='Dataset')
+    # publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
+    # platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_score', verbose_name='Species', null=False) # Associated species
     # efos = models.ManyToManyField(EFO, verbose_name='EFO', related_name='associated_scores')
 
@@ -505,9 +507,10 @@ class SourceAnnotations(models.Model):
 class Performance(models.Model):
     """ Class for Performance Metric """
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_performance') # \Score that the metrics are associated with
-    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='Peformance Source', related_name='publication_performance') # Study that reported performance metrics
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_performance', verbose_name='Dataset')
+    # publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='Peformance Source', related_name='publication_performance') # Study that reported performance metrics
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT, verbose_name='Peformance Sample', related_name='sample_performance') # Sample that is associated with
-    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, verbose_name='Peformance Platform', related_name='platform_performance') # Platform that is associated with
+    # platform = models.ForeignKey(Platform, on_delete=models.PROTECT, verbose_name='Peformance Platform', related_name='platform_performance') # Platform that is associated with
     efo = models.ForeignKey(EFO, on_delete=models.PROTECT, verbose_name='Peformance EFO', related_name='efo_performance', null=True) # EFO trait that is associated with
     # Evaluation Type
     EVALUATION_CHOICES = [
