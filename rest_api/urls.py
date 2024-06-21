@@ -39,6 +39,7 @@ urlpatterns = [
     path('rest/', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
+    re_path(r'^'+rest_urls['cohort']+'(?P<cohort>[^/]+)'+slash, RestCohort.as_view(), name="getCohort"),
     # Pathways
     re_path(r'^'+rest_urls['pathway']+'all'+slash, RestListPathways.as_view(), name="getAllPathways"),
     re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
@@ -53,6 +54,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['transcriptomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestTranscriptomics.as_view()), name="getTranscriptomicsScores"),
     # Performance metrics
     # re_path(r'^'+rest_urls['performance']+'all'+slash, cache_page(cache_time)(RestListPerformances.as_view()), name="getAllPerformanceMetrics"),
+    re_path(r'^'+rest_urls['performance']+'search/(?P<type>[^/]+)/(?P<molecular_trait>[^/]+)'+slash, RestPerformanceSearchByMolecularTrait.as_view(), name="searchPerformancesByMolecularTrait"),
     re_path(r'^'+rest_urls['performance']+'search'+slash, RestPerformanceSearch.as_view(), name="searchPerformanceMetrics"),
     # Publication
     re_path(r'^'+rest_urls['publication']+'all'+slash, cache_page(cache_time)(RestListPublications.as_view()), name="getAllPublications"),
@@ -69,7 +71,7 @@ urlpatterns = [
     # Platform_additional
     re_path(r'^'+rest_urls['dataset']+'all'+slash, cache_page(cache_time)(RestListDatasets.as_view()), name="getAllDatasets"),
     re_path(r'^'+rest_urls['dataset']+'search'+slash, cache_page(cache_time)(RestDatasetSearch.as_view()), name="searchDatasets"),
-    re_path(r'^'+rest_urls['dataset']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestDataset.as_view()), name="getDatasets"),
+    re_path(r'^'+rest_urls['dataset']+'(?P<dataset>[^/]+)'+slash, cache_page(cache_time)(RestDataset.as_view()), name="getDatasets"),
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),
