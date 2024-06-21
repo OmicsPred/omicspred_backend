@@ -21,10 +21,12 @@ tags:
     description: Trait metadata (PheCode [ID, label, description, ...], associated Genetic Scores, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
-  - name: "Sample endpoints"
-    description: Sample metadata (number of individuals, ancestry, cohorts)
+  - name: "Dataset endpoints"
+    description: "Dataset metadata (name, publication, platform, samples, ...)"
   - name: "Platform endpoints"
     description: "Platform metadata (name, type, version, technic, ...)"
+  - name: "Sample/Cohort endpoints"
+    description: Sample metadata (number of individuals, ancestry, cohorts)
   - name: "Omics endpoints"
     description: "Omics metadata (metabolomics, proteomics, transcriptomics, ...)"
   - name: "Molecular trait endpoints"
@@ -55,6 +57,20 @@ components:
           type: string
           description: "URL of the Cohort project"
           example: "https://www.intervalstudy.org.uk/"
+
+    Cohort_extended:
+      description: "Based on the **Cohort** schema, with the addition of the '**ancestries**'."
+      allOf:
+        - $ref: '#/components/schemas/Cohort'
+        - type: object
+          properties:
+            ancestries:
+              type: array
+              description: "List of ancestries associated with the cohort."
+              items:
+                type: string
+              example: ['European','South Asian']
+
 
     # Trait #
     EFO:
@@ -198,10 +214,6 @@ components:
               source:
                 type: string
                 example: "KEGG COMPOUND"
-        # pathway_group:
-        #   $ref: '#/components/schemas/Pathway'
-        # pathway_subgroup:
-        #   $ref: '#/components/schemas/Pathway'
 
     Metabolite_extended:
       description: "Based on the **Metabolite** schema, with the addition of the '**description**' and '**pathways**'."
@@ -374,7 +386,7 @@ components:
         cohort_label:
           type: string
           description: "Name of the cohort used to calculate the performance metric"
-          example: 'MEC-CN'
+          example: 'MEC_CN'
         evaluation_type:
           type: string
           description: 'Type of evaluation'
@@ -393,10 +405,6 @@ components:
       allOf:
         - type: object
           properties:
-            id:
-              type: integer
-              description: "Internal ID"
-              example: 1
             associated_opgs_id:
               type: string
               description: "Associated OmicsPred Score ID"
@@ -451,34 +459,6 @@ components:
       #     description: "Covariates used in the prediction model to evaluate the PGS."
       #     example: "Age, sex and the first 10 genetic principal components"
 
-    # Performance:
-    #   type: object
-    #   description: "Performance Metric of a score (lighter version)"
-    #   properties:
-    #     performance_metrics:
-    #       type: array
-    #       description: "List of associated performance metrics"
-    #       items:
-    #         $ref: '#/components/schemas/Metric'
-    #     cohort_label:
-    #       type: string
-    #       description: "Name of the cohort used to calculate the performance metric"
-    #       examples: 
-    #         - 'INTERVAL'
-    #         - 'MEC-CN'
-    #     evaluation_type:
-    #       type: string
-    #       description: 'Type of evaluation'
-    #       example: 'External Validation'
-    #     performance_additional:
-    #       type: string
-    #       description: "Additional information about the performance metric"
-    #       example: "Performed on 308 genes"
-    #     covariates:
-    #       type: string
-    #       description: "Covariates used in the prediction model to evaluate the PGS."
-    #       example: "Age, sex and the first 10 genetic principal components"
-
 
     # Phecode #
     Phecode:
@@ -513,6 +493,17 @@ components:
               description: "List of child phecode(s)."
               items:
                 $ref: '#/components/schemas/Phecode'
+
+    PhecodeScoresCount:
+      description: "Based on the **Phecode** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Phecode'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores associated with the PheCode entry."
+              example: 6
 
 
     # Platform #
@@ -553,11 +544,15 @@ components:
               example: 2384
 
 
-    # Platform - Additional #
-    PlatformAdditional:
+    # Dataset #
+    Dataset:
       type: object
-      description: "Structure containing information about a Platform + Additional data (EXCEPT the associated Publication information)"
+      description: "Structure containing information about a Dataset (EXCEPT the associated Publication information)"
       properties:
+        name:
+          type: string
+          description: "Dataset name"
+          example: "UKB European"
         platform:
           $ref: '#/components/schemas/Platform'
         scores_count:
@@ -608,10 +603,10 @@ components:
                 description: "Scoring files - pgsc_calc compatible"
                 example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
 
-    PlatformAdditional_extended:
-      description: "Structure containing information about a Platform + Publication + Additional data"
+    Dataset_extended:
+      description: "Based on the **Dataset** schema, with the addition of the '**publication**'."
       allOf:
-        - $ref: '#/components/schemas/PlatformAdditional'
+        - $ref: '#/components/schemas/Dataset'
         - type: object
           properties:
             publication:
@@ -703,11 +698,11 @@ components:
               type: string
               description: "Concatenated list of all the publication authors"
               example: "Xu Y, ... , Inouye M."
-            platforms:
+            datasets:
               type: array
-              description: "List of platform + additional data"
+              description: "List of datasets (including platforms)"
               items:
-                $ref: '#/components/schemas/PlatformAdditional'
+                $ref: '#/components/schemas/Dataset'
 
 
     # Sample #
@@ -839,10 +834,10 @@ components:
           type: string
           description: "A description of the relevant inputs and parameters relevant to the genetic score development method/process."
           example: "P<5x10-8"
-        variants_number:
-          type: integer
-          description: "Number of variants used to calculate the PGS."
-          example: 182
+        dataset_name:
+          type: string
+          description: "Dataset name"
+          example: "UKB European"
         publication:
           $ref: '#/components/schemas/Publication'
         platform:
@@ -863,6 +858,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Metabolite'
+        variants_number:
+          type: integer
+          description: "Number of variants used to calculate the PGS."
+          example: 182
         variants_interactions:
           type: integer
           description: "Number of higher-order variant interactions included in the PGS."
@@ -1077,9 +1076,6 @@ components:
           example: "Ensembl"
 
 
-    ##### Generic ####
-
-
 
 #############################################################
 
@@ -1089,13 +1085,14 @@ paths:
   /rest/cohort/all:
     get:
       tags:
-        - "Sample endpoints"
+        - "Sample/Cohort endpoints"
       operationId: getAllCohorts
       description: |
         Retrieve all Cohorts, including for each of them:
           * Cohort short name
           * Cohort full name
           * Cohort Project URL
+          * List of ancestries
 
         Example of request:
         ```
@@ -1127,7 +1124,7 @@ paths:
                     description: "List of Cohorts in OmicsPred"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Cohort'
+                      $ref: '#/components/schemas/Cohort_extended'
           description: |
             All Cohorts in OmicsPred
 
@@ -1141,10 +1138,53 @@ paths:
                 $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /rest/cohort/{cohort}:
+    get:
+      tags:
+        - "Sample/Cohort endpoints"
+      operationId: getCohort
+      description: |
+        Retrieve a Cohorts, including :
+          * Cohort short name
+          * Cohort full name
+          * Cohort Project URL
+          * List of ancestries
+
+        Example of request:
+        ```
+        https://www.omicspred.org/rest/cohort/INTERVAL
+        ```
+      parameters:
+      - name: cohort
+        in: path
+        required: true
+        description: 'Cohort name'
+        examples:
+          INTERVAL:
+            value: 'INTERVAL'
+          UKB:
+            value: 'UKB'
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cohort_extended'
+          description: 'Cohort information'
+        '4XX':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
   /rest/sample/all:
     get:
       tags:
-        - "Sample endpoints"
+        - "Sample/Cohort endpoints"
       operationId: getAllSamples
       description: | 
         Retrieve all the Samples, including for each of them:
@@ -1391,10 +1431,10 @@ paths:
 
         Example of request:
         ```
-        https://www.omicspred.org/rest/protein/search?gene_id=COL1A1
+        https://www.omicspred.org/rest/protein/search?gene=COL1A1
         ```
       parameters:
-      - name: gene_id
+      - name: gene
         required: true
         in: query
         description: Gene name/symbol or ID.
@@ -1488,7 +1528,7 @@ paths:
           * OmicsPred Score ID
           * Variants number
           * Performance Metrics data
-          * Trait reported
+          * Reported Molecular Trait
           * Associated Metabolites
 
         Example of request:
@@ -1544,7 +1584,7 @@ paths:
           * OmicsPred Score ID
           * Variants number
           * Performance Metrics data
-          * Trait reported
+          * Associated Genes
           * Associated Proteins
 
         Example of request:
@@ -1600,7 +1640,6 @@ paths:
           * OmicsPred Score ID
           * Variants number
           * Performance Metrics data
-          * Trait reported
           * Associated Genes
 
         Example of request:
@@ -1686,11 +1725,12 @@ paths:
         Search Performance Metric(s) by OmicsPred Score ID, PubMed ID and/or Platform.
 
         Each result includes:
-          * Associated OmicsPred Score ID(s)
+          * Associated OmicsPred Score ID
           * Publication information
-          * Sample information
+          * Sample information (including the associated cohort(s))
           * Platform information
-          * EFO/Trait information 
+          * EFO/Trait information
+          * Performance Metric(s)
 
         Example of request:
         ```
@@ -1762,6 +1802,119 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /rest/performance/search/{type}/{molecular_trait}:
+    get:
+      tags:
+        - "Performance Metrics endpoints"
+      operationId: searchPerformancesByMolecularTrait
+      description: |
+        Search the Performance metric(s) using a molecular trait name/symbol or ID.
+
+        The molecular trait types are:
+          * gene
+          * protein
+          * metabolite
+
+        Each result includes:
+          * Associated OmicsPred Score ID
+          * Publication information
+          * Sample information (including the associated cohort(s))
+          * Platform information
+          * EFO/Trait information
+          * Performance Metric(s)
+
+        Examples of request:
+        ```
+        - https://www.omicspred.org/rest/performance/search/gene/COL1A1
+        - https://www.omicspred.org/rest/performance/search/protein/P08887
+        ```
+      parameters:
+        - name: type
+          in: path
+          required: true
+          description: 'Molecular trait type'
+          schema:
+            type: string
+            enum: [gene, protein, metabolite]
+            readOnly: true
+        - name: molecular_trait
+          in: path
+          required: true
+          description: 'Molecular Trait name/symbol or ID'
+          examples:
+            Gene COL1A1:
+              value: "COL1A1"
+            Protein Q8IW75:
+              value: "Q8IW75"
+            Metabolite CHEBI_25017:
+              value: "CHEBI_25017"
+          schema:
+            type: string
+        - name: opgs_id
+          required: false
+          in: query
+          description: OmicsPred Score ID - *optional*
+          schema:
+            type: string
+          examples:
+            op_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+            OPGS002402:
+              value: 'OPGS002402'
+            OPGS003423:
+              value: 'OPGS003423'
+        - name: pmid
+          required: false
+          in: query
+          description: PubMed ID (without the prefix "PMID:") - *optional*
+          schema:
+            type: integer
+          examples:
+              pmid_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              pmid_1:
+                summary: 'PMID: 36991119'
+                value: 36991119
+        - name: platform
+          required: false
+          in: query
+          description: The platform name.
+          schema:
+            type: string
+          examples:
+            platform_sel:
+              summary: Select an example or type a platform name - click on 'Try it out' first
+            Olink:
+              value: 'Olink'
+            Nightingale:
+              value: 'Nightingale'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of Performance Metrics'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Performance_extended'
+          description: |
+            List all the Genetic Scores associated with the molecular trait
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
 
   ## Publication endpoints ##
   /rest/publication/all:
@@ -1773,11 +1926,12 @@ paths:
         Retrieve all the Publications, including for each of them:
           * Pubmed ID and doi
           * Publication title, journal, date and authors
-          * Associated Platform(s)
-          * Biological tissue
-          * Sample training information
-          * Sample validation information
-          * URLs to the data files
+          * Associated Dataset(s):
+            * Platform
+            * Biological tissue
+            * Sample training information
+            * Sample validation information
+            * URLs to the data files
 
         Example of request:
         ```
@@ -1844,11 +1998,12 @@ paths:
         Retrieve a Publication, including:
           * Pubmed ID and doi
           * Publication title, journal, date and authors
-          * Associated Platform(s)
-          * Biological tissue
-          * Sample training information
-          * Sample validation information
-          * URLs to the data files
+          * Associated Dataset(s):
+            * Platform
+            * Biological tissue
+            * Sample training information
+            * Sample validation information
+            * URLs to the data files
 
         Example of request:
         ```
@@ -1890,11 +2045,12 @@ paths:
         Each result includes:
           * Pubmed ID and doi
           * Publication title, journal, date and authors
-          * Associated Platform(s)
-          * Biological tissue
-          * Sample training information
-          * Sample validation information
-          * URLs to the data files
+          * Associated Dataset(s):
+            * Platform
+            * Biological tissue
+            * Sample training information
+            * Sample validation information
+            * URLs to the data files
 
         Example of request:
         ```
@@ -1976,6 +2132,7 @@ paths:
         Retrieve all the OmicsPred Genetic Scores, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID and name
           * Method used
+          * Dataset name
           * Publication information
           * Platform information
           * Reported molecular trait(s)
@@ -2049,6 +2206,7 @@ paths:
         Retrieve an OmicsPred Genetic Score, including:
           * Score ID and name
           * Method used
+          * Dataset name
           * Publication information
           * Platform information
           * Reported molecular trait(s)
@@ -2115,6 +2273,7 @@ paths:
         Each result includes:
           * Score ID and name
           * Method used
+          * Dataset name
           * Publication information
           * Platform information
           * Reported molecular trait(s)
@@ -2165,6 +2324,19 @@ paths:
               value: 'Olink'
             Nightingale:
               value: 'Nightingale'
+        - name: cohort
+          required: false
+          in: query
+          description: A cohort name.
+          schema:
+            type: string
+          examples:
+            cohort_sel:
+              summary: Select an example or type a cohort name - click on 'Try it out' first
+            INTERVAL:
+              value: 'INTERVAL'
+            UKB:
+              value: 'UKB'
       responses:
         '200':
           content:
@@ -2208,6 +2380,7 @@ paths:
         Each result includes:
           * Score ID and name
           * Method used
+          * Dataset name
           * Publication information
           * Platform information
           * Reported molecular trait(s)
@@ -2430,6 +2603,7 @@ paths:
         Retrieve an OmicsPred Genetic Score (OPGS) with its performance metrics, including:
           * Score ID and name
           * Method used
+          * Dataset name
           * Publication information
           * Platform information
           * Reported molecular trait(s)
@@ -2469,6 +2643,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
 
   ## Platform endpoints ##
   /rest/platform/all:
@@ -2554,15 +2729,19 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /rest/platform/additional/all:
+
+  ## Dataset endpoints ##
+  /rest/dataset/all:
     get:
       tags:
-        - "Platform endpoints"
-      operationId: getAllPlatformAdditionals
+        - "Dataset endpoints"
+      operationId: getAllDatasets
       description: |
-        Retrieve all the Platform Additional data, including for each of them:
-          * Platform information
+        Retrieve all the Dataset data, including for each of them:
+          * Dataset name
           * Publication information
+          * Platform information
+          * Number of Genetic Scores
           * Tissue information
           * Training Samples and Cohorts
           * Validation Samples and Cohorts
@@ -2570,7 +2749,7 @@ paths:
 
         Example of request:
         ```
-        https://www.omicspred.org/rest/platform/additional/all
+        https://www.omicspred.org/rest/dataset/all
         ```
       responses:
         '200':
@@ -2582,12 +2761,12 @@ paths:
                   - $ref: '#/components/schemas/Pagination'
                 properties:
                   results:
-                    description: "List all the Platform Additional data"
+                    description: "List all the Datasets"
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlatformAdditional_extended'
+                      $ref: '#/components/schemas/Dataset_extended'
           description: |
-            List all the Platform Additional data
+            List all the Datasets
         
             ---
 
@@ -2599,15 +2778,17 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /rest/platform/additional/{platform}:
+  /rest/dataset/{dataset}:
     get:
       tags:
-        - "Platform endpoints"
-      operationId: getPlatformAdditionals
+        - "Dataset endpoints"
+      operationId: getDatasets
       description: |
-        Retrieve a Platform Additional data, including:
-          * Platform information
+        Retrieve all the datasets associated with a dataset name, including:
+          * Dataset name
           * Publication information
+          * Platform information
+          * Number of Genetic Scores
           * Tissue information
           * Training Samples and Cohorts
           * Validation Samples and Cohorts
@@ -2615,29 +2796,16 @@ paths:
 
         Examples of request:
         ```
-        - https://www.omicspred.org/rest/platform/additional/Olink
-        - https://www.omicspred.org/rest/platform/additional/Somalogic?pmid=36991119
+        - https://www.omicspred.org/rest/dataset/INTERVAL
         ```
       parameters:
-      - name: platform
+      - name: dataset
         in: path
         required: true
-        description: "Platform name"
-        example: "Olink"
+        description: "Dataset name"
+        example: "UKB European"
         schema:
           type: string
-      - name: pmid
-        required: false
-        in: query
-        description: PubMed ID (without the prefix "PMID:") - *optional*
-        schema:
-          type: integer
-        examples:
-            pmid_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
       responses:
         '200':
           content:
@@ -2650,10 +2818,10 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlatformAdditional_extended'
+                      $ref: '#/components/schemas/Dataset_extended'
           description: |
-            List of Platform Additional data from the given platform
-        
+            List of Dataset data from the given dataset name
+
             ---
 
             __Notes:__ This endpoint uses pagination.
@@ -2664,6 +2832,78 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /rest/dataset/search:
+    get:
+      tags:
+        - "Dataset endpoints"
+      operationId: getDatasets
+      description: |
+        Retrieve all the datasets associated with a platform, including:
+          * Dataset name
+          * Publication information
+          * Platform information
+          * Number of Genetic Scores
+          * Tissue information
+          * Training Samples and Cohorts
+          * Validation Samples and Cohorts
+          * URLs to the data files
+
+        Examples of request:
+        ```
+        - https://www.omicspred.org/rest/dataset/search?platform=Olink
+        - https://www.omicspred.org/rest/dataset/search?pmid=36991119
+        ```
+      parameters:
+      - name: pmid
+        required: false
+        in: query
+        description: PubMed ID (without the prefix "PMID:") - *optional*
+        schema:
+          type: integer
+        examples:
+          pmid_sel:
+            summary: Select an example or type an ID - click on 'Try it out' first
+          pmid_1:
+            summary: 'PMID: 36991119'
+            value: 36991119
+      - name: platform
+        required: false
+        in: query
+        description: "Platform name"
+        schema:
+          type: string
+        examples:
+          platform_sel:
+            summary: Select an example or type a platform name - click on 'Try it out' first
+          Olink:
+            value: 'Olink'
+          Nightingale:
+            value: 'Nightingale'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dataset_extended'
+          description: |
+            List of Datasets associated with the request
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   ## Plot ##
   # /rest/plot/search:
@@ -2775,8 +3015,8 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Phecode'
                   - $ref: '#/components/schemas/Phecode_extended'
+                  - $ref: '#/components/schemas/PhecodeScoresCount'
           description: 'Phecode information'
         '4XX':
           content:
@@ -2799,7 +3039,7 @@ paths:
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
-          * Association values
+          * Associated performances
 
         Example of request:
         ```
@@ -2855,7 +3095,7 @@ paths:
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
-          * Association values
+          * Associated performances
 
         Example of request:
         ```
@@ -2913,7 +3153,7 @@ paths:
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
-          * Association values
+          * Associated performances
 
         Example of request:
         ```
@@ -2976,7 +3216,7 @@ paths:
   /rest/applications_sample/all:
     get:
       tags:
-        - "Sample endpoints"
+        - "Sample/Cohort endpoints"
       operationId: getAllPhecodeSamples
       description: |
         Retrieve all the Phecode Sample associations, including for each of them:

@@ -27,8 +27,7 @@ related_dict = {
     'molecular_traits': ['genes','transcripts','proteins','metabolites'],
     'pathway_prefetch': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
-    'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label').all().prefetch_related(*performance_metric).order_by('id'))],
-    # 'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','eval_type','cohort_label','sample__ancestry_broad').select_related('sample').all().prefetch_related(*performance_metric).order_by('id'))],
+    'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
     'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts','dataset_score'],
@@ -124,10 +123,10 @@ class RestListCohorts(generics.ListAPIView):
     """
     Retrieve all the Cohorts
     """
-    serializer_class = CohortSerializer
+    serializer_class = CohortSerializerExtended
 
     def get_queryset(self):
-        queryset = Cohort.objects.all().order_by('name_short')
+        queryset = Cohort.objects.all().prefetch_related('cohorts_sample').order_by('name_short')
         ## 'filter_ids' parameter: fetch the cohorts from the list of cohort short names
         # names_list = get_ids_list(self)
         # # Filter the query depending on the parameters used
@@ -137,6 +136,18 @@ class RestListCohorts(generics.ListAPIView):
 
         return queryset
 
+class RestCohort(generics.RetrieveAPIView):
+    """
+    Retrieve a Cohort
+    """
+    def get(self, request, cohort):
+        try:
+            queryset = Cohort.objects.prefetch_related('cohorts_sample').get(Q(name_short__iexact=cohort) | Q(name_full__iexact=cohort) | Q(name_others__iexact=cohort))
+        except Cohort.DoesNotExist:
+            queryset = None
+        serializer = CohortSerializerExtended(queryset,many=False)
+        return Response(serializer.data)
+
 
 ## Pathways ##
 
@@ -144,7 +155,7 @@ class RestListPathways(generics.ListAPIView):
     """
     Retrieve all the Pathways
     """
-    serializer_class = PathwaySerializerNewExtended
+    serializer_class = PathwaySerializerExtended
 
     def get_queryset(self):
         # Fetch all the Pathways
@@ -172,7 +183,7 @@ class RestPathway(generics.RetrieveAPIView):
             queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
         except Gene.DoesNotExist:
             queryset = None
-        serializer = PathwaySerializerNewExtended(queryset,many=False)
+        serializer = PathwaySerializerExtended(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -233,9 +244,9 @@ class RestSearchProtein(generics.ListAPIView):
         queryset = []
 
         # Search by Gene
-        gene_id = self.request.query_params.get('gene_id')
-        if gene_id and gene_id is not None:
-            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene_id) | Q(gene__external_id__iexact=gene_id)).order_by('id')
+        gene = self.request.query_params.get('gene')
+        if gene and gene is not None:
+            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene) | Q(gene__external_id__iexact=gene)).order_by('id')
 
         return queryset
 
@@ -365,6 +376,24 @@ class RestPerformanceSearch(generics.ListAPIView):
             queryset = queryset.filter(publication__pmid=pmid)
             params += 1
 
+        # Search by Gene
+        gene = self.request.query_params.get('gene')
+        if gene and gene is not None:
+            queryset = queryset.filter(Q(score__genes__external_id__iexact=gene) | Q(score__genes__name__iexact=gene)).prefetch_related('score__genes')
+            params += 1
+
+        # Search by Protein
+        protein = self.request.query_params.get('protein')
+        if protein and protein is not None:
+            queryset = queryset.filter(Q(score__proteins__external_id__iexact=protein) | Q(score__proteins__name__iexact=protein)).prefetch_related('score__proteins')
+            params += 1
+
+        # Search by Metabolite
+        metabolite = self.request.query_params.get('metabolite')
+        if metabolite and metabolite is not None:
+            queryset = queryset.filter(Q(score__metabolites__external_id__iexact=metabolite) | Q(score__metabolites__name__iexact=metabolite)).prefetch_related('score__metabolites')
+            params += 1
+
         # Search by Platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
@@ -373,6 +402,46 @@ class RestPerformanceSearch(generics.ListAPIView):
 
         if params == 0:
             queryset = []
+
+        return queryset
+
+
+
+class RestPerformanceSearchByMolecularTrait(generics.ListAPIView):
+    """
+    Search the Performance metric(s) using molecular trait name/id
+    """
+    serializer_class = PerformanceSerializer
+
+    def get_queryset(self):
+        molecular_trait_type = self.kwargs['type']
+        molecular_trait = self.kwargs['molecular_trait']
+        query_list = []
+        queryset = []
+
+        if molecular_trait_type and molecular_trait_type in ('gene','protein','metabolite') and molecular_trait:
+            query_name_filter = {f'score__{molecular_trait_type}s__name__iexact': molecular_trait}
+            query_id_filter = {f'score__{molecular_trait_type}s__external_id__iexact': molecular_trait}
+            query_list = [Q(**query_name_filter), Q(**query_id_filter)]
+        if query_list:
+
+            queryset = Performance.objects.select_related(*related_dict['perf_select']).filter(reduce(operator.or_,query_list)).prefetch_related('sample__cohorts','performance_metric',f'score__{molecular_trait_type}s').order_by('id')
+
+            # Search by Score ID
+            opgs_id = self.request.query_params.get('opgs_id')
+            if opgs_id and opgs_id is not None:
+                opgs_id = opgs_id.upper()
+                queryset = queryset.filter(score__id=opgs_id)
+
+            # Search by PubMed ID
+            pmid = self.request.query_params.get('pmid')
+            if pmid and pmid.isnumeric():
+                queryset = queryset.filter(publication__pmid=pmid)
+
+            # Search by Platform
+            platform = self.request.query_params.get('platform')
+            if platform and platform is not None:
+                queryset = queryset.filter(platform__name=platform)
 
         return queryset
 
@@ -417,13 +486,17 @@ class RestDataset(generics.ListAPIView):
 
     def get_queryset(self):
         try:
-            platform = self.kwargs['platform']
+            dataset = self.kwargs['dataset']
             # Database filtering
-            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).filter(platform__name__iexact=platform)
+            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).filter(name__iexact=dataset)
             # Filter by publication
             pmid = self.request.query_params.get('pmid')
             if pmid and pmid.isnumeric():
                 queryset = queryset.filter(publication__pmid=pmid)
+            # Filter by platform
+            platform = self.request.query_params.get('platform')
+            if platform and platform is not None:
+                queryset = queryset.filter(platform__name__iexact=platform)
         except Dataset.DoesNotExist:
             queryset = []
         return queryset
@@ -541,7 +614,7 @@ class RestListSamples(generics.ListAPIView):
 
 class RestListScores(generics.ListAPIView):
     """
-    Retrieve the Polygenic Scores
+    Retrieve the Genetic Scores
     """
     serializer_class = ScoreSerializer
 
@@ -569,7 +642,7 @@ class RestListScores(generics.ListAPIView):
 
 class RestScore(generics.RetrieveAPIView):
     """
-    Retrieve one Polygenic Score (PGS)
+    Retrieve one Genetic Score
     """
 
     def get(self, request, opgs_id):
@@ -592,7 +665,7 @@ class RestScore(generics.RetrieveAPIView):
 
 class RestScoreWithPerformance(generics.RetrieveAPIView):
     """
-    Retrieve one Polygenic Score (PGS) with performance data
+    Retrieve one Genetic Score (PGS) with performance data
     """
 
     def get(self, request, opgs_id):
@@ -607,7 +680,7 @@ class RestScoreWithPerformance(generics.RetrieveAPIView):
 
 class RestScoreSearchByMolecularTrait(generics.ListAPIView):
     """
-    Search the Polygenic Score(s) using molecular trait name/id
+    Search the Genetic Score(s) using molecular trait name/id
     """
     serializer_class = ScoreSerializer
 
@@ -634,15 +707,14 @@ class RestScoreSearchByMolecularTrait(generics.ListAPIView):
                 queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],*related_dict['performance_cohorts']).distinct().order_by('num')
             # Metadata without performance metrics information - PUBLIC parameter
             else:
-                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits']).order_by('num')
-        else:
-            queryset = []
+                queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits']).distinct().order_by('num')
+
         return queryset
 
 
 class RestScoreSearch(generics.ListAPIView):
     """
-    Search the Polygenic Score(s) using query
+    Search the Genetic Score(s) using query
     """
     serializer_class = ScoreSerializer
 
@@ -670,15 +742,28 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(dataset__platform__name__iexact=platform)
             params += 1
 
+        # Search by Cohort
+        cohort = self.request.query_params.get('cohort')
+        if cohort and cohort is not None:
+            # queryset = queryset.filter(dataset__platform__name__iexact=platform)
+            queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related('score_performance', 'score_performance__sample', 'score_performance__sample__cohorts')
+            params += 1
+
+
         # Filter data - for intern use
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
+            queryset = queryset.filter(Q(id__iexact=filter_term) |
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
+                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
+                                       Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term))
 
         if params == 0:
             queryset = []
 
-        return queryset
+        # Avoid duplicated entries when a cohort is used several times for a score (with different ancestries/samples)
+        return queryset.distinct()
 
 
 ## Tables - format by column ##

@@ -14,13 +14,25 @@ class CohortSerializer(serializers.ModelSerializer):
         read_only_fields = meta_fields
 
 
+class CohortSerializerExtended(CohortSerializer):
+    ancestries = serializers.SerializerMethodField()
+
+    class Meta(CohortSerializer.Meta):
+        meta_fields = ('ancestries',)
+        fields = CohortSerializer.Meta.fields + meta_fields
+        read_only_fields = CohortSerializer.Meta.read_only_fields + meta_fields
+
+    def get_ancestries(self, obj):
+        return sorted({x.ancestry_broad for x in obj.cohorts_sample.all()})
+
+
 #### Sample ####
 class SampleSerializer(serializers.ModelSerializer):
     cohorts = CohortSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sample
-        meta_fields = ('sample_number', 'sample_percent_male', 'sample_age', 'sample_age_sd',
+        meta_fields = ('sample_number', 'sample_age', 'sample_age_sd', 'sample_percent_male',
                     'ancestry_broad', 'ancestry_free', 'ancestry_country', 'ancestry_additional',
                     'source_gwas_catalog', 'source_pmid','source_doi','cohorts','cohorts_additional')#,'tissue_name')
         fields = meta_fields
@@ -89,7 +101,7 @@ class PlatformExtendedSerializer(PlatformSerializer):
         read_only_fields = PlatformSerializer.Meta.read_only_fields + meta_fields
 
 
-#### Platform Additional ####
+#### Dataset ####
 class DatasetLightSerializer(serializers.ModelSerializer):
     platform = PlatformSerializer(many=False, read_only=True)
     tissue = EFOSerializer(many=False, read_only=True)
@@ -127,7 +139,7 @@ class PublicationExtendedSerializer(PublicationSerializer):
 
 
 #### Pathway ####
-class PathwaySerializer(serializers.ModelSerializer):
+class PathwayOldSerializer(serializers.ModelSerializer):
     class Meta:
         model = PathwayOld
         meta_fields = ('name', 'external_id', 'external_id_source')
@@ -297,7 +309,7 @@ class MetaboliteSerializerScoresCount(MetaboliteSerializer):
 
 
 #### Pathway - Extended (with genes and metabolites) ####
-class PathwaySerializerNewExtended(PathwaySerializer):
+class PathwaySerializerExtended(PathwaySerializer):
     # superpathways = SuperPathwaySerializer(many=True, read_only=True)
     genes = GeneSerializerScoresCount(source='pathway_genes', many=True, read_only=True)
     metabolites = MetaboliteSerializerScoresCount(source='pathway_metabolites', many=True, read_only=True)
@@ -312,6 +324,7 @@ class PathwaySerializerNewExtended(PathwaySerializer):
 class ScoreSerializer(serializers.ModelSerializer):
     # publication = PublicationSerializer(many=False, read_only=True)
     # platform = PlatformSerializer(many=False, read_only=True)
+    dataset_name = serializers.SerializerMethodField()
     publication = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
 
@@ -326,10 +339,14 @@ class ScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
-                       'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
+                       'dataset_name', 'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
                        'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_dataset_name(self,obj):
+        ''' Get Dataset name '''
+        return obj.dataset.name
 
     def get_publication(self, obj):
         ''' Get Publication model '''
@@ -369,15 +386,25 @@ class MetricSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Metric
-        meta_fields = ('name', 'name_short', 'performance_type', 'estimate', 'pvalue')
+        meta_fields = ('type', 'name', 'name_short', 'estimate', 'pvalue')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
 #### Performance ####
+class PerformanceLightSerializer(serializers.ModelSerializer):
+    evaluation_type = serializers.SerializerMethodField('get_eval_type_label')
+    class Meta:
+        model = Performance
+        meta_fields = ('performance_metrics', 'cohort_label','performance_additional', 'evaluation_type', 'covariates')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+    def get_eval_type_label(self, obj):
+        return obj.get_eval_type_display()
+
+
 class PerformanceSerializer(serializers.ModelSerializer):
-    # publication = PublicationSerializer(many=False, read_only=True)
-    # platform = PlatformSerializer(many=False, read_only=True)
     publication = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
     sample = SampleSerializer(many=False, read_only=True)
@@ -387,7 +414,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Performance
-        meta_fields = ('id', 'associated_opgs_id', 'publication', 'sample', 'platform', 'efo',
+        meta_fields = ('associated_opgs_id', 'publication', 'sample', 'platform', 'efo',
                        'performance_metrics', 'cohort_label',
                        'evaluation_type', 'performance_additional', 'covariates')
         fields = meta_fields
@@ -403,18 +430,6 @@ class PerformanceSerializer(serializers.ModelSerializer):
         platform = obj.dataset.platform
         return PlatformSerializer(platform, many=False, read_only=True).data
 
-
-    def get_eval_type_label(self, obj):
-        return obj.get_eval_type_display()
-
-
-class PerformanceLightSerializer(serializers.ModelSerializer):
-    evaluation_type = serializers.SerializerMethodField('get_eval_type_label')
-    class Meta:
-        model = Performance
-        meta_fields = ('performance_metrics', 'cohort_label','performance_additional', 'evaluation_type', 'covariates')
-        fields = meta_fields
-        read_only_fields = meta_fields
 
     def get_eval_type_label(self, obj):
         return obj.get_eval_type_display()
@@ -526,7 +541,7 @@ class CohortApplicationsSerializer(CohortSerializer):
 class MolecularTraitApplicationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = MolecularTraitApplications
-        meta_fields = ('external_id','name','type')
+        meta_fields = ('name','external_id','type')
         fields = meta_fields
         read_only_fields = meta_fields
 

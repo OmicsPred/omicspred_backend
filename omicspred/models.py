@@ -84,7 +84,6 @@ class PlatformMaster(models.Model):
 
     @property
     def versions(self):
-        print(self.platform_version)
         versions_list = []
         for platform in self.platform_version.all():
             if platform.version:
@@ -94,8 +93,11 @@ class PlatformMaster(models.Model):
     @property
     def scores_count(self):
         total_count = 0
+        # Platforms version
         for p_version in self.platform_version.all():
-            total_count += p_version.platform_dataset.scores_count
+            # Datasets
+            for dataset in p_version.platform_dataset.all():
+                total_count += dataset.scores_count
         return total_count
 
 
@@ -153,7 +155,7 @@ class Sample(models.Model):
     source_gwas_catalog = models.CharField('GWAS Catalog Study ID (GCST...)', max_length=20, null=True)
     source_pmid = models.IntegerField('Source PubMed ID (PMID)', null=True)
     source_doi = models.CharField('Source DOI', max_length=100, null=True)
-    cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)')
+    cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohorts_sample')
     cohorts_additional = models.TextField('Additional Sample/Cohort Information', null=True)
 
     curation_notes = models.TextField('Curation Notes', default='')
@@ -563,11 +565,15 @@ class Performance(models.Model):
         #cohort_label = '_'.join([x.name_short for x in self.sample.cohorts.all()])
         cohort_label = self.cohort_label
         metrics = self.performance_metric.all()
+        cohort_label_suffix = ''
+        if self.get_eval_type_display() == 'Training':
+            cohort_label_suffix = '__training'
         if metrics:
             for m in metrics:
-                cohort_metrics[f'{cohort_label}_{m.name_short}'] = {
+                cohort_metrics[f'{cohort_label}_{m.name_short}{cohort_label_suffix}'] = {
                     # 'label': f'{cohort_label} {m.name_short}',
                     'estimate': m.display_value(m.estimate)
+                    # 'type': self.get_eval_type_display()
                 }
         return cohort_metrics
 
