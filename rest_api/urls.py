@@ -82,6 +82,8 @@ urlpatterns = [
 
     # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
+    # To generate plot data
+    re_path(r'^'+rest_urls['plot']+'file/search'+slash, cache_page(cache_time)(RestPlotFileSearch.as_view()), name="searchFilePlots"),
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
     # Applications

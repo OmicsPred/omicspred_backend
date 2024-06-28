@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from omicspred.models import *
 from applications.models import *
+from plot.models import *
 
 
 #### Cohort ####
@@ -368,11 +369,43 @@ class ScorePathwaySerializer(ScoreSerializer):
         read_only_fields = ScoreSerializer.Meta.read_only_fields
 
 
+class GeneMinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gene
+        meta_fields = ('name', 'external_id')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+class TranscriptMinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  Transcript
+        meta_fields = ('name', 'external_id')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+class ProteinMinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Protein
+        meta_fields = ('name', 'external_id')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+class MetaboliteMinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Metabolite
+        meta_fields = ('name', 'external_id')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
 class ScorePlotSerializer(serializers.ModelSerializer):
-    genes = GeneSerializer(many=True, read_only=True)
-    transcripts = TranscriptSerializer(many=True, read_only=True)
-    proteins = ProteinSerializer(many=True, read_only=True)
-    metabolites = MetaboliteSerializer(many=True, read_only=True)
+    genes = GeneMinSerializer(many=True, read_only=True)
+    transcripts = TranscriptMinSerializer(many=True, read_only=True)
+    proteins = ProteinMinSerializer(many=True, read_only=True)
+    metabolites = MetaboliteMinSerializer(many=True, read_only=True)
+    # genes = GeneSerializer(many=True, read_only=True)
+    # transcripts = TranscriptSerializer(many=True, read_only=True)
+    # proteins = ProteinSerializer(many=True, read_only=True)
+    # metabolites = MetaboliteSerializer(many=True, read_only=True)
 
     class Meta:
         model = Score
@@ -576,6 +609,15 @@ class SampleApplicationsSerializer(serializers.ModelSerializer):
 ###############
 #### TESTS ####
 ###############
+
+class PlotSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Plot
+        meta_fields = ('plot_data','score_data')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
 # class ScoreExtendedSerializer(serializers.ModelSerializer):
 #     publication = PublicationSerializer(many=False, read_only=True)
 #     platform = PlatformSerializer(many=False, read_only=True)

@@ -2836,7 +2836,7 @@ paths:
     get:
       tags:
         - "Dataset endpoints"
-      operationId: getDatasets
+      operationId: searchDataset
       description: |
         Retrieve all the datasets associated with a platform, including:
           * Dataset name
