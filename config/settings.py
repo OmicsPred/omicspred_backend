@@ -69,6 +69,7 @@ else:
 INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
+    'plot.apps.PlotConfig',
     'search_es.apps.SearchESConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
@@ -157,6 +158,14 @@ if OP_ON_GAE == 1:
             'PASSWORD': os.environ['DATABASE_PASSWORD_2'],
             'HOST': os.environ['DATABASE_HOST_2'],
             'PORT': os.environ['DATABASE_PORT_2']
+        },
+        'plot': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.environ['DATABASE_NAME_3'],
+            'USER': os.environ['DATABASE_USER_3'],
+            'PASSWORD': os.environ['DATABASE_PASSWORD_3'],
+            'HOST': os.environ['DATABASE_HOST_3'],
+            'PORT': os.environ['DATABASE_PORT_3']
         }
     }
 else:
@@ -176,6 +185,14 @@ else:
             'PASSWORD': os.environ['DATABASE_PASSWORD_2'],
             'HOST': 'localhost',
             'PORT': os.environ['DATABASE_PORT_LOCAL_2']
+        },
+        'plot': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.environ['DATABASE_NAME_3'],
+            'USER': os.environ['DATABASE_USER_3'],
+            'PASSWORD': os.environ['DATABASE_PASSWORD_3'],
+            'HOST': 'localhost',
+            'PORT': os.environ['DATABASE_PORT_LOCAL_3']
         }
     }
 

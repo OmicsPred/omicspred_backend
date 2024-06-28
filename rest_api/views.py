@@ -1101,8 +1101,40 @@ class RestScoreSearch(generics.ListAPIView):
 
 
 ## Plots ##
+from plot.models import Plot
+class RestPlotSearch(generics.ListAPIView):
 
-class RestPlotSearch(generics.RetrieveAPIView):
+    serializer_class = PlotSerializer
+
+    def get_queryset(self):
+        queryset = Plot.objects.using('plot').all()
+        params = 0
+
+        # Search by Pubmed ID
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid.isnumeric():
+            queryset = queryset.filter(pmid=pmid)
+            params += 1
+
+        # Search by platform
+        platform = self.request.query_params.get('platform')
+        if platform and platform is not None:
+            queryset = queryset.filter(platform_name__iexact=platform)
+            params += 1
+
+        # Search by dataset
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset_name__iexact=dataset)
+            params += 1
+
+        if params == 0:
+            queryset = []
+
+        return queryset
+
+
+class RestPlotFileSearch(generics.RetrieveAPIView):
     """
     Retrieve performance metrics for a given platform.
     """
@@ -1145,7 +1177,6 @@ class RestPlotSearch(generics.RetrieveAPIView):
         score_idx = {}
         new_score_ids = list(score_ids)
         for idx, score_id in enumerate(new_score_ids):
-            # print(f'{idx}: {score_id}')
             score_idx[score_id] = idx
         # print(score_idx)
         # for score in queryset:
@@ -1179,9 +1210,26 @@ class RestPlotSearch(generics.RetrieveAPIView):
                 #     if missing_index not in cohort_cols[col]["data"].keys():
                 #         cohort_cols[col]["data"][missing_index] = None
 
+        # Final check to avoid missing entries
+        for score_id in score_idx.keys():
+            for col in cohort_cols.keys():
+                if score_id not in cohort_cols[col]["data"].keys():
+                    cohort_cols[col]["data"][score_id] = None
+
         # for colname in sorted(cohort_cols_names):
         for colname in cohort_cols_names:
-            data.append(cohort_cols[colname])
+            cohort_data = {}
+            for key in cohort_cols[colname].keys():
+                # Sort data
+                if key == 'data':
+                    # sorted_data = dict(sorted(cohort_cols[colname][key].items()))
+                    # new_sorted_data = [{str(key): val for key, val in sorted_data.items()}]
+                    cohort_data[key] = dict(sorted(cohort_cols[colname][key].items()))
+                else:
+                   cohort_data[key] = cohort_cols[colname][key]
+
+            # data.append(cohort_cols[colname])
+            data.append(cohort_data)
 
         return Response(data)
 
