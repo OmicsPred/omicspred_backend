@@ -489,12 +489,18 @@ class ScorePerformanceDataSerializer(ScoreSerializer):
 ######## Omics tables ########
 
 class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
+    dataset_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','performance_data')
+        meta_fields = ('id','variants_number','dataset_name')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_dataset_name(self,obj):
+        ''' Get Dataset name '''
+        return obj.dataset.name
 
 
 class ScoreMetaboliteSerializer(ScoreMolecularTraitSerializer):
@@ -520,6 +526,40 @@ class ScoreTranscriptSerializer(ScoreMolecularTraitSerializer):
         meta_fields = ('genes',)
         fields = ScoreMolecularTraitSerializer.Meta.fields + meta_fields
         read_only_fields = ScoreMolecularTraitSerializer.Meta.read_only_fields + meta_fields
+
+
+# -- Omics with Performance data -- #
+
+class ScorePerformanceMolecularTraitSerializer(ScoreMolecularTraitSerializer):
+    class Meta(ScoreMolecularTraitSerializer.Meta):
+        meta_fields = ('performance_data',)
+        fields = ScoreMolecularTraitSerializer.Meta.fields + meta_fields
+        read_only_fields = ScoreMolecularTraitSerializer.Meta.read_only_fields + meta_fields
+
+
+class ScorePerformanceMetaboliteSerializer(ScorePerformanceMolecularTraitSerializer):
+    metabolites = MetaboliteLightSerializer(many=True, read_only=True)
+    class Meta(ScorePerformanceMolecularTraitSerializer.Meta):
+        meta_fields = ('trait_reported','trait_reported_id','metabolites')
+        fields = ScorePerformanceMolecularTraitSerializer.Meta.fields + meta_fields
+        read_only_fields = ScorePerformanceMolecularTraitSerializer.Meta.read_only_fields + meta_fields
+
+
+class ScorePerformanceProteinSerializer(ScorePerformanceMolecularTraitSerializer):
+    proteins = ProteinSerializer(many=True, read_only=True)
+    genes = GeneSerializer(many=True, read_only=True)
+    class Meta(ScorePerformanceMolecularTraitSerializer.Meta):
+        meta_fields = ('genes','proteins')
+        fields = ScorePerformanceMolecularTraitSerializer.Meta.fields + meta_fields
+        read_only_fields = ScorePerformanceMolecularTraitSerializer.Meta.read_only_fields + meta_fields
+
+
+class ScorePerformanceTranscriptSerializer(ScorePerformanceMolecularTraitSerializer):
+    genes = GeneSerializer(many=True, read_only=True)
+    class Meta(ScorePerformanceMolecularTraitSerializer.Meta):
+        meta_fields = ('genes',)
+        fields = ScorePerformanceMolecularTraitSerializer.Meta.fields + meta_fields
+        read_only_fields = ScorePerformanceMolecularTraitSerializer.Meta.read_only_fields + meta_fields
 
 
 ######################

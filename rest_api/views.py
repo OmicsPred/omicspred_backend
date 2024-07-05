@@ -15,7 +15,7 @@ from .serializers import *
 
 generic_defer = ['curation_notes']
 only_dict = {
-    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
+    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -59,7 +59,6 @@ def sort_data_list(request,type,queryset,default_col='num'):
         queryset = queryset.order_by(sort_field)
     else:
         queryset = queryset.order_by(default_col)
-    print(f"SORTING: {sort_field} | {sort}")
     return queryset
 
 
@@ -181,7 +180,7 @@ class RestPathway(generics.RetrieveAPIView):
     def get(self, request, pathway_id):
         try:
             queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
-        except Gene.DoesNotExist:
+        except Pathway.DoesNotExist:
             queryset = None
         serializer = PathwaySerializerExtended(queryset,many=False)
         return Response(serializer.data)
@@ -254,18 +253,25 @@ class RestSearchProtein(generics.ListAPIView):
 ## Omics by platform ##
 
 class RestMetabolomics(generics.ListAPIView):
-    serializer_class = ScoreMetaboliteSerializer
+    serializer_class = ScorePerformanceMetaboliteSerializer
 
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
+
+        performance_metrics = self.request.query_params.get('include_performance_metrics')
+        if str(performance_metrics) == '0':
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites']).distinct().order_by('num')
+            self.serializer_class = ScoreMetaboliteSerializer
+        else:
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
+                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
          # Filter publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
@@ -282,18 +288,26 @@ class RestMetabolomics(generics.ListAPIView):
 
 
 class RestProteomics(generics.ListAPIView):
-    serializer_class = ScoreProteinSerializer
+    serializer_class = ScorePerformanceProteinSerializer
 
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
+
+        performance_metrics = self.request.query_params.get('include_performance_metrics')
+        if str(performance_metrics) == '0':
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes']).distinct()
+            self.serializer_class = ScoreProteinSerializer
+        else:
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
 
         ## Filters ##
         # Filter data - for intern use
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
+                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
         # Filter platforms
         platform_versions = self.request.query_params.get('versions')
         if platform_versions and platform_versions is not None:
@@ -315,18 +329,25 @@ class RestProteomics(generics.ListAPIView):
 
 
 class RestTranscriptomics(generics.ListAPIView):
-    serializer_class = ScoreTranscriptSerializer
+    serializer_class = ScorePerformanceTranscriptSerializer
 
     def get_queryset(self):
         # Platform
         platform = self.kwargs['platform']
-        queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
+
+        performance_metrics = self.request.query_params.get('include_performance_metrics')
+        if str(performance_metrics) == '0':
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes']).distinct().order_by('num')
+            self.serializer_class = ScoreTranscriptSerializer
+        else:
+            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
         # Filter publication
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
@@ -464,7 +485,7 @@ class RestPlatform(generics.RetrieveAPIView):
     def get(self, request, platform):
         try:
             queryset = PlatformMaster.objects.prefetch_related(*related_dict['platform_prefetch']).get(name__iexact=platform)
-        except Platform.DoesNotExist:
+        except PlatformMaster.DoesNotExist:
             queryset = None
         serializer = PlatformMasterSerializer(queryset,many=False)
         return Response(serializer.data)
@@ -577,8 +598,8 @@ class RestPublicationSearch(generics.ListAPIView):
         if pgs_id and pgs_id is not None:
             pgs_id = pgs_id.upper()
             try:
-                score = Score.objects.only('id','publication__id').select_related('dataset','dataset__publication').get(id=pgs_id)
-                queryset = queryset.filter(id=score.publication.id)
+                score = Score.objects.only('id','dataset__publication__id').select_related('dataset','dataset__publication').get(id=pgs_id)
+                queryset = queryset.filter(id=score.dataset.publication.id)
                 params += 1
             except Score.DoesNotExist:
                 queryset = []

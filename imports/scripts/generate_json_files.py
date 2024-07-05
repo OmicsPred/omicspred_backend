@@ -26,6 +26,7 @@ plot_score_url_root = f'{url_root}/plot/score/search?format=json&pmid='
 table_url_root = f'{url_root}/'
 default_path = '/Users/lg10/Workspace/git/fork/omicspred_frontend/public/data/'
 
+
 def rest_api_call(url,endpoint,parameters=None):
     """"
     Generic method to perform REST API calls to the PGS Catalog
@@ -75,6 +76,17 @@ def fetch_score_data(parameters):
 
 def fetch_plot_data(parameters):
     plot_data = rest_api_call(plot_url_root, parameters)
+    for col_data in plot_data:
+        score_ids_list = col_data['data'].keys()
+        scores_with_zero = []
+        # Identify the score IDs with a null value
+        for score_id in score_ids_list:
+            if str(col_data['data'][score_id]) == '0.0':
+                scores_with_zero.append(score_id)
+                col_data['data'][score_id] = 0
+        if len(scores_with_zero) > 0:
+            print(f"# {col_data['title']} ({len(scores_with_zero)})")
+            print(', '.join(scores_with_zero[:20]))
     return plot_data
 
 
@@ -109,10 +121,10 @@ def run():
                     write_data(plot_data,plot_file_path)
 
                     # Plot Score file
-                    print(f"\t- Plot Score data")
-                    plot_score_data = fetch_score_data(dataset_parameters)
-                    score_file_path = f'{dataset_file_path_prefix}_plot_score.json'
-                    write_data(plot_score_data,score_file_path)
+                    # print(f"\t- Plot Score data")
+                    # plot_score_data = fetch_score_data(dataset_parameters)
+                    # score_file_path = f'{dataset_file_path_prefix}_plot_score.json'
+                    # write_data(plot_score_data,score_file_path)
 
                     # # Add/update entry in omicspred_plot
                     # if dataset_name and dataset_name != '':
@@ -137,7 +149,7 @@ def run():
                 write_data(plot_data,plot_file_path)
 
                 # Plot Score file
-                print(f"\t- Plot Score data")
-                plot_score_data = fetch_score_data(parameters)
-                score_file_path = f'{file_path_prefix}_plot_score.json'
-                write_data(plot_score_data,score_file_path)
+                # print(f"\t- Plot Score data")
+                # plot_score_data = fetch_score_data(parameters)
+                # score_file_path = f'{file_path_prefix}_plot_score.json'
+                # write_data(plot_score_data,score_file_path)

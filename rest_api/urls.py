@@ -28,7 +28,6 @@ rest_urls = {
     'proteomics':           'rest/proteomics/',
     'publication':          'rest/publication/',
     'sample':               'rest/sample/',
-    'es_search':            'rest/es_search/',
     'score':                'rest/score/',
     'transcriptomics':      'rest/transcriptomics/',
     # 'table':               'rest/table/',
@@ -68,7 +67,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['score']+'search/(?P<type>[^/]+)/(?P<molecular_trait>[^/]+)'+slash, RestScoreSearchByMolecularTrait.as_view(), name="searchScoresByMolecularTrait"),
     re_path(r'^'+rest_urls['score']+'search'+slash, RestScoreSearch.as_view(), name="searchScores"),
     re_path(r'^'+rest_urls['score']+'(?P<opgs_id>[^/]+)'+slash, RestScore.as_view(), name="getScore"),
-    # Platform_additional
+    # Dataset
     re_path(r'^'+rest_urls['dataset']+'all'+slash, cache_page(cache_time)(RestListDatasets.as_view()), name="getAllDatasets"),
     re_path(r'^'+rest_urls['dataset']+'search'+slash, cache_page(cache_time)(RestDatasetSearch.as_view()), name="searchDatasets"),
     re_path(r'^'+rest_urls['dataset']+'(?P<dataset>[^/]+)'+slash, cache_page(cache_time)(RestDataset.as_view()), name="getDatasets"),

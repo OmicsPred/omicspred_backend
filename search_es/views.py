@@ -12,9 +12,9 @@ result_size = 25
 
 def query_fields():
     return ['id^3','name^3','platform_name','omics_type','category','full_name',
-            'genes.id^2','genes.name^2','genes.description',
-            'proteins.id^2','proteins.names^2','proteins.description',
-            'metabolites.id^2','metabolites.name^2','metabolites.description']
+            'genes.external_id^2','genes.name^2','genes.description',
+            'proteins.external_id^2','proteins.names^2','proteins.description',
+            'metabolites.external_id^2','metabolites.name^2','metabolites.description']
 
 
 def get_search(query):
@@ -36,7 +36,7 @@ def get_search(query):
 
 class ESSearch(generics.RetrieveAPIView):
     """
-    Send ElasticSearch query and return the result as JSON
+    Send Elasticsearch query and return the result as JSON
     """
 
     def get(self,request):

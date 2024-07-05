@@ -1,0 +1,608 @@
+[
+    {
+        "model": "omicspred.Publication",
+        "pk": 1,
+        "fields": {
+            "pmid": 36991119,
+            "doi": "10.1038/s41586-023-05844-9",
+            "journal": "Nature",
+            "firstauthor": "Xu Y",
+            "authors": "Xu Y, ..., Butterworth AS, Inouye M.",
+            "title": "An atlas of genetic scores to predict multi-omic traits.",
+            "date_publication": "2023-03-29",
+            "date_released": "2023-03-29",
+            "curation_status": "C",
+            "curation_notes": ""
+        }
+    },
+    {
+        "model": "omicspred.PlatformMaster",
+        "pk": 1,
+        "fields": {
+            "name": "Somalogic",
+            "full_name": "Somalogic",
+            "technic": "aptamer-based multiplex protein assay",
+            "type": "Proteomics"
+        }
+    },
+    {
+        "model": "omicspred.PlatformMaster",
+        "pk": 2,
+        "fields": {
+            "name": "Olink",
+            "full_name": "Olink",
+            "technic": "antibody-based proximity extension assay for proteins",
+            "type": "Proteomics"
+        }
+    },
+    {
+        "model": "omicspred.PlatformMaster",
+        "pk": 4,
+        "fields": {
+            "name": "Metabolon",
+            "full_name": "Metabolon Discovery HD4",
+            "technic": "untargeted mass spectrometry metabolomics platform",
+            "type": "Metabolomics"
+        }
+    },
+    {
+        "model": "omicspred.Platform",
+        "pk": 1,
+        "fields": {
+            "name": "Somalogic",
+            "version": "3.0",
+            "platform_master_id": 1
+        }
+    },
+    {
+        "model": "omicspred.Platform",
+        "pk": 2,
+        "fields": {
+            "name": "Olink",
+            "version": "Target",
+            "platform_master_id": 2
+        }
+    },
+    {
+        "model": "omicspred.Platform",
+        "pk": 4,
+        "fields": {
+            "name": "Metabolon",
+            "platform_master_id": 4
+        }
+    },
+    {
+        "model": "omicspred.Cohort",
+        "pk": 1,
+        "fields": {
+            "name_short": "INTERVAL",
+            "name_full": "INTERVAL",
+            "name_others": null,
+            "url": "https://www.intervalstudy.org.uk/"
+        }
+    },
+    {
+        "model": "omicspred.Cohort",
+        "pk": 2,
+        "fields": {
+            "name_short": "UKB",
+            "name_full": "UK Biobank",
+            "name_others": null,
+            "url": "https://www.ukbiobank.ac.uk/"
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 1,
+        "fields": {
+            "sample_number": 3175,
+            "sample_percent_male": 50.8,
+            "sample_age": 46.3,
+            "sample_age_sd": 14.2,
+            "ancestry_broad": "European",
+            "cohorts": [ 1 ]
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 2,
+        "fields": {
+            "sample_number": 98245,
+            "sample_percent_male": 45.8,
+            "sample_age": 56.5,
+            "sample_age_sd": 8.1,
+            "ancestry_broad": "European",
+            "cohorts": [ 2 ]
+        }
+    },
+    {
+        "model": "omicspred.Species",
+        "pk": 9606,
+        "fields": {
+            "taxonomy_id": 9606,
+            "name": "human",
+            "name_latin": "Homo sapiens"
+        }
+    },
+    {
+        "model": "omicspred.EFO",
+        "pk": "UBERON_0001969",
+        "fields": {
+            "label": "blood plasma",
+            "description": "The liquid component of blood, in which erythrocytes are suspended.",
+            "url": "http://purl.obolibrary.org/obo/UBERON_0001969",
+            "type": "tissue"
+        }
+    },
+    {
+        "model": "omicspred.Dataset",
+        "pk": 1,
+        "fields": {
+            "name": null,
+            "omics_count": 2384,
+            "omics_type": "protein",
+            "scores_count": 2384,
+            "files_ids": {
+                "gwas_sumstats": "u3fl",
+                "scoring_files": "z86f",
+                "score_variant_info": "eac8",
+                "validation_results": "7j72",
+                "scoring_files_pgsc_calc": "7qga"
+            },
+            "platform": 1,
+            "publication": 1,
+            "species_id": 9606,
+            "tissue_id": "UBERON_0001969",
+            "samples_training": [ 1 ],
+            "samples_validation": [ 2 ]
+        }
+    },
+    {
+        "model": "omicspred.Dataset",
+        "pk": 2,
+        "fields": {
+            "name": "INTERVAL",
+            "omics_count": 308,
+            "omics_type": "protein",
+            "scores_count": 308,
+            "files_ids": {
+                "gwas_sumstats": "u3fl1",
+                "scoring_files": "z86f1",
+                "score_variant_info": "eac81",
+                "validation_results": "7j721",
+                "scoring_files_pgsc_calc": "7qga1"
+            },
+            "platform": 2,
+            "publication": 1,
+            "species_id": 9606,
+            "tissue_id": "UBERON_0001969",
+            "samples_training": [ 1 ],
+            "samples_validation": [ 2 ]
+        }
+    },
+    {
+        "model": "omicspred.Dataset",
+        "pk": 3,
+        "fields": {
+            "name": "",
+            "omics_count": 726,
+            "omics_type": "metabolite",
+            "scores_count": 726,
+            "files_ids": {
+                "gwas_sumstats": "u3fl2",
+                "scoring_files": "z86f2",
+                "score_variant_info": "eac82",
+                "validation_results": "7j722",
+                "scoring_files_pgsc_calc": "7qga2"
+            },
+            "platform": 4,
+            "publication": 1,
+            "species_id": 9606,
+            "tissue_id": "UBERON_0001969",
+            "samples_training": [ 1 ],
+            "samples_validation": [ 2 ]
+        }
+    },
+    {
+        "model": "omicspred.SuperPathway",
+        "pk": 16,
+        "fields": {
+            "name": "Immune System",
+            "external_id": "R-HSA-168256",
+            "external_id_source": "Reactome"
+        }
+    },
+    {
+        "model": "omicspred.SuperPathway",
+        "pk": 17,
+        "fields": {
+            "name": "Metabolism",
+            "external_id": "R-HSA-1430728",
+            "external_id_source": "Reactome"
+        }
+    },
+    {
+        "model": "omicspred.Pathway",
+        "pk": 2389,
+        "fields": {
+            "name": "Cholesterol biosynthesis",
+            "external_id": "R-HSA-191273",
+            "external_id_source": "Reactome",
+            "superpathways": [17]
+        }
+    },
+    {
+        "model": "omicspred.Pathway",
+        "pk": 2400,
+        "fields": {
+            "name": "Immunoregulatory interactions between a Lymphoid and a non-Lymphoid cell",
+            "external_id": "R-HSA-198933",
+            "external_id_source": "Reactome",
+            "superpathways": [16]
+        }
+    },
+    {
+        "model": "omicspred.Gene",
+        "pk": 5,
+        "fields": {
+            "name": "FCGR2B",
+            "external_id": "ENSG00000072694",
+            "external_id_source": "Ensembl",
+            "biotype": "protein_coding",
+            "pathways": [2400]
+        }
+    },
+    {
+        "model": "omicspred.Protein",
+        "pk": 5,
+        "fields": {
+            "name": "Low affinity immunoglobulin gamma Fc region receptor II-b",
+            "external_id": "P31994",
+            "external_id_source": "UniProt",
+            "gene_id": 5,
+            "description": "Receptor for the Fc region of ..."
+        }
+    },
+    {
+        "model": "omicspred.Metabolite",
+        "pk": 454,
+        "fields": {
+            "name": "cholesterol",
+            "external_id": "CHEBI_16113",
+            "external_id_source": "ChEBI",
+            "description": "A cholestanoid consisting of cholestane ...",
+            "synonyms": [{
+                "name": "cholesterol",
+                "source": "UniProt"
+            }],
+            "xrefs": [{
+                "name": "HMDB0000067",
+                "source": "HMDB"
+            }],
+            "pathways": [2389]
+        }
+    },
+    {
+        "model": "omicspred.Score",
+        "pk": 5,
+        "fields": {
+            "id": "OPGS000005",
+            "name": "FCGR2B.3310.62.1",
+            "trait_reported": "Low affinity immunoglobulin gamma Fc region receptor II-b",
+            "trait_reported_id": "P31994",
+            "method_name": "Bayesian Ridge regression",
+            "method_params": null,
+            "variants_number": 327,
+            "variants_interactions": 0,
+            "variants_genomebuild": "GRCh37",
+            "date_released": "2023-03-29",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+            "species_id": 9606,
+            "dataset_id": 1,
+            "genes": [ 5 ],
+            "proteins": [ 5 ],
+            "transcripts": [],
+            "metabolites": []
+        }
+    },
+    {
+        "model": "omicspred.Score",
+        "pk": 2385,
+        "fields": {
+            "id": "OPGS002385",
+            "name": null,
+            "trait_reported": "Low affinity immunoglobulin gamma Fc region receptor II-b",
+            "trait_reported_id": "P31994",
+            "method_name": "Bayesian Ridge regression",
+            "method_params": null,
+            "variants_number": 134,
+            "variants_interactions": 0,
+            "variants_genomebuild": "GRCh37",
+            "date_released": "2023-03-29",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+            "species_id": 9606,
+            "dataset_id": 2,
+            "genes": [ 5],
+            "proteins": [ 5 ],
+            "transcripts": [],
+            "metabolites": []
+        }
+    },
+    {
+        "model": "omicspred.Score",
+        "pk": 3006,
+        "fields": {
+            "id": "OPGS003006",
+            "name": null,
+            "trait_reported": "cholesterol",
+            "trait_reported_id": "M00063",
+            "method_name": "Bayesian Ridge regression",
+            "method_params": null,
+            "variants_number": 19,
+            "variants_interactions": 0,
+            "variants_genomebuild": "GRCh37",
+            "date_released": "2023-03-29",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+            "species_id": 9606,
+            "dataset_id": 3,
+            "genes": [],
+            "proteins": [],
+            "transcripts": [],
+            "metabolites": [ 454 ]
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 25,
+        "fields": {
+            "eval_type": "T",
+            "performance_additional": "2,384 genes",
+            "cohort_label": "INTERVAL",
+            "covariates": null,
+            "efo_id": "UBERON_0001969",
+            "sample_id": 1,
+            "score_id": 5,
+            "dataset_id": 1
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 26,
+        "fields": {
+            "eval_type": "EV",
+            "performance_additional": "2,129 proteins genes",
+            "cohort_label": "UKB",
+            "covariates": "Age, sex, sample collection site, and the first 10 genetic principal components",
+            "efo_id": "UBERON_0001969",
+            "sample_id": 2,
+            "score_id": 5,
+            "dataset_id": 1
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 14305,
+        "fields": {
+            "eval_type": "T",
+            "performance_additional": "308 genes",
+            "cohort_label": "INTERVAL",
+            "covariates": null,
+            "efo_id": "UBERON_0001969",
+            "sample_id": 1,
+            "score_id": 2385,
+            "dataset_id": 2
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 14306,
+        "fields": {
+            "eval_type": "EV",
+            "performance_additional": "302 proteins genes",
+            "cohort_label": "UKB",
+            "covariates": "Age, sex, sample collection site, and the first 10 genetic principal components",
+            "efo_id": "UBERON_0001969",
+            "sample_id": 2,
+            "score_id": 2385,
+            "dataset_id": 2
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 17155,
+        "fields": {
+            "eval_type": "T",
+            "performance_additional": "726 genes",
+            "cohort_label": "INTERVAL",
+            "covariates": null,
+            "efo_id": "UBERON_0001969",
+            "sample_id": 1,
+            "score_id": 3006,
+            "dataset_id": 3
+        }
+    },
+    {
+        "model": "omicspred.Performance",
+        "pk": 17156,
+        "fields": {
+            "eval_type": "IV",
+            "performance_additional": "527 metabolites genes",
+            "cohort_label": "UKB",
+            "covariates": "Age, sex, batch, recruitment centre, ...",
+            "efo_id": "UBERON_0001969",
+            "sample_id": 2,
+            "score_id": 3006,
+            "dataset_id": 3
+        }
+    },
+    {
+        "model": "omicspred.metric",
+        "pk": 69,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.727,
+            "performance_id": 25,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 70,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.876,
+            "performance_id": 25,
+            "type": "Spearman's rank correlation"
+        }
+    },
+
+    {
+        "model": "omicspred.Metric",
+        "pk": 71,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.728,
+            "performance_id": 26,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 72,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.872,
+            "performance": 26,
+            "type": "Spearman's rank correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 72,
+        "fields": {
+            "name": "Missing Rate",
+            "name_short": "Missing Rate",
+            "estimate": 0.872,
+            "performance": 26,
+            "type": "Variant Missing Rate"
+        }
+    },
+
+    {
+        "model": "omicspred.Metric",
+        "pk": 40529,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.615,
+            "performance": 14305,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 40530,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.804,
+            "performance": 14305,
+            "type": "Spearman's rank correlation"
+        }
+    },
+
+    {
+        "model": "omicspred.Metric",
+        "pk": 40531,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.507,
+            "performance": 14306,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 40532,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.713,
+            "performance": 14306,
+            "type": "Spearman's rank correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 40533,
+        "fields": {
+            "name": "Missing Rate",
+            "name_short": "Missing Rate",
+            "estimate": 0.375,
+            "performance": 14306,
+            "type": "Variant Missing Rate"
+        }
+    },
+
+    {
+        "model": "omicspred.metric",
+        "pk": 69,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.03,
+            "performance_id": 17155,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 70,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.165,
+            "performance_id": 17155,
+            "type": "Spearman's rank correlation"
+        }
+    },
+
+    {
+        "model": "omicspred.Metric",
+        "pk": 40531,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.019,
+            "performance": 17156,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 40532,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.135,
+            "performance": 17156,
+            "type": "Spearman's rank correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 40533,
+        "fields": {
+            "name": "Missing Rate",
+            "name_short": "Missing Rate",
+            "estimate": 0,
+            "performance": 17156,
+            "type": "Variant Missing Rate"
+        }
+    }
+]

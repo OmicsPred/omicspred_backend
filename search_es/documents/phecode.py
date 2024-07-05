@@ -41,7 +41,7 @@ class PhecodeDocument(Document):
     )
     phecode_score = fields.ObjectField(
         properties={
-            'id': fields.TextField()
+            'score_id': fields.TextField()
         }
     )
 
