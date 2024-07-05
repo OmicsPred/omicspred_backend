@@ -887,6 +887,10 @@ components:
         variants_number:
           type: integer
           example: 182
+        dataset_name:
+          type: string
+          description: "Dataset name"
+          example: "UKB European"
         performance_data:
           type: array
           description: "Simplified structure containing information about a Performance Metrics for a Cohort."
