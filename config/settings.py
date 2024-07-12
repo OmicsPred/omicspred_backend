@@ -81,10 +81,10 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    # 'django.contrib.messages',
+    'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_elasticsearch_dsl',
+    # 'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
