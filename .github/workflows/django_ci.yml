@@ -8,27 +8,28 @@ on:
 
 env:
   DEBUG: False
-  ALLOWED_HOSTS: 'localhost'
-  DATABASE_NAME: 'db_test'
-  DATABASE_USER: 'postgres'
-  DATABASE_PASSWORD: 'postgres'
-  DATABASE_HOST: 'localhost'
+  IS_TEST: 'True'
+  ALLOWED_HOSTS: localhost
+  DATABASE_NAME: db_test
+  DATABASE_USER: postgres
+  DATABASE_PASSWORD: postgres
+  DATABASE_HOST: localhost
   DATABASE_PORT: 5432
   DATABASE_PORT_LOCAL: 5432
-  DATABASE_NAME_2: 'db_test_applications'
-  DATABASE_USER_2: 'postgres'
-  DATABASE_PASSWORD_2: 'postgres'
-  DATABASE_HOST_2: 'localhost'
+  DATABASE_NAME_2: db_test_applications
+  DATABASE_USER_2: postgres
+  DATABASE_PASSWORD_2: postgres
+  DATABASE_HOST_2: localhost
   DATABASE_PORT_2: 5432
   DATABASE_PORT_LOCAL_2: 5432
-  DATABASE_NAME_3: 'db_test_plot'
-  DATABASE_USER_3: 'postgres'
-  DATABASE_PASSWORD_3: 'postgres'
-  DATABASE_HOST_3: 'localhost'
+  DATABASE_NAME_3: db_test_plot
+  DATABASE_USER_3: postgres
+  DATABASE_PASSWORD_3: postgres
+  DATABASE_HOST_3: localhost
   DATABASE_PORT_3: 5432
   DATABASE_PORT_LOCAL_3: 5432
-  REST_URL_ROOT: 'http://127.0.0.1/rest/'
-  ELASTICSEARCH_URL_ROOT: 'http://localhost:9200'
+  REST_URL_ROOT: http://127.0.0.1/rest/
+  ELASTICSEARCH_URL_ROOT: http://localhost:9200
   SECRET_KEY: 1234
 
 jobs:
@@ -38,14 +39,20 @@ jobs:
     services:
       postgres:
         image: postgres:13
+        # Provide the user/password/db for postgres
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: db_test
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
+          # Maps tcp port 5432 on service container to the host
           - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         
     strategy:
       max-parallel: 2
@@ -64,14 +71,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Install Elasticsearch
-      run: |
-        curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.20-amd64.deb -o elasticsearch.deb
-        sudo dpkg -i --force-confnew elasticsearch.deb
-        sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-        sudo service elasticsearch start
+        pip install -r requirements_local.txt
         
     - name: Run Tests
       run: |
-        python manage.py test rest_api/tests
+        python manage.py test

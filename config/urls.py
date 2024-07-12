@@ -21,14 +21,16 @@ from django.urls import include, path
 # Settings-specific configuration
 from django.conf import settings
 
-# Allow to build search indexes by importing the module
-if settings.OP_ON_GAE == 0:
-    from search_es import indexes
 
 urlpatterns = [
-    path('', include('rest_api.urls')),
-    path('', include('search_es.urls'))
+    path('', include('rest_api.urls'))
 ]
+
+# Allow to build search indexes by importing the module
+if settings.IS_TEST == False:
+    if settings.OP_ON_GAE == 0:
+        from search_es import indexes
+    urlpatterns.append(path('', include('search_es.urls')))
 
 # Debug SQL queries
 if settings.DEBUG:
