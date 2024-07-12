@@ -17,8 +17,8 @@ tags:
     description: Genetic Score metadata with associated molecular traits (genes, transcripts, proteins, metabolites), publications and platforms
   - name: "Publication endpoints"
     description: Publication metadata (PubMed IDs, doi, authors, associated platforms, ...)
-  - name: "Trait endpoints (Applications)"
-    description: Trait metadata (PheCode [ID, label, description, ...], associated Genetic Scores, ...)
+  - name: "PheWAS endpoints"
+    description: PheWAS metadata (PheCode [ID, label, description, ...], associated Genetic Scores, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
   - name: "Dataset endpoints"
@@ -2974,7 +2974,7 @@ paths:
   /rest/phecode/{phecode_id}:
     get:
       tags:
-        - "Trait endpoints (Applications)"
+        - "PheWAS endpoints"
       operationId: getPhecode
       description: |
         Retrieve the Phecode information, including:
@@ -3034,7 +3034,7 @@ paths:
   /rest/applications_score/all:
     get:
       tags:
-        - "Trait endpoints (Applications)"
+        - "PheWAS endpoints"
       operationId: getAllPhecodeScores
       description: |
         Retrieve all the Phecode Score associations, including for each of them:
@@ -3090,7 +3090,7 @@ paths:
   /rest/applications_score/{opgs_id}:
     get:
       tags:
-        - "Trait endpoints (Applications)"
+        - "PheWAS endpoints"
       operationId: getPhecodeScore
       description: |
         Retrieve all the Phecode Score associations for a given Score ID, including for each of them:
@@ -3146,7 +3146,7 @@ paths:
   /rest/applications_score/search:
     get:
       tags:
-        - "Trait endpoints (Applications)"
+        - "PheWAS endpoints"
       operationId: searchPhecodeScores
       description: |
         Search Phecode Score associations by OmicsPred Score ID or Phecode ID.

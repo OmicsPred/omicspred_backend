@@ -28,6 +28,8 @@
 
 # Tests
 **/tests/
+**/tests.py
+/rest_api/fixtures/
 
 # Python pycache:
 **/__pycache__/

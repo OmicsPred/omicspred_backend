@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 box_shared_url = 'https://app.box.com/shared/static/'
+box_folder_shared_url = 'https://app.box.com/s/'
 
 class Species(models.Model):
     """ Class for species information """
@@ -299,7 +300,10 @@ class Dataset(models.Model):
     def scoring_files_urls(self):
         urls = {}
         for file_type in self.files_ids.keys():
-           urls[file_type] = f'{box_shared_url}{self.files_ids[file_type]}'
+            url_prefix = box_shared_url
+            if file_type == 'gwas_sumstats':
+                url_prefix = box_folder_shared_url
+            urls[file_type] = f'{url_prefix}{self.files_ids[file_type]}'
         return urls
 
     @property
