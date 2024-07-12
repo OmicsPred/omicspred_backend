@@ -75,4 +75,4 @@ jobs:
         
     - name: Run Tests
       run: |
-        python manage.py test rest_api/tests
+        python manage.py test
