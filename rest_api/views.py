@@ -30,7 +30,7 @@ related_dict = {
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
     'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
-    'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts','dataset_score'],
+    'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_defer': [*generic_defer,'curation_status'],
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
@@ -539,7 +539,7 @@ class RestDatasetSearch(generics.ListAPIView):
                 queryset = queryset.filter(publication__pmid=pmid)
             # Filter by platform
             platform = self.request.query_params.get('platform')
-            if platform and platform != None:
+            if platform and platform is not None:
                 queryset = queryset.filter(platform__name__iexact=platform)
         except Dataset.DoesNotExist:
             queryset = []

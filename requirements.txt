@@ -1,6 +1,6 @@
 #### Django library ####
-# Django==4.2.13
-Django==5.0.6
+# Django==4.2.14
+Django==5.0.7
 #### Python PostgreSQL library ####
 psycopg2-binary==2.9.9
 #### Django REST API libraries ####
