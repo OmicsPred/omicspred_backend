@@ -44,6 +44,11 @@ DEBUG = False
 if os.environ['DEBUG'] == 'True':
     DEBUG = True
 
+# For Continuous integration (CI)
+IS_TEST = False
+if os.environ['IS_TEST'] == 'True':
+    IS_TEST = True
+
 #ALLOWED_HOSTS = []
 ALLOWED_HOSTS = os.environ['ALLOWED_HOSTS'].split(',')
 
@@ -70,18 +75,26 @@ INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
     'plot.apps.PlotConfig',
-    'search_es.apps.SearchESConfig',
+    # 'search_es.apps.SearchESConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.messages',
+    # 'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
     'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
+
+# Test skipped app installation
+if IS_TEST == False:
+    elastic_search = [
+        'search_es.apps.SearchESConfig',
+        'django_elasticsearch_dsl'
+    ]
+    INSTALLED_APPS.extend(elastic_search)
 
 # Local app installation
 if OP_ON_GAE == 0:

@@ -8,6 +8,7 @@ on:
 
 env:
   DEBUG: False
+  IS_TEST: 'True'
   ALLOWED_HOSTS: 'localhost'
   DATABASE_NAME: 'db_test'
   DATABASE_USER: 'postgres'
@@ -38,14 +39,18 @@ jobs:
     services:
       postgres:
         image: postgres:13
+        # Provide the password for postgres
         env:
-          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: db_test
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
+          # Maps tcp port 5432 on service container to the host
           - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         
     strategy:
       max-parallel: 2
@@ -65,13 +70,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements_local.txt
-
-    - name: Install Elasticsearch
-      run: |
-        curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.20-amd64.deb -o elasticsearch.deb
-        sudo dpkg -i --force-confnew elasticsearch.deb
-        sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-        sudo service elasticsearch start
         
     - name: Run Tests
       run: |
