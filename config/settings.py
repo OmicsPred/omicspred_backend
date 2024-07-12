@@ -243,16 +243,6 @@ STATICFILES_FINDERS = [
 	'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder'
 ]
-if OP_ON_GAE == 0:
-    STATICFILES_FINDERS.append('compressor.finders.CompressorFinder')
-
-
-COMPRESS_PRECOMPILERS = ''
-COMPRESS_ROOT = os.path.join(BASE_DIR, "static/")
-
-COMPRESS_PRECOMPILERS = (
-    ('text/x-scss', 'django_libsass.SassCompiler'),
-)
 
 
 #---------------------#
