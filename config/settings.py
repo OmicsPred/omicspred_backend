@@ -87,8 +87,7 @@ INSTALLED_APPS = [
 if OP_ON_GAE == 0:
     local_apps = [
         'django_extensions',
-        'imports.apps.ImportsConfig',
-        'misc.apps.MiscConfig',
+        'imports.apps.ImportsConfig'
     ]
     INSTALLED_APPS.extend(local_apps)
 
