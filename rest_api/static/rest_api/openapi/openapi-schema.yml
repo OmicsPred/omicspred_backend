@@ -891,6 +891,12 @@ components:
           type: string
           description: "Dataset name"
           example: "UKB European"
+        platform_version:
+          type: string
+          description: "Platform version"
+          example: "3.0"
+        publication:
+          $ref: '#/components/schemas/Publication'
         performance_data:
           type: array
           description: "Simplified structure containing information about a Performance Metrics for a Cohort."
@@ -1531,6 +1537,8 @@ paths:
         Retrieve all the Scores associated with the given metabolomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Platform version
+          * Publication information
           * Performance Metrics data
           * Reported Molecular Trait
           * Associated Metabolites
@@ -1587,6 +1595,8 @@ paths:
         Retrieve all the Scores associated with the given proteomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Platform version
+          * Publication information
           * Performance Metrics data
           * Associated Genes
           * Associated Proteins
@@ -1643,6 +1653,8 @@ paths:
         Retrieve all the Scores associated with the given transcriptomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Platform version
+          * Publication information
           * Performance Metrics data
           * Associated Genes
 

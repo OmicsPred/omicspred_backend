@@ -355,7 +355,7 @@ class ScoreSerializer(serializers.ModelSerializer):
         return PublicationSerializer(publication, many=False, read_only=True).data
 
     def get_platform(self, obj):
-        ''' Get Publication model '''
+        ''' Get Platform model '''
         platform = obj.dataset.platform
         return PlatformSerializer(platform, many=False, read_only=True).data
 
@@ -459,7 +459,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
         return PublicationSerializer(publication, many=False, read_only=True).data
 
     def get_platform(self, obj):
-        ''' Get Publication model '''
+        ''' Get Platform model '''
         platform = obj.dataset.platform
         return PlatformSerializer(platform, many=False, read_only=True).data
 
@@ -490,10 +490,12 @@ class ScorePerformanceDataSerializer(ScoreSerializer):
 
 class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
     dataset_name = serializers.SerializerMethodField()
+    publication = serializers.SerializerMethodField()
+    platform_version = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','dataset_name')
+        meta_fields = ('id','variants_number','dataset_name','platform_version','publication')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -501,6 +503,15 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
     def get_dataset_name(self,obj):
         ''' Get Dataset name '''
         return obj.dataset.name
+
+    def get_platform_version(self, obj):
+        ''' Get Platform version '''
+        return obj.dataset.platform.version
+
+    def get_publication(self, obj):
+        ''' Get Publication model '''
+        publication = obj.dataset.publication
+        return PublicationSerializer(publication, many=False, read_only=True).data
 
 
 class ScoreMetaboliteSerializer(ScoreMolecularTraitSerializer):

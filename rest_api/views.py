@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
-from django.db.models import Prefetch, Q, FloatField, DecimalField
+from django.db.models import Prefetch, Q, FloatField
 from django.db.models.functions import Cast
 from omicspred.models import *
 from applications.models import *
@@ -16,7 +16,13 @@ from .serializers import *
 generic_defer = ['curation_notes']
 only_dict = {
     'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
+    'scores_pp_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__version','dataset__publication'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
+}
+
+defer_dict = {
+    'scores_table_defer': [*generic_defer,'method_name','method_params','variants_interactions','variants_genomebuild','date_released','species','license'],
+    'publication_defer': [*generic_defer,'curation_status']
 }
 
 performance_metric = [Prefetch('performance_metric', queryset=Metric.objects.only('id','performance_id','name_short','estimate').all())]
@@ -32,7 +38,6 @@ related_dict = {
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
-    'publication_defer': [*generic_defer,'curation_status'],
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
     'score_applications_select': ['phecode','platform','platform__platform_master','cohort'],
@@ -261,10 +266,10 @@ class RestMetabolomics(generics.ListAPIView):
 
         performance_metrics = self.request.query_params.get('include_performance_metrics')
         if str(performance_metrics) == '0':
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites']).distinct().order_by('num')
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites']).distinct().order_by('num')
             self.serializer_class = ScoreMetaboliteSerializer
         else:
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
@@ -296,10 +301,10 @@ class RestProteomics(generics.ListAPIView):
 
         performance_metrics = self.request.query_params.get('include_performance_metrics')
         if str(performance_metrics) == '0':
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes']).distinct()
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes']).distinct()
             self.serializer_class = ScoreProteinSerializer
         else:
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
 
         ## Filters ##
         # Filter data - for intern use
@@ -337,10 +342,10 @@ class RestTranscriptomics(generics.ListAPIView):
 
         performance_metrics = self.request.query_params.get('include_performance_metrics')
         if str(performance_metrics) == '0':
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes']).distinct().order_by('num')
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes']).distinct().order_by('num')
             self.serializer_class = ScoreTranscriptSerializer
         else:
-            queryset = Score.objects.only(*only_dict['scores_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
+            queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
         # Filter data - for intern use
@@ -556,7 +561,7 @@ class RestListPublications(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Publications
-        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
+        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
         # Filter by list of Publications IDs
         pmids_list = get_ids_list(self)
         if pmids_list:
@@ -573,8 +578,8 @@ class RestPublication(generics.RetrieveAPIView):
     def get(self, request, pmid):
         try:
             # queryset = Publication.objects.get(pmid__iexact=pmid)
-            queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related(*related_dict['publication_datasets']).get(pmid__iexact=pmid)
-            # queryset = Publication.objects.defer(*related_dict['publication_defer']).prefetch_related('platforms','platforms__platform__platform_master','platforms__tissue','platforms__samples_training','platforms__samples_training__cohorts','platforms__samples_validation','platforms__samples_validation__cohorts').get(pmid__iexact=pmid)
+            queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related(*related_dict['publication_datasets']).get(pmid__iexact=pmid)
+            # queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related('platforms','platforms__platform__platform_master','platforms__tissue','platforms__samples_training','platforms__samples_training__cohorts','platforms__samples_validation','platforms__samples_validation__cohorts').get(pmid__iexact=pmid)
         except Publication.DoesNotExist:
             queryset = None
         serializer = PublicationExtendedSerializer(queryset,many=False)
@@ -588,8 +593,8 @@ class RestPublicationSearch(generics.ListAPIView):
     serializer_class = PublicationExtendedSerializer
 
     def get_queryset(self):
-        # queryset = Publication.objects.defer(*related_dict['publication_defer']).all().order_by('id')
-        queryset = Publication.objects.defer(*related_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
+        # queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().order_by('id')
+        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
 
         params = 0
 
