@@ -7,6 +7,7 @@ from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
 from django.db.models import Prefetch, Q, FloatField
 from django.db.models.functions import Cast
+from django.conf import settings
 from omicspred.models import *
 from applications.models import *
 from .serializers import *
@@ -119,6 +120,24 @@ def get_ids_list(object):
     elif 'filter_ids' in object.request.data:
         ids_list = [ x.upper() for x in object.request.data['filter_ids']]
     return ids_list
+
+
+# Method used for the App Engine warmup
+def warmup(request):
+    """
+    Provides default procedure for handling warmup requests on App
+    Engine. Just add this view to your main urls.py.
+    """
+    import importlib
+    from django.http import HttpResponse
+    for app in settings.INSTALLED_APPS:
+        for name in ('urls', 'views', 'models'):
+            try:
+                importlib.import_module('%s.%s' % (app, name))
+            except ImportError:
+                pass
+    content_type = 'text/plain; charset=utf-8'
+    return HttpResponse("Warmup done.", content_type=content_type)
 
 
 ## Cohorts ##

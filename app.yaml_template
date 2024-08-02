@@ -1,0 +1,56 @@
+# [START django_app]
+runtime: python311
+
+service: <service_name>
+
+inbound_services:
+- warmup
+
+handlers:
+# This configures Google App Engine to serve the files in the app's
+# static directory.
+- url: /static
+  static_dir: static/
+
+# This handler routes all requests not caught above to the main app.
+# It is required when static routes are defined, but can be omitted
+# (along with the entire handlers section) when there are no static
+# files defined.
+- url: /.*
+  script: auto
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 3
+
+env_variables:
+    SECRET_KEY: <django_secret_key>
+    ALLOWED_HOSTS: '*'
+    IS_TEST: 'False'
+    PUBLIC_SITE: 'True'
+    DEBUG: 'False'
+    # OmicsPred database #
+    DATABASE_NAME: '<db_name>' # e.g.: omicspred_db
+    DATABASE_USER: '<db_user>'
+    DATABASE_PASSWORD: '<db_password>'
+    DATABASE_PORT: '<db_port>'
+    DATABASE_PORT_LOCAL: '<db_port_local>'
+    DATABASE_HOST: '<db_host>' # e.g.: localhost, IP address, /cloudsql/...
+    # OmicsPred Applications database #
+    DATABASE_NAME_2: '<applications_db_name>' # e.g.: omicspred_applications
+    DATABASE_USER_2: '<db_user>'
+    DATABASE_PASSWORD_2: '<db_password>'
+    DATABASE_PORT_2: '<db_port>'
+    DATABASE_PORT_LOCAL_2: '<db_port_local>'
+    DATABASE_HOST_2: '<db_host>' # e.g.: localhost, IP address, /cloudsql/...
+    # OmicsPred Plot database #
+    DATABASE_NAME_3: '<plot_db_name>' # e.g.: omicspred_plot
+    DATABASE_USER_3: '<db_user>'
+    DATABASE_PASSWORD_3: '<db_password>'
+    DATABASE_PORT_3: '<db_port>'
+    DATABASE_PORT_LOCAL_3: '<db_port_local>'
+    DATABASE_HOST_3: '<db_host>' # e.g.: localhost, IP address, /cloudsql/...
+    # Search - cloud
+    ELASTICSEARCH_URL_ROOT: '<url_to_elasticsearch_service>'
+
+# [END django_app]
