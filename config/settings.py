@@ -49,6 +49,11 @@ IS_TEST = False
 if os.environ['IS_TEST'] == 'True':
     IS_TEST = True
 
+# Flag to indicate whether the installation is for the public server or not
+PUBLIC_SITE = False
+if os.environ['PUBLIC_SITE'] == 'True':
+    PUBLIC_SITE = True
+
 #ALLOWED_HOSTS = []
 ALLOWED_HOSTS = os.environ['ALLOWED_HOSTS'].split(',')
 

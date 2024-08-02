@@ -36,6 +36,8 @@ rest_urls = {
 urlpatterns = [
     # REST Documentation
     path('rest/', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
+    # Setup URL used to warmup the Django app in the Google App Engine
+    path('_ah/warmup', warmup, name="Warmup"),
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
     re_path(r'^'+rest_urls['cohort']+'(?P<cohort>[^/]+)'+slash, RestCohort.as_view(), name="getCohort"),
