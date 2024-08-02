@@ -9,6 +9,7 @@ on:
 env:
   DEBUG: False
   IS_TEST: 'True'
+  PUBLIC_SITE: 'True'
   ALLOWED_HOSTS: localhost
   DATABASE_NAME: db_test
   DATABASE_USER: postgres
