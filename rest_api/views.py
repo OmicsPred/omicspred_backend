@@ -341,10 +341,11 @@ class RestProteomics(generics.ListAPIView):
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid is not None:
             queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
-        # Filter Dataset
+        # Filter Dataset(s)
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
-            queryset = queryset.filter(dataset__name=dataset)
+            datasets_list = dataset.split(';')
+            queryset = queryset.filter(dataset__name__in=datasets_list)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
