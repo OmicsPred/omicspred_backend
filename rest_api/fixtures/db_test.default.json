@@ -302,7 +302,8 @@
             "genes": [ 5 ],
             "proteins": [ 5 ],
             "transcripts": [],
-            "metabolites": []
+            "metabolites": [],
+            "ancestry": {"dev": {"anc": {"EUR": {"dist": 100, "count": 4822}}, "count": 4822}, "eval": {"anc": {"EUR": {"dist": 100, "count": 1924}}, "count": 1924}}
         }
     },
     {
@@ -325,7 +326,8 @@
             "genes": [ 5],
             "proteins": [ 5 ],
             "transcripts": [],
-            "metabolites": []
+            "metabolites": [],
+            "ancestry": {"dev": {"anc": {"EUR": {"dist": 100, "count": 4822}}, "count": 4822}, "eval": {"anc": {"EUR": {"dist": 100, "count": 1924}}, "count": 1924}}
         }
     },
     {
@@ -348,7 +350,8 @@
             "genes": [],
             "proteins": [],
             "transcripts": [],
-            "metabolites": [ 454 ]
+            "metabolites": [ 454 ],
+            "ancestry": {"dev": {"anc": {"EAS": {"dist": 80, "count": 4000},"SAS": {"dist": 20, "count": 1000}}, "count": 5000}, "eval": {"anc": {"EUR": {"dist": 100, "count": 1924}}, "count": 1924}}
         }
     },
     {
