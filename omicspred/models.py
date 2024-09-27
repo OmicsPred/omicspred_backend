@@ -436,6 +436,9 @@ class Score(models.Model):
     proteins = models.ManyToManyField(Protein, related_name='protein_score', verbose_name='Protein(s)')
     metabolites = models.ManyToManyField(Metabolite, related_name='metabolite_score', verbose_name='Metabolite(s)')
 
+    # Ancestry distribution
+    ancestry = models.JSONField('Ancestry distribution', null=True)
+
     # LICENSE information/text
     license = models.TextField('License/Terms of Use', default='Creative Commons Attribution 4.0 International (CC BY 4.0)')
 

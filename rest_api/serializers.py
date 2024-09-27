@@ -341,7 +341,7 @@ class ScoreSerializer(serializers.ModelSerializer):
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
                        'dataset_name', 'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
+                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license', 'ancestry')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -495,7 +495,7 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','dataset_name','platform_version','publication')
+        meta_fields = ('id','variants_number','dataset_name','platform_version','publication','ancestry')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields

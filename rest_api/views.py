@@ -17,7 +17,7 @@ from .serializers import *
 generic_defer = ['curation_notes']
 only_dict = {
     'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
-    'scores_pp_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__version','dataset__publication'],
+    'scores_pp_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__version','dataset__publication','ancestry'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -346,6 +346,21 @@ class RestProteomics(generics.ListAPIView):
         if dataset and dataset is not None:
             datasets_list = dataset.split(';')
             queryset = queryset.filter(dataset__name__in=datasets_list)
+        # Filter Ancestry
+        ancestry = self.request.query_params.get('anc')
+        if ancestry and ancestry is not None:
+            anc_training_filter = Q(**{f'ancestry__dev__anc__{ancestry}__isnull':False})
+            anc_validation_filter = Q(**{f'ancestry__eval__anc__{ancestry}__isnull':False})
+            stage = self.request.query_params.get('stage')
+            match stage:
+                case 't': # Training
+                    queryset = queryset.filter(anc_training_filter)
+                case 'v': # Validation
+                    queryset = queryset.filter(anc_validation_filter)
+                case 'b': # Training and Validation
+                    queryset = queryset.filter(anc_training_filter & anc_validation_filter)
+                case _: # No stage provided
+                    queryset = queryset.filter(anc_training_filter | anc_validation_filter)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
