@@ -322,9 +322,7 @@ class PathwaySerializerExtended(PathwaySerializer):
 
 
 #### Score ####
-class ScoreSerializer(serializers.ModelSerializer):
-    # publication = PublicationSerializer(many=False, read_only=True)
-    # platform = PlatformSerializer(many=False, read_only=True)
+class ScoreLightSerializer(serializers.ModelSerializer):
     dataset_name = serializers.SerializerMethodField()
     publication = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
@@ -341,7 +339,7 @@ class ScoreSerializer(serializers.ModelSerializer):
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
                        'dataset_name', 'publication', 'platform', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license', 'ancestry')#, 'date_release')
+                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -358,6 +356,13 @@ class ScoreSerializer(serializers.ModelSerializer):
         ''' Get Platform model '''
         platform = obj.dataset.platform
         return PlatformSerializer(platform, many=False, read_only=True).data
+
+
+class ScoreSerializer(ScoreLightSerializer):
+    class Meta(ScoreLightSerializer.Meta):
+        meta_fields = ('ancestry',)
+        fields = ScoreLightSerializer.Meta.fields + meta_fields
+        read_only_fields = ScoreLightSerializer.Meta.read_only_fields + meta_fields
 
 
 class ScorePathwaySerializer(ScoreSerializer):

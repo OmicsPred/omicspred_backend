@@ -677,10 +677,15 @@ class RestListScores(generics.ListAPIView):
     """
     Retrieve the Genetic Scores
     """
-    serializer_class = ScoreSerializer
+    serializer_class = ScoreLightSerializer
 
     def get_queryset(self):
+        include_ancestry = self.request.query_params.get('include_ancestry')
         # Fetch all the Scores
+        if include_ancestry and include_ancestry is not None:
+            self.serializer_class = ScoreSerializer
+        else:
+            self.serializer_class = ScoreLightSerializer
         queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
 
         # Filter by list of Score IDs
@@ -777,9 +782,14 @@ class RestScoreSearch(generics.ListAPIView):
     """
     Search the Genetic Score(s) using query
     """
-    serializer_class = ScoreSerializer
 
     def get_queryset(self):
+        include_ancestry = self.request.query_params.get('include_ancestry')
+        # Fetch all the Scores
+        if include_ancestry == '0':
+            self.serializer_class = ScoreLightSerializer
+        else:
+            self.serializer_class = ScoreSerializer
         queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['molecular_traits']).order_by('num')
         params = 0
 
