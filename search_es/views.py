@@ -24,12 +24,20 @@ def get_search(query):
     data = []
     if response:
         for hit in response:
-            new_entry = {
-                '_source': hit._d_,
-                '_index': hit.meta.index,
-                '_score': hit.meta.score
-            }
-            data.append(new_entry)
+            hit_data = hit._d_
+            use_hit = True
+            # Filter out the hits without associated score
+            if 'scores_count' in hit_data.keys():
+                if hit_data['scores_count'] == 0:
+                    use_hit = False
+
+            if use_hit:
+                new_entry = {
+                    '_source': hit_data,
+                    '_index': hit.meta.index,
+                    '_score': hit.meta.score
+                }
+                data.append(new_entry)
 
     return data
 
