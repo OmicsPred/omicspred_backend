@@ -19,7 +19,6 @@ def run():
     for phecode_id in phecode_platform.keys():
         try:
             sample_app = SampleApplications.objects.using(applications_db).select_related('phecode').get(phecode__id=phecode_id)
-            print(f'- {phecode_id}: {phecode_platform[phecode_id]}')
             sample_app.platform_counts = phecode_platform[phecode_id]
             sample_app.save()
         except SampleApplications.DoesNotExist:

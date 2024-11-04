@@ -6,7 +6,7 @@ from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
 from django.db.models import Prefetch, Q, FloatField
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Lower
 from django.conf import settings
 from omicspred.models import *
 from applications.models import *
@@ -59,12 +59,23 @@ def sort_data_list(request,type,queryset,default_col='num'):
         elif sort_field.endswith(f'_name') and not sort_field.endswith(f'__name'):
             sort_field = sort_field.replace('_name','__name')
     sort = request.query_params.get('sort')
-    if sort_field and sort_field is not None and sort and sort is not None:
+    if not sort_field or sort_field is None:
+        sort_field = default_col
+    # Sorting order
+    is_desc = False
+    if sort and sort is not None:
         if sort == 'desc':
+            is_desc = True
+    # Set sorting field
+    if sort_field.endswith('name'):
+        if is_desc == True:
+            queryset = queryset.order_by(Lower(sort_field).desc())
+        else:
+            queryset = queryset.order_by(Lower(sort_field))
+    else:
+        if is_desc == True:
             sort_field = '-'+sort_field
         queryset = queryset.order_by(sort_field)
-    else:
-        queryset = queryset.order_by(default_col)
     return queryset
 
 
@@ -182,7 +193,7 @@ class RestListPathways(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Pathways
-        queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by('name')
+        queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by(Lower('name'))
 
         # Filter data - for intern use
         filter_term = self.request.query_params.get('filter')
