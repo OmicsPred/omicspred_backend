@@ -16,6 +16,22 @@
         }
     },
     {
+        "model": "omicspred.Publication",
+        "pk": 2,
+        "fields": {
+            "pmid": 123456,
+            "doi": "10.1000/s1233456",
+            "journal": "Test",
+            "firstauthor": "Doe J",
+            "authors": "Doe J",
+            "title": "A test publication.",
+            "date_publication": "2024-01-01",
+            "date_released": "2024-03-01",
+            "curation_status": "C",
+            "curation_notes": ""
+        }
+    },
+    {
         "model": "omicspred.PlatformMaster",
         "pk": 1,
         "fields": {

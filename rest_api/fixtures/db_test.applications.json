@@ -17,6 +17,15 @@
     },
     {
         "model": "applications.Phecode",
+        "pk": "250",
+        "fields": {
+            "name": "Diabetes mellitus",
+            "category": "endocrine/metabolic",
+            "child_phecode": [ "250.2" ]
+        }
+    },
+    {
+        "model": "applications.Phecode",
         "pk": "278.1",
         "fields": {
             "name": "Obesity",
@@ -172,7 +181,7 @@
                 "SomaScan": 65,
                 "Metabolon": 21
             },
-            "phecode_id": "250.2"
+            "phecode_id": "250"
         }
     },
     {

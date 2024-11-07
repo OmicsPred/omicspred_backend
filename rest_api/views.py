@@ -693,7 +693,7 @@ class RestListScores(generics.ListAPIView):
     def get_queryset(self):
         include_ancestry = self.request.query_params.get('include_ancestry')
         # Fetch all the Scores
-        if include_ancestry and include_ancestry is not None:
+        if include_ancestry and str(include_ancestry) == '1':
             self.serializer_class = ScoreSerializer
         else:
             self.serializer_class = ScoreLightSerializer
@@ -726,7 +726,7 @@ class RestScore(generics.RetrieveAPIView):
         opgs_id = opgs_id.upper()
         include_pathway = self.request.query_params.get('include_pathway')
         try:
-            if include_pathway and include_pathway is not None:
+            if include_pathway and str(include_pathway)=='1':
                 queryset = Score.objects.select_related(*related_dict['score_dataset_full']).prefetch_related('genes__pathways','genes__pathways__superpathways','metabolites__pathways','metabolites__pathways__superpathways').get(id=opgs_id)
             else:
                 queryset = Score.objects.select_related(*related_dict['score_dataset_full']).get(id=opgs_id)
@@ -775,11 +775,11 @@ class RestScoreSearchByMolecularTrait(generics.ListAPIView):
             include_performance_metrics = self.request.query_params.get('include_performance_metrics')
             include_performance_data = self.request.query_params.get('include_performance_data')
             # Add the performance metrics data structure
-            if include_performance_metrics and include_performance_metrics is not None:
+            if include_performance_metrics and str(include_performance_metrics) == '1':
                 self.serializer_class = ScorePerformanceSerializer
                 queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],'score_performance','score_performance__sample','score_performance__sample__cohorts','score_performance__performance_metric').distinct().order_by('num')
             # Add the performance metrics condensed data (for web display on tables) - PRIVATE parameter
-            elif include_performance_data and include_performance_data is not None:
+            elif include_performance_data and str(include_performance_data) == '1':
                 self.serializer_class = ScorePerformanceDataSerializer
                 queryset = Score.objects.select_related(*related_dict['score_dataset_full']).filter(reduce(operator.or_,query_list)).prefetch_related(*related_dict['molecular_traits'],*related_dict['performance_cohorts']).distinct().order_by('num')
             # Metadata without performance metrics information - PUBLIC parameter
@@ -797,7 +797,7 @@ class RestScoreSearch(generics.ListAPIView):
     def get_queryset(self):
         include_ancestry = self.request.query_params.get('include_ancestry')
         # Fetch all the Scores
-        if include_ancestry == '0':
+        if str(include_ancestry) == '0':
             self.serializer_class = ScoreLightSerializer
         else:
             self.serializer_class = ScoreSerializer
@@ -1455,7 +1455,7 @@ class RestListPhecodeSample(generics.ListAPIView):
         # Fetch all the ScoresApplications
         queryset = SampleApplications.objects.using(applications_db).select_related('phecode',).all().prefetch_related('phecode__phecode_score').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
 
-        # Filter by list of Score IDs
+        # Filter by list of PheCode IDs
         ids_list = get_ids_list(self)
         if ids_list:
             queryset = queryset.filter(phecode__id__in=ids_list)
