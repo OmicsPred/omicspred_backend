@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from django.conf import settings
-import re
+import re, json
 
 
 class BrowseEndpointTest(APITestCase):
@@ -23,7 +23,7 @@ class BrowseEndpointTest(APITestCase):
     # Data example
     filter_ids = 'filter_ids'
     cohorts_list = ['INTERVAL','UKB']
-    publications_list = ['36991119']
+    publications_list = ['36991119','123456']
 
     platforms_list_proteomics = ['Somalogic','Olink']
     platforms_list_metabolomics = ['Metabolon']
@@ -33,7 +33,7 @@ class BrowseEndpointTest(APITestCase):
     proteins_list = ['P31994']
     metabolites_list = ['CHEBI_16113']
     pathways_list = ['R-HSA-191273','R-HSA-198933']
-    phecodes_list = ['555.2','250.2','278.1']
+    phecodes_list = ['555.2','250','278.1']
 
     index_result_mutliplicity = 2
     index_example = 3
@@ -95,7 +95,113 @@ class BrowseEndpointTest(APITestCase):
     ]
 
 
-    def send_request(self, url):
+    endpoints_with_include_flag = [
+        (
+            'Scores / ancestry', 'score/all', 1,
+            {
+                'response_path': [],
+                'query': ['include_ancestry'],
+                'response': ['ancestry']
+            }
+        ),
+        (
+            'Score / pathways', f'score/{scores_list[0]}', 1,
+            {
+                'response_path':['genes',0],
+                'query': ['include_pathway'],
+                'response': ['pathways']
+            }
+        ),
+        (
+            'Scores Search Type / performances', f'score/search/gene/{genes_list[0]}', 1,
+            {
+                'response_path': [],
+                'query': ['include_performance_metrics','include_performance_data'],
+                'response': ['score_performance','performance_data']
+            }
+        ),
+        (
+            'Scores Search / ancestry', f'score/search', 1,
+            {
+                'response_path': [],
+                'query': [f'{search_pmid}&include_ancestry'],
+                'response': ['ancestry']
+            }
+        ),
+        (
+            'Metabolomics/Name / performance_metrics', f'metabolomics/{platforms_list_metabolomics[0]}', 1,
+            {
+                'response_path': [],
+                'query': [f'include_performance_metrics'],
+                'response': ['performance_data']
+            }
+        ),
+        (
+            'Proteomics/Name / performance_metrics', f'proteomics/{platforms_list_proteomics[0]}', 1,
+            {
+                'response_path': [],
+                'query': [f'include_performance_metrics'],
+                'response': ['performance_data']
+            }
+        ),
+        # (
+        #     'Transcriptomics/Name / performance_metrics', f'transcriptomics/{platforms_list_transcriptomics[0]}', 1,
+        #     {
+        #         'response_path': [],
+        #         'query': [f'include_performance_metrics'],
+        #         'response': ['performance_data']
+        #     }
+        # ),
+        (
+            'Phecode / children', f'phecode/{phecodes_list[1]}', 0,
+            {
+                'response_path': [],
+                'query': ['include_children'],
+                'response': ['child_phecode']
+            }
+        )
+    ]
+
+
+    endpoints_with_filter_ids = (
+        ('Scores / filter_ids', 'score/all' , scores_list[1:]), # Exclude 1st element
+        ('Publications / filter_ids', 'publication/all' , publications_list[1:]), # Exclude 1st element
+        ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
+        ('Applications - Sample', 'applications_sample/all', phecodes_list[1:]) # Exclude 1st element
+    )
+
+
+    def check_response(self,url:str,is_included:int,path_structure:list,included_key:str):
+        """ Check that the response contains (or not) the 'included_key' item/data """
+        resp = self.client.get(f'{url}={is_included}')
+        # Get releavant data content
+        content = resp.data
+        tmp_content_keys = content.keys()
+        if 'results' in tmp_content_keys:
+            content = content['results'][0]
+        # Browse the data result structure
+        for path in path_structure:
+            if str(path) == '0':
+                content = content[0]
+            else:
+                content = content[path]
+        # Extract the keys of the reached structure
+        content_keys = content.keys()
+        # Check the presence/absence of the element
+        if is_included == 1:
+            self.assertIn(included_key, content_keys)
+        else:
+            self.assertNotIn(included_key, content_keys)
+
+
+    def check_filter_ids(self,url:str,ids_list:list):
+        """ Compare the number of results with the number of IDs provided in the filter_ids parameter """
+        ids_list_string = ",".join(ids_list)
+        resp = self.client.get(f'{url}?filter_ids={ids_list_string}')
+        self.assertEqual(len(resp.data['results']), len(ids_list))
+
+
+    def send_request(self, url:str):
         """ Send REST API request and check the reponse status code """
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
@@ -104,20 +210,20 @@ class BrowseEndpointTest(APITestCase):
             self.assertNotEqual(content, empty_content)
 
 
-    def get_empty_response(self, url, index):
+    def get_empty_response(self, url:str, index:int):
         """ Send REST API request and check the reponse status code """
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content.decode("utf-8"), self.empty_resp[index])
 
 
-    def get_not_found_response(self, url):
+    def get_not_found_response(self, url:str):
         """ Send REST API request on non existing endpoint and check reponse status code """
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 404)
 
 
-    def get_paginated_response(self, url):
+    def get_paginated_response(self, url:str):
         """ Send REST API request with limit and offset parameters, and check the reponse status code """
         resp = self.client.get(url+'?limit=20&offset=20')
         self.assertEqual(resp.status_code, 200)
@@ -188,12 +294,12 @@ class BrowseEndpointTest(APITestCase):
                         ex_full = endpoint[self.index_example]['query'][0]
                         ex_content = ex_full.split('=')
                         url_endpoint += '?'+ex_content[0]+'='
-                        ex = ex_content[1]
+                        ex = ex_content[1].split(',')[0] # Only retain first item
 
                 if ex:
-                    if re.match("^\d+$",ex):
+                    if re.match(r"^\d+$",ex):
                         url_endpoint += self.fake_examples['integer']
-                    elif re.match("^\d{4}-\d{2}-\d{2}$", ex):
+                    elif re.match(r"^\d{4}-\d{2}-\d{2}$", ex):
                         url_endpoint += self.fake_examples['date']
                     else:
                         url_endpoint += self.fake_examples['string']
@@ -203,3 +309,26 @@ class BrowseEndpointTest(APITestCase):
     def test_endpoint_not_found(self):
         """ Test an endpoint that doens't exist """
         self.get_not_found_response(self.server+'chocolate')
+
+
+    def test_endpoint_with_include_flag(self):
+        """ Test the 'include flag' used on some of the endpoints """
+        for endpoint in self.endpoints_with_include_flag:
+            url_endpoint = self.server+endpoint[1]
+            query_list = endpoint[self.index_example]['query']
+            # Loop over the queries
+            for idx, example in enumerate(query_list):
+                url = url_endpoint+'?'+example
+                response_path = endpoint[self.index_example]['response_path']
+                included_key = endpoint[self.index_example]['response'][idx]
+                # Test include
+                self.check_response(url, 1, response_path, included_key)
+                # Test exclude
+                self.check_response(url, 0, response_path, included_key)
+
+
+    def test_endpoint_with_filter_ids_param(self):
+        """ Test the 'filter_ids' parameter used on some of the endpoints """
+        for endpoint in self.endpoints_with_filter_ids:
+            url_endpoint = self.server+endpoint[1]
+            self.check_filter_ids(url_endpoint,endpoint[2])

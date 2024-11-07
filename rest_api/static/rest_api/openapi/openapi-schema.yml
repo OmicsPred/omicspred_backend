@@ -1,6 +1,6 @@
 openapi: 3.0.3
 servers:
-  - url: http://127.0.0.1:7000/
+  - url: https://www.omicspred.org/rest/
 info:
   title: 'OmicsPred REST API'
   version: '1.0'
@@ -39,6 +39,69 @@ tags:
 
 components:
   schemas:
+
+    # Ancestry #
+    Ancestry:
+      type: object
+      description: "Ancestry distribution on each stage."
+      properties:
+        dev:
+          type: object
+          description: "Ancestries used in the development/training stage. Only available if there is ancestry data at this stage."
+          properties:
+            anc:
+              type: object
+              description: "Ancestry distribution."
+              additionalProperties:
+                type: object
+                description: "Ancestry symbol, e.g. EUR"
+                properties:
+                  dist:
+                    type: float
+                    description: "Percentage of the samples/participants distribution"
+                  count:
+                    type: integer
+                    description: "Number of samples/participants"
+              example:
+                EUR: { "dist": 80.0, "count": 1600}
+                EAS: {
+                    "dist": 20.0,
+                    "count": 400
+                  }
+            count:
+              type: integer
+              description: "Total number of individuals from this stage."
+              example: 2000
+        eval:
+          type: object
+          description: "Ancestry(ies) used in the evaluation/validation stage. Only available if there is ancestry data at this stage."
+          properties:
+            anc:
+              type: object
+              description: "Ancestry distribution."
+              additionalProperties:
+                type: object
+                description: "Ancestry symbol, e.g. EUR"
+                properties:
+                  dist:
+                    type: float
+                    description: "Percentage of the samples/participants distribution"
+                  count:
+                    type: integer
+                    description: "Number of samples/participants"
+              example:
+                EUR: { "dist": 50.0, "count": 2500}
+                ASN: { "dist": 10.0, "count": 500}
+                MAO: {
+                    "dist": 40.0,
+                    "count": 2000,
+                    "anc_list": [ "EAS", "SAS", "AMR", "AFR" ]
+                  }
+            count:
+              type: integer
+              description: "Total number of individuals from this stage."
+              example: 5000
+
 
     # Cohort #
     Cohort:
@@ -875,6 +938,16 @@ components:
           description: "License applied to the score"
           example: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
+    # Score with ancestry #
+    Score_Ancestry:
+      description: "Based on the **Score** schema, with the addition of the '*ancestry*' distribution."
+      allOf:
+        - $ref: '#/components/schemas/Score'
+        - type: object
+          properties:
+            ancestry:
+              $ref: '#/components/schemas/Ancestry'
+
     # Score - Molecular Trait Applications #
     Score_MolecularTrait:
       type: object
@@ -908,24 +981,26 @@ components:
                   type: integer
                   description: "Numeric value of the performance metrics"
                   example: 0.345
+        ancestry:
+          $ref: '#/components/schemas/Ancestry'
 
     # Score with Performance data #
     Score_Performance:
-      description: "Based on the **Score** schema, with the addition of the '*score_performance**'."
+      description: "Based on the **Score** schema, with the addition of the '*score_performance*'."
       allOf:
-        - $ref: '#/components/schemas/Score'
+        - $ref: '#/components/schemas/Score_Ancestry'
         - type: object
           properties:
             score_performance:
               type: array
               items:
                 $ref: '#/components/schemas/Performance'
-
+  
     # Score with Pathways #
     Score_Pathway:
-      description: "Based on the **Score** schema, with the addition of the '*genes__pathways**' and '*metabolites__pathways**'."
+      description: "Based on the **Score** schema, with the addition of the '*genes__pathways*' and '*metabolites__pathways*'."
       allOf:
-        - $ref: '#/components/schemas/Score'
+        - $ref: '#/components/schemas/Score_Ancestry'
         - type: object
           properties:
             genes:
@@ -1539,6 +1614,7 @@ paths:
           * Variants number
           * Platform version
           * Publication information
+          * Ancestry distribution
           * Performance Metrics data
           * Reported Molecular Trait
           * Associated Metabolites
@@ -1597,6 +1673,7 @@ paths:
           * Variants number
           * Platform version
           * Publication information
+          * Ancestry distribution
           * Performance Metrics data
           * Associated Genes
           * Associated Proteins
@@ -1655,6 +1732,7 @@ paths:
           * Variants number
           * Platform version
           * Publication information
+          * Ancestry distribution
           * Performance Metrics data
           * Associated Genes
 
@@ -2156,10 +2234,12 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
+          * Ancestry distribution (only when the parameter *include_ancestry=1* is used)
 
         Example of request:
         ```
-        https://www.omicspred.org/rest/score/all
+        - https://www.omicspred.org/rest/score/all
+        - https://www.omicspred.org/rest/score/all?include_ancestry=1
         ```
         ---
         ###### **Filtering**
@@ -2174,8 +2254,8 @@ paths:
         curl -X GET 'https://www.omicspred.org/rest/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
         ```
       parameters:
-        - in: query
-          name: filter_ids
+        - name: filter_ids
+          in: query
           required: false
           schema:
             type: string
@@ -2186,6 +2266,19 @@ paths:
             opgs_ids_1:
               summary: 'OPGS002402, OPGS003423'
               value: 'OPGS002402,OPGS003423'
+        - name: include_ancestry
+          in: query
+          required: false
+          description: Flag to include or not the ancestry distribution for each score [default=0] - *optional*
+          schema:
+            type: integer
+          examples:
+            exclude_ancestry_sel:
+              summary: Hide the ancestry distribution
+              value: 0
+            include_ancestry_sel:
+              summary: Include the ancestry distribution
+              value: 1
       responses:
         '200':
           content:
@@ -2199,7 +2292,9 @@ paths:
                     description: "List all the OmicsPred Genetic Scores"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Score'
+                      oneOf:
+                        - $ref: '#/components/schemas/Score'
+                        - $ref: '#/components/schemas/Score_Ancestry'
           description: |
             List all the OmicsPred Genetic Scores
         
@@ -2231,6 +2326,7 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
+          * Ancestry distribution
 
         Examples of request:
         ```
@@ -2249,8 +2345,8 @@ paths:
             value: 'OPGS003423'
         schema:
           type: string
-      - in: query
-        name: include_pathway
+      - name: include_pathway
+        in: query
         required: false
         schema:
           type: integer
@@ -2268,8 +2364,8 @@ paths:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/Score'
-                - $ref: '#/components/schemas/Score_Pathway'
+                  - $ref: '#/components/schemas/Score_Ancestry'
+                  - $ref: '#/components/schemas/Score_Pathway'
           description: 'OmicsPred Score'
         '4XX':
           content:
@@ -2297,6 +2393,7 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
+          * Ancestry distribution (unless the parameter **include_ancestry=0** is used)
 
         Example of request:
         ```
@@ -2304,8 +2401,8 @@ paths:
         ```
       parameters:
         - name: opgs_ids
-          required: false
           in: query
+          required: false
           description: Comma-separated list of OmicsPred Score IDs - *optional*
           schema:
             type: string
@@ -2316,8 +2413,8 @@ paths:
               summary: 'OPGS002402, OPGS003423'
               value: 'OPGS002402,OPGS003423'
         - name: pmid
-          required: false
           in: query
+          required: false
           description: PubMed ID (without the prefix "PMID:") - *optional*
           schema:
             type: integer
@@ -2328,8 +2425,8 @@ paths:
                 summary: 'PMID: 36991119'
                 value: 36991119
         - name: platform
-          required: false
           in: query
+          required: false
           description: The platform name.
           schema:
             type: string
@@ -2341,8 +2438,8 @@ paths:
             Nightingale:
               value: 'Nightingale'
         - name: cohort
-          required: false
           in: query
+          required: false
           description: A cohort name.
           schema:
             type: string
@@ -2353,6 +2450,19 @@ paths:
               value: 'INTERVAL'
             UKB:
               value: 'UKB'
+        - name: include_ancestry
+          in: query
+          required: false
+          description: Flag to include or not the ancestry distribution for each score [**default=1**] - *optional*
+          schema:
+            type: integer
+          examples:
+            exclude_ancestry_sel:
+              summary: Hide the ancestry distribution
+              value: 0
+            include_ancestry_sel:
+              summary: Include the ancestry distribution
+              value: 1
       responses:
         '200':
           content:
@@ -2366,7 +2476,7 @@ paths:
                     description: "List of Genetic Scores"
                     type: array
                     items:
-                      $ref: '#/components/schemas/Score'
+                      $ref: '#/components/schemas/Score_Ancestry'
           description: |
             List all the Genetic Scores associated with the request
         
@@ -2404,6 +2514,7 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
+          * Ancestry
           * Performance metrics **[** only when the parameter **include_performance_metrics** is set to **1** **]**
 
         Examples of request:
@@ -2460,8 +2571,8 @@ paths:
                     type: array
                     items:
                       oneOf:
-                      - $ref: '#/components/schemas/Score'
-                      - $ref: '#/components/schemas/Score_Performance'
+                        - $ref: '#/components/schemas/Score_Ancestry'
+                        - $ref: '#/components/schemas/Score_Performance'
           description: |
             List all the Genetic Scores associated with the molecular trait
         
@@ -2474,141 +2585,6 @@ paths:
                 schema:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
-
-  # /rest/score/searchbygene/{gene}:
-  #   get:
-  #     tags:
-  #       - "Score endpoints"
-  #     operationId: searchScoresByGene
-  #     description: Search the Genetic Score(s) using gene name/symbol or ID
-  #     parameters:
-  #       - name: gene
-  #         in: path
-  #         required: true
-  #         description: 'Gene name/symbol or ID'
-  #         examples:
-  #           COL1A1:
-  #             value: "COL1A1"
-  #           ENSG00000165953:
-  #             value: "ENSG00000165953"
-  #         schema:
-  #           type: string
-  #     responses:
-  #       '200':
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               allOf:
-  #                 - $ref: '#/components/schemas/Pagination'
-  #               properties:
-  #                 results:
-  #                   description: "List of Genetic Scores associated with the gene"
-  #                   type: array
-  #                   items:
-  #                     $ref: '#/components/schemas/Score'
-  #         description: |
-  #           List all the Genetic Scores associated with the gene
-        
-  #           ---
-
-  #           __Notes:__ This endpoint uses pagination.
-  #       '4XX':
-  #         content:
-  #             application/json:
-  #               schema:
-  #                 $ref: '#/components/schemas/Error_4XX'
-  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
-
-  # /rest/score/searchbyprotein/{protein}:
-  #   get:
-  #     tags:
-  #       - "Score endpoints"
-  #     operationId: searchScoresByProtein
-  #     description: Search the Genetic Score(s) using protein name/ID
-  #     parameters:
-  #     - name: protein
-  #       in: path
-  #       required: true
-  #       description: 'Protein name/ID'
-  #       examples:
-  #         P08887:
-  #           value: 'P08887'
-  #         Vitronectin:
-  #           value: 'Vitronectin'
-  #       schema:
-  #         type: string
-  #     responses:
-  #       '200':
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               allOf:
-  #                 - $ref: '#/components/schemas/Pagination'
-  #               properties:
-  #                 results:
-  #                   description: "List of Genetic Scores associated with the protein"
-  #                   type: array
-  #                   items:
-  #                     $ref: '#/components/schemas/Score'
-  #         description: |
-  #           List all the Genetic Scores associated with the protein
-        
-  #           ---
-
-  #           __Notes:__ This endpoint uses pagination.
-  #       '4XX':
-  #         content:
-  #             application/json:
-  #               schema:
-  #                 $ref: '#/components/schemas/Error_4XX'
-  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
-
-  # /rest/score/searchbymetabolite/{metabolite}:
-  #   get:
-  #     tags:
-  #       - "Score endpoints"
-  #     operationId: searchScoresByMetabolite
-  #     description: Search the Genetic Score(s) using metabolite name/ID
-  #     parameters:
-  #     - name: metabolite
-  #       in: path
-  #       required: true
-  #       description: 'Metabolite name/ID'
-  #       examples:
-  #         M17799:
-  #           value: 'M17799'
-  #         methionylalanine:
-  #           value: 'methionylalanine'
-  #       schema:
-  #         type: string
-  #     responses:
-  #       '200':
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               allOf:
-  #                 - $ref: '#/components/schemas/Pagination'
-  #               properties:
-  #                 results:
-  #                   description: "List of Genetic Scores associated with the metabolite"
-  #                   type: array
-  #                   items:
-  #                     $ref: '#/components/schemas/Score'
-  #         description: |
-  #           List all the Genetic Scores associated with the metabolite
-        
-  #           ---
-
-  #           __Notes:__ This endpoint uses pagination.
-  #       '4XX':
-  #         content:
-  #             application/json:
-  #               schema:
-  #                 $ref: '#/components/schemas/Error_4XX'
-  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   /rest/score/performance/{opgs_id}:
     get:
@@ -2627,6 +2603,7 @@ paths:
           * Variants number
           * Variants genome build
           * Score license
+          * Ancestry
           * Score performance metric(s) 
           * Cohort(s) associated with the performance metric(s)
 
