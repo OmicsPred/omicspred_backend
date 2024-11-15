@@ -99,6 +99,19 @@
         }
     },
     {
+        "model": "applications.PublicationApplications",
+        "pk": 1,
+        "fields": {
+            "pmid": 36991119,
+            "doi": "10.1038/s41586-023-05844-9",
+            "journal": "Nature",
+            "firstauthor": "Xu Y",
+            "authors": "Xu Y, ..., Butterworth AS, Inouye M.",
+            "title": "An atlas of genetic scores to predict multi-omic traits.",
+            "date_publication": "2023-03-29"
+        }
+    },
+    {
         "model": "applications.MolecularTraitApplications",
         "pk": 23326,
         "fields": {
@@ -136,7 +149,8 @@
             "fdr": 0.000225,
             "cohort_id": 1,
             "phecode_id": "555.2",
-            "platform_id": 1
+            "platform_id": 1,
+            "publication_id": 1
         }
     },
     {
@@ -150,7 +164,8 @@
             "fdr": 1.17e-06,
             "cohort_id": 1,
             "phecode_id": "555.2",
-            "platform_id": 2
+            "platform_id": 2,
+            "publication_id": 1
         }
     },
     {
@@ -164,7 +179,8 @@
             "fdr": 0.00554,
             "cohort_id": 1,
             "phecode_id": "278.1",
-            "platform_id": 4
+            "platform_id": 4,
+            "publication_id": 1
         }
     },
     {

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 servers:
-  - url: https://www.omicspred.org/rest/
+  - url: http://127.0.0.1:7000/
 info:
   title: 'OmicsPred REST API'
   version: '1.0'
@@ -3148,9 +3148,10 @@ paths:
           * Cohort information
           * Associated performances
 
-        Example of request:
+        Examples of request:
         ```
-        https://www.omicspred.org/rest/applications_score/search?phecode_id=250.2
+        - https://www.omicspred.org/rest/applications_score/search?phecode_id=250.2
+        - https://www.omicspred.org/rest/applications_score/search?pmid=36991119
         ```
       parameters:
         - name: opgs_id
@@ -3161,7 +3162,7 @@ paths:
             type: string
           examples:
             op_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
+              summary: Select an example or type an ID - click on 'Try it out' first
             OPGS002402:
               value: 'OPGS002402'
             OPGS003423:
@@ -3170,15 +3171,27 @@ paths:
           required: false
           in: query
           description: Phecode ID - *optional*
+          schema:
+            type: string
           examples:
             op_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
+              summary: Select an example or type an ID - click on 'Try it out' first
             pc_1:
               value: "557.1"
             pc_2:
               value: "250.2"
+        - name: pmid
+          required: false
+          in: query
+          description: PubMed ID (without the prefix "PMID:") - *optional*
           schema:
-            type: string
+            type: integer
+          examples:
+              pmid_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              pmid_1:
+                summary: 'PMID: 36991119'
+                value: 36991119
       responses:
         '200':
           content:

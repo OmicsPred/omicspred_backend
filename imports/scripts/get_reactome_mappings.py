@@ -207,6 +207,18 @@ def detect_non_associated_pathways():
     print(f">>> Non associated pathways: {count}")
 
 
+def get_reactome_models() -> dict:
+    reactome_pathways = {}
+    reactome_pathway_models = Pathway.objects.defer('superpathways').all()
+    for reactome_pathway_model in reactome_pathway_models:
+        reactome_pathways[reactome_pathway_model.external_id] = reactome_pathway_model
+    return reactome_pathways
+
+
+def print_progress(count:int,mt_type:str):
+    if str(count).endswith('00'):
+        print(f"- {count} {mt_type}s done")
+
 # def compare_ens_uniprot_mappings(gene_mappings:dict,protein_mappings:dict) -> None:
 #     ''' Compare Gene-Reactome associations with the Protein-Reactome associations, using the associations Gene-Protein '''
 #     gene_ids = gene_mappings.keys()
@@ -253,8 +265,8 @@ def run(*args):
         reactome_dir = default_reactome_dir
 
     # Files in https://reactome.org/download/current/
-    reactome_chebi_file = f'{reactome_dir}/ChEBI/ChEBI2Reactome_LOW_Levels_human.txt'
-    reactome_ensembl_file = f'{reactome_dir}/Ensembl/Ensembl2Reactome_LOW_Levels_human.txt'
+    reactome_chebi_file = f'{reactome_dir}/ChEBI2Reactome_LOW_Levels_human.txt'
+    reactome_ensembl_file = f'{reactome_dir}/Ensembl2Reactome_LOW_Levels_human.txt'
     # reactome_uniprot_file = f'{reactome_dir}/UniProt2Reactome_LOW_Levels_human.txt'
 
     # Web services: https://reactome.org/ContentService/data/pathways/top/9606
@@ -297,49 +309,66 @@ def run(*args):
             print(f">> MISSING LOW ENTITY: {entity}")
     print(f"COUNT MATCHING LOW ENTITIES: {count_low}")
 
+    # Get mappings
+    mapped_genes = map_genes(reactome_ensembl_file)
+    mapped_metabolites = map_metabolites(reactome_chebi_file)
+
     # Import Reactome data
     import_reactome_entries()
 
+    # Fetch all the Reactome models
+    reactome_pathways = get_reactome_models()
+
     # Genes mappings
-    mapped_genes = map_genes(reactome_ensembl_file)
     if (mapped_genes):
-        print(f"- Import Gene mappings ({len(mapped_genes.keys())})")
+        print(f"\n# Import Gene mappings ({len(mapped_genes.keys())})")
+        count_gene_done = 0
         genes = Gene.objects.prefetch_related('pathways').filter(external_id__in=mapped_genes.keys())
         for gene in genes:
+            print_progress(count_gene_done,'gene')
             # Remove the former list of Gene-Pathway asssociations
             gene.pathways.clear()
             # Get Reactome IDs from existing associations
-            # existing_gene_reactome_ids = [x.external_id for x in gene.pathways.all()]
             reactome_ids = [x['reactome_id'] for x in mapped_genes[gene.external_id]]
-            # Get Reactome IDs from file associations
-            reactome_pathways = Pathway.objects.defer('superpathways').filter(external_id__in=reactome_ids)
             # Add new Reactome associations when found
-            for reactome_pathway in reactome_pathways:
-                gene.pathways.add(reactome_pathway)
-                # if reactome_pathway.external_id not in existing_gene_reactome_ids:
-                #     gene.pathways.add(reactome_pathway)
-            gene.save()
+            new_gene_reactome = []
+            for reactome_id in reactome_ids:
+                try:
+                    new_gene_reactome.append(reactome_pathways[reactome_id])
+                    # reactome_pathway = reactome_pathways[reactome_id]
+                    # gene.pathways.add(reactome_pathway)
+                except Exception as e:
+                    print(f"Can't create the association between the Reactome entry {reactome_id} and the gene {gene.external_id}: {e}")
+            gene.pathways.add(*new_gene_reactome)
+            # gene.save()
+            count_gene_done += 1
 
     
     # Metabolites mappings
-    mapped_metabolites = map_metabolites(reactome_chebi_file)
     if (mapped_metabolites):
-        print(f"- Import Metabolite mappings ({len(mapped_metabolites.keys())})")
+        print(f"# Import Metabolite mappings ({len(mapped_metabolites.keys())})")
+        count_metabolite_done = 0
         metabolites = Metabolite.objects.prefetch_related('pathways').filter(external_id__in=mapped_metabolites.keys())
         for metabolite in metabolites:
+            print_progress(count_metabolite_done,'metabolite')
             # Remove the former list of Metabolite-Pathway asssociations
             metabolite.pathways.clear()
             # Get Reactome IDs from existing associations
-            # existing_metabolite_reactome_ids = [x.external_id for x in metabolite.pathways.all()]
             reactome_ids = [x['reactome_id'] for x in mapped_metabolites[metabolite.external_id]]
             # Get Reactome IDs from file associations
             reactome_pathways = Pathway.objects.defer('superpathways').filter(external_id__in=reactome_ids)
-            # Add new Reactome associations when found
-            for reactome_pathway in reactome_pathways:
-                metabolite.pathways.add(reactome_pathway)
-                # if reactome_pathway.external_id not in existing_metabolite_reactome_ids:
+             # Add new Reactome associations when found
+            new_metabolite_reactome = []
+            for reactome_id in reactome_ids:
+                try:
+                    new_metabolite_reactome.append(reactome_pathways[reactome_id])
+                    # reactome_pathway = reactome_pathways[reactome_id]
                     # metabolite.pathways.add(reactome_pathway)
-            metabolite.save()
+                except Exception as e:
+                    print(f"Can't create the association between the Reactome entry {reactome_id} and the metabolite {metabolite.external_id}: {e}")
+            metabolite.pathways.add(*new_metabolite_reactome)
+            # metabolite.save()
+            count_metabolite_done += 1
 
     # Add cleanup code to remove the Reactome entries not linked to Metabolites nor Genes ?
     detect_non_associated_pathways()
