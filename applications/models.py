@@ -16,6 +16,41 @@ class CohortApplications(models.Model):
         return self.name_short
 
 
+class PublicationApplications(models.Model):
+    """ Class for publications  """
+    pmid = models.IntegerField('PubMed ID (PMID)', null=False)
+
+    # Key information (also) in the spreadsheet
+    doi = models.CharField('digital object identifier (doi)', max_length=100)
+
+    journal = models.CharField('Journal Name', max_length=100)
+    firstauthor = models.CharField('First Author', max_length=50)
+
+    # Information extracted from EuropePMC
+    authors = models.TextField('Authors')
+    title = models.TextField('Title')
+    date_publication = models.DateField('Publication Date')
+
+    # Methods
+    def __str__(self):
+        return f'{self.firstauthor} | PMID:{self.pmid}'
+
+    class Meta:
+        get_latest_by = 'id'
+
+    # @property
+    # def is_preprint(self):
+    #     return 'bioRxiv' in self.journal or 'medRxiv' in self.journal
+
+    @property
+    def pub_year(self):
+        # Dependant on the context, sometimes the date_publication is returned as a string
+        pub_date = self.date_publication
+        if type(pub_date) == str:
+            pub_date = datetime.strptime(pub_date, '%Y-%m-%d')
+        return pub_date.strftime('%Y')
+
+
 class Phecode(models.Model):
     """ Class for individual Phecode entry """
     # PheWAS identifiers
@@ -121,6 +156,7 @@ class ScoreApplications(models.Model):
     """ Class for score association for the application """
     score_id = models.CharField('Omicspred ID', max_length=30, db_index=True)
     phecode = models.ForeignKey(Phecode, on_delete=models.PROTECT, related_name='phecode_score', verbose_name='Phecode')
+    publication = models.ForeignKey(PublicationApplications, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
     platform = models.ForeignKey(PlatformApplications, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     cohort = models.ForeignKey(CohortApplications, on_delete=models.PROTECT, related_name='cohort_score', verbose_name='Cohort')
     molecular_traits = models.ManyToManyField(MolecularTraitApplications, related_name='molecular_trait_score', verbose_name='Molecular traits')

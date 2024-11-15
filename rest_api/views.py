@@ -23,7 +23,8 @@ only_dict = {
 
 defer_dict = {
     'scores_table_defer': [*generic_defer,'method_name','method_params','variants_interactions','variants_genomebuild','date_released','species','license'],
-    'publication_defer': [*generic_defer,'curation_status']
+    'publication_defer': [*generic_defer,'curation_status'],
+    'publication_applications': [f'publication__{x}' for x in ['doi','journal','firstauthor','authors','title','date_publication']]
 }
 
 performance_metric = [Prefetch('performance_metric', queryset=Metric.objects.only('id','performance_id','name_short','estimate').all())]
@@ -1419,7 +1420,7 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
     serializer_class = ScoreApplicationsSerializer
 
     def get_queryset(self):
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').all()
+        queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related('molecular_traits').all()
         params = 0
 
         # Search by Score ID
@@ -1427,6 +1428,11 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
         if opgs_id and opgs_id is not None:
             opgs_id = opgs_id.upper()
             queryset = queryset.filter(score_id=opgs_id)
+            params += 1
+        # Search by PubMed ID
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid.isnumeric():
+            queryset = queryset.filter(publication__pmid=pmid)
             params += 1
         # Search by Phecode ID
         phecode_id = self.request.query_params.get('phecode_id')

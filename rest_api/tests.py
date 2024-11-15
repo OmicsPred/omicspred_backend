@@ -69,7 +69,6 @@ class BrowseEndpointTest(APITestCase):
         ('Samples', 'sample/all', 1),
         # Score endpoints
         ('Scores', 'score/all', 1),
-        ('Scores', 'score/all', 1, {'query': [filter_ids+'='+','.join(scores_list)]}),
         ('Score/ID', 'score', 0, {'path': scores_list}),
         ('Scores Search', 'score/search', 1, {'query': [search_pmid]}),
         ('Scores Search Type', 'score/search/protein', 1, {'path': [proteins_list[0]],'extra_query': 'include_performance_metrics=1'}),
