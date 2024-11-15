@@ -1436,7 +1436,7 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
             params += 1
         # Search by Phecode ID
         phecode_id = self.request.query_params.get('phecode_id')
-        if phecode_id and re.match('^\d+\.?\d*$',phecode_id):
+        if phecode_id and re.match(r'^\d+\.?\d*$',phecode_id):
             queryset = queryset.filter(phecode__id=phecode_id)
             params += 1
 
