@@ -196,7 +196,7 @@ class RestListPathways(generics.ListAPIView):
         # Fetch all the Pathways
         queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by(Lower('name'))
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__iexact=filter_term) |
@@ -303,19 +303,25 @@ class RestMetabolomics(generics.ListAPIView):
             queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['metabolites'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
-         # Filter publication
-        pmid = self.request.query_params.get('pmid')
-        if pmid and pmid is not None:
-            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
-        # Filter Dataset
+        # Filter Dataset - FOR INTERN USE
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
             queryset = queryset.filter(dataset__name=dataset)
+
+        # Filter Publication
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid is not None:
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+
+        # Filter Version
+        version = self.request.query_params.get('version')
+        if version and version is not None:
+            queryset = queryset.filter(dataset__platform__version=version)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -338,27 +344,24 @@ class RestProteomics(generics.ListAPIView):
             queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['proteins'],*related_dict['genes'],*related_dict['performance_cohorts']).distinct()
 
         ## Filters ##
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
                                        Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
-        # Filter platforms
+        # Filter Dataset - FOR INTERN USE
+        dataset = self.request.query_params.get('dataset')
+        if dataset and dataset is not None:
+            queryset = queryset.filter(dataset__name=dataset)
+
+        # Filter platform versions - FOR INTERN USE
         platform_versions = self.request.query_params.get('versions')
         if platform_versions and platform_versions is not None:
             platform_versions_list = platform_versions.split(';')
             queryset = queryset.filter(dataset__platform__version__in=platform_versions_list)
-        # Filter publication
-        pmid = self.request.query_params.get('pmid')
-        if pmid and pmid is not None:
-            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
-        # Filter Dataset(s)
-        dataset = self.request.query_params.get('dataset')
-        if dataset and dataset is not None:
-            datasets_list = dataset.split(';')
-            queryset = queryset.filter(dataset__name__in=datasets_list)
-        # Filter Ancestry
+
+        # Filter Ancestry - FOR INTERN USE
         ancestry = self.request.query_params.get('anc')
         if ancestry and ancestry is not None:
             anc_training_filter = Q(**{f'ancestry__dev__anc__{ancestry}__isnull':False})
@@ -373,6 +376,16 @@ class RestProteomics(generics.ListAPIView):
                     queryset = queryset.filter(anc_training_filter & anc_validation_filter)
                 case _: # No stage provided
                     queryset = queryset.filter(anc_training_filter | anc_validation_filter)
+
+        # Filter Publication
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid is not None:
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+
+        # Filter Version
+        version = self.request.query_params.get('version')
+        if version and version is not None:
+            queryset = queryset.filter(dataset__platform__version=version)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -395,19 +408,25 @@ class RestTranscriptomics(generics.ListAPIView):
             queryset = Score.objects.only(*only_dict['scores_pp_table']).select_related(*related_dict['score_dataset']).filter(dataset__platform__name__iexact=platform).prefetch_related(*related_dict['genes'],*related_dict['performance_cohorts']).distinct().order_by('num')
 
         ## Filters ##
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
-        # Filter publication
-        pmid = self.request.query_params.get('pmid')
-        if pmid and pmid is not None:
-            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
-        # Filter Dataset
+        # Filter Dataset - FOR INTERN USE
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
             queryset = queryset.filter(dataset__name=dataset)
+
+        # Filter Publication
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid is not None:
+            queryset = queryset.filter(Q(dataset__publication__pmid__iexact=pmid) | Q(dataset__publication__doi__iexact=pmid))
+
+        # Filter Version
+        version = self.request.query_params.get('version')
+        if version and version is not None:
+            queryset = queryset.filter(dataset__platform__version=version)
 
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
@@ -446,7 +465,7 @@ class RestPerformanceSearch(generics.ListAPIView):
         # Search by PubMed ID
         pmid = self.request.query_params.get('pmid')
         if pmid and pmid.isnumeric():
-            queryset = queryset.filter(publication__pmid=pmid)
+            queryset = queryset.filter(dataset__publication__pmid=pmid)
             params += 1
 
         # Search by Gene
@@ -470,7 +489,7 @@ class RestPerformanceSearch(generics.ListAPIView):
         # Search by Platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
-            queryset = queryset.filter(platform__name=platform)
+            queryset = queryset.filter(dataset__platform__name=platform)
             params += 1
 
         if params == 0:
@@ -705,7 +724,7 @@ class RestListScores(generics.ListAPIView):
         if ids_list:
             queryset = queryset.filter(id__in=ids_list)
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(name__iexact=filter_term) |
@@ -833,7 +852,7 @@ class RestScoreSearch(generics.ListAPIView):
             params += 1
 
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) |
@@ -844,9 +863,11 @@ class RestScoreSearch(generics.ListAPIView):
 
         if params == 0:
             queryset = []
+        else:
+            queryset = queryset.distinct()
 
         # Avoid duplicated entries when a cohort is used several times for a score (with different ancestries/samples)
-        return queryset.distinct()
+        return queryset
 
 
 ## Tables - format by column ##
@@ -1389,7 +1410,7 @@ class RestListPhecodeScore(generics.ListAPIView):
         if ids_list:
             queryset = queryset.filter(score_id__in=ids_list)
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) |
@@ -1440,7 +1461,7 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(phecode__id=phecode_id)
             params += 1
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
@@ -1466,7 +1487,7 @@ class RestListPhecodeSample(generics.ListAPIView):
         if ids_list:
             queryset = queryset.filter(phecode__id__in=ids_list)
 
-        # Filter data - for intern use
+        # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term))

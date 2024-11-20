@@ -27,7 +27,8 @@ class BrowseEndpointTest(APITestCase):
 
     platforms_list_proteomics = ['Somalogic','Olink']
     platforms_list_metabolomics = ['Metabolon']
-    platforms_list = [*platforms_list_proteomics,*platforms_list_metabolomics]
+    platforms_list_transcriptomics = ['Illumina RNAseq']
+    platforms_list = [*platforms_list_proteomics,*platforms_list_metabolomics,*platforms_list_transcriptomics]
     scores_list = ['OPGS000005','OPGS002385','OPGS003006']
     genes_list = ['FCGR2B']
     proteins_list = ['P31994']
@@ -39,6 +40,12 @@ class BrowseEndpointTest(APITestCase):
     index_example = 3
 
     search_pmid = f'pmid={publications_list[0]}'
+    search_platform = f'platform={platforms_list_proteomics[1]}'
+    search_cohort = f'cohort={cohorts_list[1]}'
+    search_author = f'author=Xu'
+    search_opgs_id = f'opgs_id={scores_list[0]}'
+    search_phecode = f'phecode_id={phecodes_list[0]}'
+    search_gene = f'gene={genes_list[0]}'
 
     # Tuple: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples* )
     endpoints = [
@@ -51,26 +58,26 @@ class BrowseEndpointTest(APITestCase):
         # Molecular trait endpoints
         ('Gene/Name', 'gene', 0, {'path': genes_list}),
         ('Protein/Name', 'protein', 0, {'path': proteins_list}),
-        ('Protein/Search', 'protein/search', 1, {'query': ['gene='+genes_list[0]]}),
+        ('Protein/Search', 'protein/search', 1, {'query': [search_gene]}),
         ('Metabolite/Name', 'metabolite', 0, {'path': metabolites_list}),
          # Omics by platform endpoints
         ('Proteomics/Name', 'proteomics',1, {'path': platforms_list_proteomics}),
         ('Metabolomics/Name', 'metabolomics',1, {'path': platforms_list_metabolomics}),
-        # ('Transcriptomics/Name', 'transcriptomics',1, {'path': platforms_list_transcriptomics}),
+        ('Transcriptomics/Name', 'transcriptomics',1, {'path': platforms_list_transcriptomics}),
         # Performance Metrics endpoints
-        ('Performances Search MT','performance/search/protein', 1, {'path': [proteins_list[0]], 'extra_query':'opgs_id='+scores_list[0]}),
-        ('Performances Search','performance/search', 1, {'query': ['opgs_id='+scores_list[0]]}),
+        ('Performances Search MT','performance/search/protein', 1, {'path': [proteins_list[0]], 'extra_query':search_opgs_id}),
+        ('Performances Search','performance/search', 1, {'query': [search_opgs_id,search_pmid,search_platform]}),
         # Publication endpoints
         ('Publications', 'publication/all', 1),
         ('Publications', 'publication/all', 1, {'query': [filter_ids+'='+','.join(publications_list)]}),
         ('Publication/PMID', 'publication', 0, {'path': publications_list}),
-        ('Publication Search', 'publication/search', 1, {'query': ['opgs_id='+scores_list[0],search_pmid]}),
+        ('Publication Search', 'publication/search', 1, {'query': [search_opgs_id,search_pmid,search_author]}),
         # Sample endpoint
         ('Samples', 'sample/all', 1),
         # Score endpoints
         ('Scores', 'score/all', 1),
         ('Score/ID', 'score', 0, {'path': scores_list}),
-        ('Scores Search', 'score/search', 1, {'query': [search_pmid]}),
+        ('Scores Search', 'score/search', 1, {'query': ['opgs_ids='+','.join(scores_list),search_pmid,search_platform,search_cohort]}),
         ('Scores Search Type', 'score/search/protein', 1, {'path': [proteins_list[0]],'extra_query': 'include_performance_metrics=1'}),
         ('Scores Search Type', 'score/search/gene', 1, {'path': [genes_list[0]], 'extra_query': 'include_performance_data=1'}),
         ('Scores Search Type', 'score/search/metabolite', 1, {'path': [metabolites_list[0]]}),
@@ -87,7 +94,7 @@ class BrowseEndpointTest(APITestCase):
         ('Phecode', 'phecode', 0, {'path': phecodes_list}),
         ('Applications - Score', 'applications_score/all', 1),
         ('Applications - Score', 'applications_score', 1, {'path': scores_list}),
-        ('Applications - Score Search', 'applications_score/search', 1, {'query': ['phecode_id='+phecodes_list[0],'opgs_id='+scores_list[0]]}),
+        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phecode,search_opgs_id,search_pmid]}),
         ('Applications - Sample', 'applications_sample/all', 1),
         # Other endpoints
         ('Info', 'info', 0)
@@ -143,14 +150,14 @@ class BrowseEndpointTest(APITestCase):
                 'response': ['performance_data']
             }
         ),
-        # (
-        #     'Transcriptomics/Name / performance_metrics', f'transcriptomics/{platforms_list_transcriptomics[0]}', 1,
-        #     {
-        #         'response_path': [],
-        #         'query': [f'include_performance_metrics'],
-        #         'response': ['performance_data']
-        #     }
-        # ),
+        (
+            'Transcriptomics/Name / performance_metrics', f'transcriptomics/{platforms_list_transcriptomics[0]}', 1,
+            {
+                'response_path': [],
+                'query': [f'include_performance_metrics'],
+                'response': ['performance_data']
+            }
+        ),
         (
             'Phecode / children', f'phecode/{phecodes_list[1]}', 0,
             {

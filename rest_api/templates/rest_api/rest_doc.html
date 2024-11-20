@@ -1,5 +1,5 @@
 {% load static %}
-{% with op_color_1="#1D65A6" op_color_2="#F2A104" %}
+{% with op_color_1="#1D65A6" op_color_2="#F2A104" grey_color="#dee2e6" %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -161,6 +161,18 @@
               }
             }
           }
+
+
+          // Update Execute buttons
+          var execute_button = document.createElement("i");
+          execute_button.className=("bi bi-caret-right-fill");
+          var execute_buttons = document.getElementsByClassName('execute');
+          console.log("COUNT: "+execute_buttons.length);
+          for (var i = 0; i < execute_buttons.length; i++) {
+            console.log("YES");
+            var element = execute_buttons[i];
+            element.appendChild(execute_button);
+          }
         }, 100);
       }
     </script>
@@ -216,7 +228,7 @@
       .opblock-tag {
         background-color: rgba(0, 0, 0, 0.05) !important;
         border-radius: 4px;
-        border: 1px solid #dee2e6 !important;
+        border: 1px solid {{ grey_color }} !important;
         margin-bottom: 1rem !important;
       }
       .opblock-tag:hover {
@@ -228,7 +240,7 @@
         justify-content: flex-start;
         background-color: rgba(97, 175, 254, 0.1);
         padding: .25rem 1rem;
-        border: 1px solid #dee2e6 !important;
+        border: 1px solid {{ grey_color }} !important;
         border-radius: 4px;
       }
       .endpoints_list > div:first-child {
@@ -248,6 +260,10 @@
       .btn {
         border: none !important;
         font-weight: 400 !important;
+      }
+      .swagger-ui .btn-group .btn {
+        margin: 0rem 1rem;
+        border-radius: 4px !important;
       }
       .opblock-summary-method , .btn {
         background-color: {{ op_color_1 }} !important;
@@ -282,6 +298,17 @@
       .renderedMarkdown code {
         color: {{ op_color_1 }} !important;
         font-weight: 200 !important;
+      }
+      .execute::before {
+        content:"\25B6";
+        vertical-align: baseline;
+        padding-right:0.5em;
+      }
+      .btn-clear:before {
+        font-size: 1.2rem;
+        content:"\2297";
+        vertical-align: baseline;
+        padding-right:0.5em;
       }
     </style>
   </head>
