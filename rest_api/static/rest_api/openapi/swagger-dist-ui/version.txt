@@ -1,1 +1,1 @@
-swagger-ui-5.17.3
+swagger-ui-5.18.2

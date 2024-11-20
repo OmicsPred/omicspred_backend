@@ -1183,19 +1183,6 @@ paths:
         ```
         https://www.omicspred.org/rest/cohort/all
         ```
-      parameters:
-        - in: query
-          name: filter_ids
-          required: false
-          schema:
-            type: string
-          description: Comma-separated list of cohort symbols or JSON object with an array of cohort symbols
-          examples:
-            pgs_cohort_sel:
-              summary: Select an example or type cohort symbol(s) - click on 'Try it out' first
-            pgs_cohort_1:
-              summary: 'INTERVAL, UKB'
-              value: 'INTERVAL,UKB'
       responses:
         '200':
           content:
@@ -1342,7 +1329,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Pathway_extended'
           description: |
-            List all the Platforms
+            List all the Pathways
         
             ---
 
@@ -1635,6 +1622,40 @@ paths:
             value: 'Nightingale'
         schema:
           type: string
+      - name: include_performance_metrics
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Flag to include or not the Performance Metrics for each score [default=1]  - *optional*
+        examples:
+          exclude_perf_sel:
+            summary: Exclude the list of Performance Metrics
+            value: 0
+          include_perf_sel:
+            summary: Include the list of Performance Metrics
+            value: 1
+      - name: pmid
+        in: query
+        required: false
+        description: PubMed ID (without the prefix "PMID:") - *optional*
+        schema:
+          type: integer
+        examples:
+            pmid_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
+      - name: version
+        in: query
+        required: false
+        description: Platform version - *optional*
+        schema:
+          type: string
+        examples:
+            version_sel:
+              summary: Type a platform version - click on 'Try it out' first
       responses:
         '200':
           content:
@@ -1694,6 +1715,46 @@ paths:
             value: 'Somalogic'
         schema:
           type: string
+      - name: include_performance_metrics
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Flag to include or not the Performance Metrics for each score [default=1]  - *optional*
+        examples:
+          exclude_perf_sel:
+            summary: Exclude the list of Performance Metrics
+            value: 0
+          include_perf_sel:
+            summary: Include the list of Performance Metrics
+            value: 1
+      - name: pmid
+        in: query
+        required: false
+        description: PubMed ID (without the prefix "PMID:") - *optional*
+        schema:
+          type: integer
+        examples:
+            pmid_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
+      - name: version
+        in: query
+        required: false
+        description: Platform version - *optional*
+        schema:
+          type: string
+        examples:
+            version_sel:
+              summary: Select an example or type a platform version - click on 'Try it out' first
+            version_olink:
+              summary: 'Explore (Olink)'
+              value: 'Explore'
+            version_somalogic:
+              summary: '3.0 (Somalogic)'
+              value: '3.0'
       responses:
         '200':
           content:
@@ -1751,6 +1812,40 @@ paths:
             value: 'Illumina RNAseq'
         schema:
           type: string
+      - name: include_performance_metrics
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Flag to include or not the Performance Metrics for each score [default=1]  - *optional*
+        examples:
+          exclude_perf_sel:
+            summary: Exclude the list of Performance Metrics
+            value: 0
+          include_perf_sel:
+            summary: Include the list of Performance Metrics
+            value: 1
+      - name: pmid
+        in: query
+        required: false
+        description: PubMed ID (without the prefix "PMID:") - *optional*
+        schema:
+          type: integer
+        examples:
+            pmid_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pmid_1:
+              summary: 'PMID: 36991119'
+              value: 36991119
+      - name: version
+        in: query
+        required: false
+        description: Platform version - *optional*
+        schema:
+          type: string
+        examples:
+            version_sel:
+              summary: Type a platform version - click on 'Try it out' first
       responses:
         '200':
           content:
@@ -2544,17 +2639,17 @@ paths:
               value: "CHEBI_25017"
           schema:
             type: string
-        - in: query
-          name: include_performance_metrics
+        - name: include_performance_metrics
+          in: query
           required: false
           schema:
             type: integer
-          description: Include the list of Performance Metrics
+          description: Flag to include or not the Performance Metrics for each score [default=0]  - *optional*
           examples:
-            exclude_asso_child_sel:
+            exclude_perf_sel:
               summary: Exclude the list of Performance Metrics
               value: 0
-            include_asso_child_sel:
+            include_perf_sel:
               summary: Include the list of Performance Metrics
               value: 1
       responses:
@@ -3050,6 +3145,19 @@ paths:
         ```
         curl -X GET 'https://www.omicspred.org/rest/applications_score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
         ```
+      parameters:
+        - name: filter_ids
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of OmicsPred Score IDs or JSON object with an array of OmicsPred Score IDs
+          examples:
+            opgs_ids_sel:
+              summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+            opgs_ids_1:
+              summary: 'OPGS002402, OPGS003423'
+              value: 'OPGS002402,OPGS003423'
       responses:
         '200':
           content:
@@ -3246,6 +3354,18 @@ paths:
         ```
         curl -X GET 'https://www.omicspred.org/rest/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
         ```
+      parameters:
+        - in: query
+          name: filter_ids
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of Phecode IDs.
+          examples:
+            pmid_sel:
+              summary: Select an example or type Phecode ID(s) - click on 'Try it out' first
+            "250.2 (Type 2 diabetes), 557.1 (Celiac disease)":
+              value: '250.2,557.1'
       responses:
         '200':
           content:
