@@ -317,7 +317,10 @@
             "external_id": "P31994",
             "external_id_source": "UniProt",
             "gene_id": 5,
-            "description": "Receptor for the Fc region of ..."
+            "description": "Receptor for the Fc region of ...",
+            "synonyms": [{
+                "name": "CDw32"
+            }]
         }
     },
     {
