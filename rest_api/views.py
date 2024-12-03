@@ -11,7 +11,6 @@ from django.conf import settings
 from omicspred.models import *
 from applications.models import *
 from .serializers import *
-# from search_es.search import get_search
 
 
 generic_defer = ['curation_notes']
@@ -42,7 +41,7 @@ related_dict = {
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
-    'score_applications_select': ['phecode','platform','platform__platform_master','cohort'],
+    'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform'],
     'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master']
 }
@@ -1377,33 +1376,33 @@ class RestPlotScoreSearch(generics.ListAPIView):
 ##################
 applications_db = 'applications'
 
-class RestPhecode(generics.RetrieveAPIView):
+class RestPhenotype(generics.RetrieveAPIView):
     """
-    Retrieve the Phecode information
+    Retrieve the Phenotype information
     """
 
-    def get(self, request, phecode_id):
+    def get(self, request, phenotype_id):
         param_inc_children = self.request.query_params.get('include_children')
         try:
-            queryset = Phecode.objects.using(applications_db).prefetch_related('phecode_score').get(id=phecode_id)
-        except Phecode.DoesNotExist:
+            queryset = Phenotype.objects.using(applications_db).prefetch_related('phenotype_score').get(id=phenotype_id)
+        except Phenotype.DoesNotExist:
             queryset = None
         if (param_inc_children and str(param_inc_children)=='1'):
-            serializer = PhecodeSerializerExtended(queryset,many=False)
+            serializer = PhenotypeSerializerExtended(queryset,many=False)
         else:
-            serializer = PhecodeSerializerScoresCount(queryset,many=False)
+            serializer = PhenotypeSerializerScoresCount(queryset,many=False)
         return Response(serializer.data)
 
 
-class RestListPhecodeScore(generics.ListAPIView):
+class RestListPhenotypeScore(generics.ListAPIView):
     """
-    Retrieve all the Phecode Score Applications
+    Retrieve all the Phenotype Score Applications
     """
     serializer_class = ScoreApplicationsSerializer
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
@@ -1414,16 +1413,16 @@ class RestListPhecodeScore(generics.ListAPIView):
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) |
-                                       Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term) |
+                                       Q(phenotype__id__iexact=filter_term) | Q(phenotype__name__icontains=filter_term) | Q(phenotype__category__icontains=filter_term) |
                                        Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
         # Sort data
-        queryset = sort_data_list(self.request,'score_application',queryset,'phecode_as_float')
+        queryset = sort_data_list(self.request,'score_application',queryset,'phenotype_as_float')
         return queryset
 
 
-class RestPhecodeScore(generics.ListAPIView):
+class RestPhenotypeScore(generics.ListAPIView):
     """
-    Retrieve all the Phecode Score Application for a given Score ID
+    Retrieve all the Phenotype Score Application for a given Score ID
     """
 
     serializer_class = ScoreApplicationsSerializer
@@ -1434,9 +1433,9 @@ class RestPhecodeScore(generics.ListAPIView):
         return queryset
 
 
-class RestPhecodeScoreSearch(generics.ListAPIView):
+class RestPhenotypeScoreSearch(generics.ListAPIView):
     """
-    Search the Phecode Score Application using query
+    Search the Phenotype Score Application using query
     """
     serializer_class = ScoreApplicationsSerializer
 
@@ -1455,10 +1454,10 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
         if pmid and pmid.isnumeric():
             queryset = queryset.filter(publication__pmid=pmid)
             params += 1
-        # Search by Phecode ID
-        phecode_id = self.request.query_params.get('phecode_id')
-        if phecode_id and re.match(r'^\d+\.?\d*$',phecode_id):
-            queryset = queryset.filter(phecode__id=phecode_id)
+        # Search by Phenotype ID
+        phenotype_id = self.request.query_params.get('phenotype_id')
+        if phenotype_id and re.match(r'^\d+\.?\d*$',phenotype_id):
+            queryset = queryset.filter(phenotype__id=phenotype_id)
             params += 1
 
         # Filter data - FOR INTERN USE
@@ -1472,27 +1471,27 @@ class RestPhecodeScoreSearch(generics.ListAPIView):
         return queryset
 
 
-class RestListPhecodeSample(generics.ListAPIView):
+class RestListPhenotypeSample(generics.ListAPIView):
     """
-    Retrieve all the Phecode Sample Applications
+    Retrieve all the Phenotype Sample Applications
     """
-    serializer_class = SampleApplicationsSerializer
+    serializer_class = SampleApplicationsLegacySerializer
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = SampleApplications.objects.using(applications_db).select_related('phecode',).all().prefetch_related('phecode__phecode_score').annotate(phecode_as_float=Cast('phecode__id', output_field=FloatField()))
+        queryset = SampleApplicationsLegacy.objects.using(applications_db).select_related('phenotype',).all().prefetch_related('phenotype__phenotype_score').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
 
         # Filter by list of PheCode IDs
         ids_list = get_ids_list(self)
         if ids_list:
-            queryset = queryset.filter(phecode__id__in=ids_list)
+            queryset = queryset.filter(phenotype__id__in=ids_list)
 
         # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(phecode__id__iexact=filter_term) | Q(phecode__name__icontains=filter_term) | Q(phecode__category__icontains=filter_term))
+            queryset = queryset.filter(Q(phenotype__id__iexact=filter_term) | Q(phenotype__name__icontains=filter_term) | Q(phenotype__category__icontains=filter_term))
         # Sort data
-        queryset = sort_data_list(self.request,'sample_application',queryset,'phecode_as_float')
+        queryset = sort_data_list(self.request,'sample_application',queryset,'phenotype_as_float')
 
         return queryset
 

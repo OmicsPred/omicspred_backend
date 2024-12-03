@@ -1,4 +1,3 @@
-import requests
 from omicspred.models import Gene, Transcript
 
 input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.110.gtf'

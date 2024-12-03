@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from django.conf import settings
-import re, json
+import re
 
 
 class BrowseEndpointTest(APITestCase):
@@ -34,7 +34,7 @@ class BrowseEndpointTest(APITestCase):
     proteins_list = ['P31994']
     metabolites_list = ['CHEBI_16113']
     pathways_list = ['R-HSA-191273','R-HSA-198933']
-    phecodes_list = ['555.2','250','278.1']
+    phenotypes_list = ['555.2','250','278.1']
 
     index_result_mutliplicity = 2
     index_example = 3
@@ -44,7 +44,7 @@ class BrowseEndpointTest(APITestCase):
     search_cohort = f'cohort={cohorts_list[1]}'
     search_author = f'author=Xu'
     search_opgs_id = f'opgs_id={scores_list[0]}'
-    search_phecode = f'phecode_id={phecodes_list[0]}'
+    search_phenotype = f'phenotype_id={phenotypes_list[0]}'
     search_gene = f'gene={genes_list[0]}'
 
     # Tuple: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples* )
@@ -91,10 +91,10 @@ class BrowseEndpointTest(APITestCase):
         ('Platform/Name', 'platform', 0, {'path': platforms_list}),
 
         # Applications
-        ('Phecode', 'phecode', 0, {'path': phecodes_list}),
+        ('Phenotype', 'phenotype', 0, {'path': phenotypes_list}),
         ('Applications - Score', 'applications_score/all', 1),
         ('Applications - Score', 'applications_score', 1, {'path': scores_list}),
-        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phecode,search_opgs_id,search_pmid]}),
+        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_pmid]}),
         ('Applications - Sample', 'applications_sample/all', 1),
         # Other endpoints
         ('Info', 'info', 0)
@@ -159,11 +159,11 @@ class BrowseEndpointTest(APITestCase):
             }
         ),
         (
-            'Phecode / children', f'phecode/{phecodes_list[1]}', 0,
+            'Phenotype / children', f'phenotype/{phenotypes_list[1]}', 0,
             {
                 'response_path': [],
                 'query': ['include_children'],
-                'response': ['child_phecode']
+                'response': ['child_phenotype']
             }
         )
     ]
@@ -173,7 +173,7 @@ class BrowseEndpointTest(APITestCase):
         ('Scores / filter_ids', 'score/all' , scores_list[1:]), # Exclude 1st element
         ('Publications / filter_ids', 'publication/all' , publications_list[1:]), # Exclude 1st element
         ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
-        ('Applications - Sample', 'applications_sample/all', phecodes_list[1:]) # Exclude 1st element
+        ('Applications - Sample', 'applications_sample/all', phenotypes_list[1:]) # Exclude 1st element
     )
 
 

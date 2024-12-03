@@ -1,6 +1,6 @@
 [
     {
-        "model": "applications.Phecode",
+        "model": "applications.Phenotype",
         "pk": "555.2",
         "fields": {
             "name": "Ulcerative colitis",
@@ -8,7 +8,7 @@
         }
     },
     {
-        "model": "applications.Phecode",
+        "model": "applications.Phenotype",
         "pk": "250.2",
         "fields": {
             "name": "Type 2 diabetes",
@@ -16,16 +16,16 @@
         }
     },
     {
-        "model": "applications.Phecode",
+        "model": "applications.Phenotype",
         "pk": "250",
         "fields": {
             "name": "Diabetes mellitus",
             "category": "endocrine/metabolic",
-            "child_phecode": [ "250.2" ]
+            "child_phenotype": [ "250.2" ]
         }
     },
     {
-        "model": "applications.Phecode",
+        "model": "applications.Phenotype",
         "pk": "278.1",
         "fields": {
             "name": "Obesity",
@@ -148,9 +148,10 @@
             "hr_ci": [0.89,0.95],
             "fdr": 0.000225,
             "cohort_id": 1,
-            "phecode_id": "555.2",
+            "phenotype_id": "555.2",
             "platform_id": 1,
-            "publication_id": 1
+            "publication_id": 1,
+            "sample_id": 678
         }
     },
     {
@@ -163,9 +164,10 @@
             "hr_ci": [0.87,0.93],
             "fdr": 1.17e-06,
             "cohort_id": 1,
-            "phecode_id": "555.2",
+            "phenotype_id": "555.2",
             "platform_id": 2,
-            "publication_id": 1
+            "publication_id": 1,
+            "sample_id": 678
         }
     },
     {
@@ -178,13 +180,14 @@
             "hr_ci": [0.96,0.99],
             "fdr": 0.00554,
             "cohort_id": 1,
-            "phecode_id": "278.1",
+            "phenotype_id": "278.1",
             "platform_id": 4,
-            "publication_id": 1
+            "publication_id": 1,
+            "sample_id": 218
         }
     },
     {
-        "model": "applications.SampleApplications",
+        "model": "applications.SampleApplicationsLegacy",
         "pk": 166,
         "fields": {
             "sample_number": 406673,
@@ -197,11 +200,11 @@
                 "SomaScan": 65,
                 "Metabolon": 21
             },
-            "phecode_id": "250"
+            "phenotype_id": "250"
         }
     },
     {
-        "model": "applications.SampleApplications",
+        "model": "applications.SampleApplicationsLegacy",
         "pk": 678,
         "fields": {
             "sample_number": 296948,
@@ -213,11 +216,11 @@
                 "Olink": 1,
                 "SomaScan": 3
             },
-            "phecode_id": "555.2"
+            "phenotype_id": "555.2"
         }
     },
     {
-        "model": "applications.SampleApplications",
+        "model": "applications.SampleApplicationsLegacy",
         "pk": 218,
         "fields": {
             "sample_number": 409104,
@@ -230,7 +233,43 @@
                 "SomaScan": 9,
                 "Metabolon": 2
             },
-            "phecode_id": "278.1"
+            "phenotype_id": "278.1"
+        }
+    },
+    {
+        "model": "applications.SampleApplications",
+        "pk": 166,
+        "fields": {
+            "sample_number": 406673,
+            "sample_cases": 28709,
+            "sample_controls": 377964,
+            "sample_percent_female": 54,
+            "sample_age": 67.62,
+            "sample_age_sd": 8.06
+        }
+    },
+    {
+        "model": "applications.SampleApplications",
+        "pk": 678,
+        "fields": {
+            "sample_number": 296948,
+            "sample_cases": 3878,
+            "sample_controls": 293070,
+            "sample_percent_female": 53,
+            "sample_age": 67.24,
+            "sample_age_sd": 8.13
+        }
+    },
+    {
+        "model": "applications.SampleApplications",
+        "pk": 218,
+        "fields": {
+            "sample_number": 409104,
+            "sample_cases": 24338,
+            "sample_controls": 384766,
+            "sample_percent_female": 54,
+            "sample_age": 67.82,
+            "sample_age_sd": 8.083
         }
     }
 ]

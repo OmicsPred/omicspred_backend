@@ -2,7 +2,7 @@ from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from search_es.analyzers import id_analyzer, name_delimiter_analyzer
-from applications.models import Phecode
+from applications.models import Phenotype
 
 
 # PGS index analyzer
@@ -11,8 +11,8 @@ name_delimiter = name_delimiter_analyzer()
 
 
 @registry.register_document
-class PhecodeDocument(Document):
-    """ Phecode elasticsearch document """
+class PhenotypeDocument(Document):
+    """ Phenotype elasticsearch document """
     id = fields.TextField(analyzer=id_analyzer)
     name = fields.TextField(
         analyzer=name_delimiter,
@@ -39,7 +39,7 @@ class PhecodeDocument(Document):
             'raw': fields.KeywordField()
         }
     )
-    phecode_score = fields.ObjectField(
+    phenotype_score = fields.ObjectField(
         properties={
             'score_id': fields.TextField()
         }
@@ -59,7 +59,7 @@ class PhecodeDocument(Document):
     class Django:
         """Inner nested class Django."""
 
-        model = Phecode # The model associated with this Document
+        model = Phenotype # The model associated with this Document
         db = 'applications'
         # Extra fields to store and return
         # fields = []
