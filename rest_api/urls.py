@@ -20,7 +20,7 @@ rest_urls = {
     'metabolite':           'rest/metabolite/',
     'metabolomics':         'rest/metabolomics/',
     'pathway':              'rest/pathway/',
-    'phecode':              'rest/phecode/',
+    'phenotype':              'rest/phenotype/',
     'platform':             'rest/platform/',
     'plot':                 'rest/plot/',
     'performance':          'rest/performance/',
@@ -88,11 +88,11 @@ urlpatterns = [
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
     # Applications
-    re_path(r'^'+rest_urls['phecode']+'(?P<phecode_id>[^/]+)'+slash, RestPhecode.as_view(), name="getPhecode"),
-    re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhecodeScore.as_view()), name="getAllPhecodeScores"),
-    re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhecodeScoreSearch.as_view(), name="searchPhecodeScores"),
-    re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhecodeScore.as_view(), name="getPhecodeScore"),
-    re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhecodeSample.as_view()), name="getAllPhecodeSamples"),
+    re_path(r'^'+rest_urls['phenotype']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotype.as_view(), name="getPhenotype"),
+    re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhenotypeScore.as_view()), name="getAllPhenotypeScores"),
+    re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhenotypeScoreSearch.as_view(), name="searchPhenotypeScores"),
+    re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhenotypeScore.as_view(), name="getPhenotypeScore"),
+    re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhenotypeSample.as_view()), name="getAllPhenotypeSamples"),
 
     re_path(r'^'+rest_urls['info']+slash, RestInfo.as_view(), name="getInfo"),
 

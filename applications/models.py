@@ -51,26 +51,75 @@ class PublicationApplications(models.Model):
         return pub_date.strftime('%Y')
 
 
-class Phecode(models.Model):
-    """ Class for individual Phecode entry """
-    # PheWAS identifiers
-    id = models.CharField('PheWAS ID', max_length=30, primary_key=True)
-    name = models.CharField('PheWAS Name', max_length=150, null=True)
-    category = models.CharField('PheWAS Category', max_length=100, null=True)
+# class Phecode(models.Model):
+#     """ Class for individual Phecode entry """
+#     # PheWAS identifiers
+#     id = models.CharField('PheWAS ID', max_length=30, primary_key=True)
+#     name = models.CharField('PheWAS Name', max_length=150, null=True)
+#     category = models.CharField('PheWAS Category', max_length=100, null=True)
 
-    child_phecode = models.ManyToManyField('self', verbose_name='Children Phecode', symmetrical=False, related_name='parent_phecode')
+#     child_phecode = models.ManyToManyField('self', verbose_name='Children Phecode', symmetrical=False, related_name='parent_phecode')
+
+#     @property
+#     def scores_count(self):
+#         # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
+#         scores = self.phecode_score.count()
+#         return scores
+
+
+#     @property
+#     def score_number(self):
+#         # scores = self.phecode_score
+#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+#         data = {}
+#         for score in scores.all():
+#             platform = score.platform.name
+#             if platform in data.keys():
+#                 data[platform] += 1
+#             else:
+#                 data[platform] = 1
+#         return data
+
+
+#     @property
+#     def platforms(self):
+#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+#         platforms = set()
+#         for score in scores.all():
+#             platform = score.platform.name
+#             platforms.add(platform)
+#         return list(platforms)
+
+#     @property
+#     def omics_types(self):
+#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','platform__platform_master').filter(phecode=self)
+#         types = set()
+#         for score in scores.all():
+#             type = score.platform.platform_master.type
+#             types.add(type)
+#         return list(types)
+
+
+class Phenotype(models.Model):
+    """ Class for individual Phenotype entry """
+    # PheWAS identifiers
+    id = models.CharField('Phenotype ID', max_length=30, primary_key=True)
+    name = models.CharField('Phenotype Name', max_length=150, null=True)
+    category = models.CharField('Phenotype Category', max_length=100, null=True)
+    source = models.CharField('Phenotype source', max_length=100, null=True)
+
+    child_phenotype = models.ManyToManyField('self', verbose_name='Children Phenotype', symmetrical=False, related_name='parent_phenotype')
 
     @property
     def scores_count(self):
         # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
-        scores = self.phecode_score.count()
+        scores = self.phenotype_score.count()
         return scores
 
 
     @property
     def score_number(self):
-        # scores = self.phecode_score
-        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+        scores = ScoreApplications.objects.using(applications_db).select_related('phenotype','platform').filter(phenotype=self)
         data = {}
         for score in scores.all():
             platform = score.platform.name
@@ -83,7 +132,7 @@ class Phecode(models.Model):
 
     @property
     def platforms(self):
-        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
+        scores = ScoreApplications.objects.using(applications_db).select_related('phenotype','platform').filter(phenotype=self)
         platforms = set()
         for score in scores.all():
             platform = score.platform.name
@@ -92,7 +141,7 @@ class Phecode(models.Model):
 
     @property
     def omics_types(self):
-        scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','platform__platform_master').filter(phecode=self)
+        scores = ScoreApplications.objects.using(applications_db).select_related('phenotype','platform','platform__platform_master').filter(phenotype=self)
         types = set()
         for score in scores.all():
             type = score.platform.platform_master.type
@@ -127,15 +176,24 @@ class PlatformApplications(models.Model):
     platform_master = models.ForeignKey(PlatformMasterApplications, on_delete=models.CASCADE, related_name='platform_version', verbose_name='Platform')
 
 
-
-class SampleApplications(models.Model):
+# Legacy model! It will need to be removed in a near future #
+class SampleApplicationsLegacy(models.Model):
     sample_number = models.IntegerField('Number of Individuals', null=True)
     sample_cases = models.IntegerField('Number of Cases', null=True)
     sample_percent_female = models.FloatField('Percent of Participants Who are Female', validators=[MinValueValidator(0), MaxValueValidator(100)], null=True)
     sample_age = models.FloatField('Sample Age', null=True)
     sample_age_sd = models.FloatField('Mean standard deviation of Age', null=True)
-    phecode = models.ForeignKey(Phecode, on_delete=models.PROTECT, related_name='phecode_sample', verbose_name='Phecode')
+    phenotype = models.ForeignKey(Phenotype, on_delete=models.PROTECT, related_name='phenotype_sample', verbose_name='Phenotype')
     platform_counts = models.JSONField('Associations by platform', null=True)
+
+
+class SampleApplications(models.Model):
+    sample_number = models.IntegerField('Number of Individuals', null=True)
+    sample_cases = models.IntegerField('Number of Cases', null=True)
+    sample_controls = models.IntegerField('Number of Controls', null=True)
+    sample_percent_female = models.FloatField('Percent of Participants Who are Female', validators=[MinValueValidator(0), MaxValueValidator(100)], null=True)
+    sample_age = models.FloatField('Sample Age', null=True)
+    sample_age_sd = models.FloatField('Mean standard deviation of Age', null=True)
 
 
 class MolecularTraitApplications(models.Model):
@@ -155,7 +213,8 @@ class MolecularTraitApplications(models.Model):
 class ScoreApplications(models.Model):
     """ Class for score association for the application """
     score_id = models.CharField('Omicspred ID', max_length=30, db_index=True)
-    phecode = models.ForeignKey(Phecode, on_delete=models.PROTECT, related_name='phecode_score', verbose_name='Phecode')
+    phenotype = models.ForeignKey(Phenotype, on_delete=models.PROTECT, related_name='phenotype_score', verbose_name='Phenotype')
+    sample = models.ForeignKey(SampleApplications, on_delete=models.PROTECT, related_name='sample_score', verbose_name='Sample information')
     publication = models.ForeignKey(PublicationApplications, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
     platform = models.ForeignKey(PlatformApplications, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     cohort = models.ForeignKey(CohortApplications, on_delete=models.PROTECT, related_name='cohort_score', verbose_name='Cohort')
@@ -169,7 +228,7 @@ class ScoreApplications(models.Model):
     @property
     def values_dict(self):
         l = {}
-        l['R2'] = self.r2
+        # l['R2'] = self.r2
         l['HR'] = self.hr
         if self.hr_ci != None:
             l['HR_lower'] = float(self.hr_ci.lower)

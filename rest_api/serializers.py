@@ -168,12 +168,18 @@ class PathwaySerializer(serializers.ModelSerializer):
 
 #### Gene ####
 class GeneSerializer(serializers.ModelSerializer):
+    synonyms = serializers.SerializerMethodField()
     descriptions = serializers.SerializerMethodField()
     class Meta:
         model = Gene
         meta_fields = ('name','external_id','external_id_source','synonyms', 'descriptions', 'biotype')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_synonyms(self, obj):
+        if (obj.synonyms):
+            return obj.synonyms_list
+        return []
 
     def get_descriptions(self, obj):
         if (obj.description):
@@ -208,12 +214,18 @@ class TranscriptSerializer(serializers.ModelSerializer):
 
 #### Protein ####
 class ProteinSerializer(serializers.ModelSerializer):
+    synonyms = serializers.SerializerMethodField()
     descriptions = serializers.SerializerMethodField()
     class Meta:
         model = Protein
-        meta_fields = ('name','external_id','external_id_source','descriptions')
+        meta_fields = ('name','external_id','external_id_source','synonyms','descriptions')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_synonyms(self, obj):
+        if (obj.synonyms):
+            return obj.synonyms_list
+        return []
 
     def get_descriptions(self, obj):
         if (obj.description):
@@ -277,6 +289,7 @@ class MetaboliteLightSerializer(serializers.ModelSerializer):
 
 # /!\ No inheritance yet - need to sort out the pathway_group/subgroup /!\
 class MetaboliteSerializer(serializers.ModelSerializer):
+    synonyms = serializers.SerializerMethodField()
     # pathway_group = PathwaySerializer(many=False, read_only=True)
     # pathway_subgroup = PathwaySerializer(many=False, read_only=True)
 
@@ -285,6 +298,11 @@ class MetaboliteSerializer(serializers.ModelSerializer):
         meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs') #,'pathway_group', 'pathway_subgroup')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_synonyms(self, obj):
+        if (obj.synonyms):
+            return obj.synonyms_list
+        return []
 
 
 class MetaboliteSerializerExtended(MetaboliteSerializer):
@@ -582,35 +600,35 @@ class ScorePerformanceTranscriptSerializer(ScorePerformanceMolecularTraitSeriali
 #### Applications ####
 ######################
 
-class PhecodeSerializer(serializers.ModelSerializer):
+class PhenotypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Phecode
-        meta_fields = ('id','name','category')
+        model = Phenotype
+        meta_fields = ('id','name','category','source')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
-class PhecodeSerializerScoresCount(PhecodeSerializer):
-    class Meta(PhecodeSerializer.Meta):
+class PhenotypeSerializerScoresCount(PhenotypeSerializer):
+    class Meta(PhenotypeSerializer.Meta):
         meta_fields = ('scores_count',)
-        fields = PhecodeSerializer.Meta.fields + meta_fields
-        read_only_fields = PhecodeSerializer.Meta.read_only_fields + meta_fields
+        fields = PhenotypeSerializer.Meta.fields + meta_fields
+        read_only_fields = PhenotypeSerializer.Meta.read_only_fields + meta_fields
 
 
-class PhecodeSerializerExtended(PhecodeSerializerScoresCount):
+class PhenotypeSerializerExtended(PhenotypeSerializerScoresCount):
 
-    # child_phecode = PhecodeSerializer(many=True,read_only=True)
-    child_phecode = serializers.SerializerMethodField()
+    # child_phenotype = PhenotypeSerializer(many=True,read_only=True)
+    child_phenotype = serializers.SerializerMethodField()
 
-    class Meta(PhecodeSerializerScoresCount.Meta):
-        meta_fields = ('child_phecode',)
-        fields = PhecodeSerializerScoresCount.Meta.fields + meta_fields
-        read_only_fields = PhecodeSerializerScoresCount.Meta.read_only_fields + meta_fields
+    class Meta(PhenotypeSerializerScoresCount.Meta):
+        meta_fields = ('child_phenotype',)
+        fields = PhenotypeSerializerScoresCount.Meta.fields + meta_fields
+        read_only_fields = PhenotypeSerializerScoresCount.Meta.read_only_fields + meta_fields
 
-    def get_child_phecode(self, obj):
-        ''' Sort phecode child terms by their IDs '''
-        children = obj.child_phecode.prefetch_related('phecode_score').order_by('id')
-        return PhecodeSerializerScoresCount(children, many=True).data
+    def get_child_phenotype(self, obj):
+        ''' Sort phenotype child terms by their IDs '''
+        children = obj.child_phenotype.prefetch_related('phenotype_score').order_by('id')
+        return PhenotypeSerializerScoresCount(children, many=True).data
 
 
 class PlatformApplicationsSerializer(PlatformSerializer):
@@ -618,6 +636,14 @@ class PlatformApplicationsSerializer(PlatformSerializer):
         model = PlatformApplications
         fields = PlatformSerializer.Meta.fields
         read_only_fields = PlatformSerializer.Meta.read_only_fields
+
+
+class SampleApplicationsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SampleApplications
+        meta_fields = ('sample_number','sample_cases','sample_controls','sample_percent_female','sample_age', 'sample_age_sd')
+        fields = meta_fields
+        read_only_fields = meta_fields
 
 
 class CohortApplicationsSerializer(CohortSerializer):
@@ -636,14 +662,15 @@ class MolecularTraitApplicationsSerializer(serializers.ModelSerializer):
 
 
 class ScoreApplicationsSerializer(serializers.ModelSerializer):
-    phecode = PhecodeSerializer(many=False,read_only=True)
+    phenotype = PhenotypeSerializer(many=False,read_only=True)
     platform = PlatformApplicationsSerializer(many=False,read_only=True)
+    sample = SampleApplicationsSerializer(many=False,read_only=True)
     cohort = CohortApplicationsSerializer(many=False,read_only=True)
     molecular_traits = MolecularTraitApplicationsSerializer(many=True,read_only=True)
     data_values = serializers.SerializerMethodField('get_data_values')
     class Meta:
         model = ScoreApplications
-        meta_fields = ('score_id','phecode','platform','cohort','data_values','molecular_traits')
+        meta_fields = ('score_id','phenotype','platform','sample','cohort','data_values','molecular_traits')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -651,11 +678,11 @@ class ScoreApplicationsSerializer(serializers.ModelSerializer):
         return obj.values_dict
 
 
-class SampleApplicationsSerializer(serializers.ModelSerializer):
-    phecode = PhecodeSerializerScoresCount(many=False,read_only=True)
+class SampleApplicationsLegacySerializer(serializers.ModelSerializer):
+    phenotype = PhenotypeSerializerScoresCount(many=False,read_only=True)
     class Meta:
-        model = SampleApplications
-        meta_fields = ('sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phecode','platform_counts')
+        model = SampleApplicationsLegacy
+        meta_fields = ('sample_number','sample_cases','sample_percent_female','sample_age','sample_age_sd','phenotype','platform_counts')
         fields = meta_fields
         read_only_fields = meta_fields
 

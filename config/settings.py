@@ -300,6 +300,8 @@ REST_FRAMEWORK = {
     }
 }
 
+# Display the Django REST framework interface only in dev/debug mode.
+# Otherwise it simply displays the data (in JSON format) in the web browser.
 if DEBUG == True:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append('rest_framework.renderers.BrowsableAPIRenderer')
 

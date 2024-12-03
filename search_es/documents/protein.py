@@ -21,11 +21,12 @@ class ProteinDocument(Document):
         }
     )
     id = fields.TextField(attr="external_id", analyzer=id_analyzer)
-    # synonyms = fields.TextField(
-    #     properties={
-    #         'raw': fields.KeywordField()
-    #     }
-    # )
+    synonyms_list = fields.TextField(
+        analyzer=name_delimiter,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
     description = fields.TextField(
         analyzer=html_strip,
         fields={

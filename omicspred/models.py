@@ -342,6 +342,14 @@ class MolecularTrait(models.Model):
         else:
             return []
 
+    @property
+    def synonyms_list(self):
+        if self.synonyms:
+            return [x['name'] for x in self.synonyms]
+        else:
+            return []
+
+
 
 class PathwayOld(MolecularTrait):
     """ Class to describe an Old Pathway entity """
@@ -618,7 +626,7 @@ class Metric(models.Model):
     )
     name = models.CharField(verbose_name='Performance Metric Name', max_length=100, null=False) # ex: " Rho score"
     name_short = models.CharField(verbose_name='Performance Metric Name (Short)', max_length=20, null=True) # ex: "Rho"
-    source = models.CharField(verbose_name='Performance Metric  Source', max_length=100, null=True)
+    source = models.CharField(verbose_name='Performance Metric Source', max_length=100, null=True)
 
     estimate = models.FloatField(verbose_name='Estimate', null=False)
     pvalue = models.FloatField(verbose_name='p-value', null=True)

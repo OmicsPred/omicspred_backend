@@ -18,7 +18,7 @@ tags:
   - name: "Publication endpoints"
     description: Publication metadata (PubMed IDs, doi, authors, associated platforms, ...)
   - name: "PheWAS endpoints"
-    description: PheWAS metadata (PheCode [ID, label, description, ...], associated Genetic Scores, ...)
+    description: PheWAS metadata (Phenotype [ID, label, description, ...], associated Genetic Scores, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
   - name: "Dataset endpoints"
@@ -196,11 +196,8 @@ components:
           type: array
           description: "Gene synonym(s)"
           items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: 'IL27B'
+            type: string
+            example: 'IL27B'
         descriptions:
           type: array
           items:
@@ -257,14 +254,8 @@ components:
           type: array
           description: "Metabolite synonym(s)"
           items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: "Hleu"
-              source:
-                type: string
-                example: "IUPAC"
+            type: string
+            example: "Hleu"
         xrefs:
           type: array
           description: "Metabolite external reference(s)"
@@ -395,11 +386,8 @@ components:
           type: array
           description: "Pathway synonym(s)"
           items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: "2019-nCoV infection"
+            type: string
+            example: "2019-nCoV infection"
         xrefs:
           type: array
           description: "Pathway external reference(s)"
@@ -523,14 +511,14 @@ components:
       #     example: "Age, sex and the first 10 genetic principal components"
 
 
-    # Phecode #
-    Phecode:
+    # Phenotype #
+    Phenotype:
       type: object
-      description: "Structure containing information about a Phecode."
+      description: "Structure containing information about a Phenotype."
       properties:
         id:
           type: string
-          description: "Phecode ID"
+          description: "Phenotype ID"
           example: "250.2"
         name:
           type: string
@@ -540,32 +528,36 @@ components:
           type: string
           description: "Phenotype category"
           example: "endocrine/metabolic"
+        source:
+          type: string
+          description: "Phenotype source"
+          example: "PheCode"
         scores_count:
           type: integer
-          description: "Number of scores associated with the phecode."
+          description: "Number of scores associated with the phenotype."
           example: 10
 
-    Phecode_extended:
-      description: "Based on the **Phecode** schema, with the addition of the '**child_phecode**'."
+    Phenotype_extended:
+      description: "Based on the **Phenotype** schema, with the addition of the '**child_phenotype**'."
       allOf:
-        - $ref: '#/components/schemas/Phecode'
+        - $ref: '#/components/schemas/Phenotype'
         - type: object
           properties:
-            child_phecode:
+            child_phenotype:
               type: array
-              description: "List of child phecode(s)."
+              description: "List of child phenotype(s)."
               items:
-                $ref: '#/components/schemas/Phecode'
+                $ref: '#/components/schemas/Phenotype'
 
-    PhecodeScoresCount:
-      description: "Based on the **Phecode** schema, with the addition of the '**scores_count**'."
+    PhenotypeScoresCount:
+      description: "Based on the **Phenotype** schema, with the addition of the '**scores_count**'."
       allOf:
-        - $ref: '#/components/schemas/Phecode'
+        - $ref: '#/components/schemas/Phenotype'
         - type: object
           properties:
             scores_count:
               type: integer
-              description: "Number of scores associated with the PheCode entry."
+              description: "Number of scores associated with the Phenotype entry."
               example: 6
 
 
@@ -693,6 +685,12 @@ components:
           type: string
           description: "Source of the Protein ID"
           example: "UniProt"
+        synonyms:
+          type: array
+          description: "Protein synonym(s)"
+          items:
+            type: string
+            example: 'Visceral adipose-specific serpin'
         descriptions:
           type: array
           items:
@@ -844,6 +842,10 @@ components:
           type: integer
           description: "Number of cases in the sample"
           example: 723
+        sample_controls:
+          type: integer
+          description: "Number of controls in the sample"
+          example: 403151
         sample_percent_female:
           type: number
           description: "Percentage of female participants"
@@ -856,16 +858,41 @@ components:
           type: integer
           description: "Standard deviation of the mean age in the sample population"
           example: 8.01
-        phecode:
-          $ref: '#/components/schemas/Phecode'
-        platform_counts:
-          type: object
-          description: "List and count the number of platforms that have been using the sample."
-          additionalProperties:
-            type: integer
-          example:
-            SomaScan: 1
-            Olink: 1
+
+    # SampleApplicationsLegacy:
+    #   type: object
+    #   description: "Structure containing information about a SampleAppliction - Legacy schema"
+    #   properties:
+    #     sample_number:
+    #       type: integer
+    #       description: "Number of participants in the sample"
+    #       example: 403874
+    #     sample_cases:
+    #       type: integer
+    #       description: "Number of cases in the sample"
+    #       example: 723
+    #     sample_percent_female:
+    #       type: number
+    #       description: "Percentage of female participants"
+    #       example: 54.0
+    #     sample_age:
+    #       type: integer
+    #       description: "Mean age in the sample population"
+    #       example: 53.8
+    #     sample_age_sd:
+    #       type: integer
+    #       description: "Standard deviation of the mean age in the sample population"
+    #       example: 8.01
+    #     phenotype:
+    #       $ref: '#/components/schemas/Phenotype'
+    #     platform_counts:
+    #       type: object
+    #       description: "List and count the number of platforms that have been using the sample."
+    #       additionalProperties:
+    #         type: integer
+    #       example:
+    #         SomaScan: 1
+    #         Olink: 1
 
 
     # Score #
@@ -1015,26 +1042,28 @@ components:
     # Score Applications #
     ScoreApplications:
       type: object
-      description: "Structure containing ScoreApplications information (Score + Phecode)."
+      description: "Structure containing ScoreApplications information (Score + Phenotype)."
       properties:
         score_id:
           type: string
           description: "OmicsPred Score ID"
           example: "OPGS002402"
-        phecode:
-          $ref: '#/components/schemas/Phecode'
+        phenotype:
+          $ref: '#/components/schemas/Phenotype'
         platform:
           $ref: '#/components/schemas/Platform'
+        sample:
+          $ref: '#/components/schemas/SampleApplications'
         cohort:
           $ref: '#/components/schemas/Cohort'
         data_values:
           type: object
-          description: "Measurements of the association between the Score and Phecode."
+          description: "Measurements of the association between the Score and Phenotype."
           properties:
-            R2:
-               type: number
-               description: "Coefficient of determination"
-               example: 0.269
+            # R2:
+            #    type: number
+            #    description: "Coefficient of determination"
+            #    example: 0.269
             HR:
               type: number
               description: "Hazard Ratio"
@@ -3054,29 +3083,29 @@ paths:
   #     tags:
   #     - rest
 
-  ## Phecode endpoints ##
-  /rest/phecode/{phecode_id}:
+  ## Phenotype endpoints ##
+  /rest/phenotype/{phenotype_id}:
     get:
       tags:
         - "PheWAS endpoints"
-      operationId: getPhecode
+      operationId: getPhenotype
       description: |
-        Retrieve the Phecode information, including:
-          * Phecode ID and name
+        Retrieve the Phenotype information, including:
+          * Phenotype ID and name
           * Trait category
           * Number of associated Genetic Scores
-          * PheCode child entries **[** only when the parameter **include_children** is set to **1** **]**
+          * Phenotype child entries **[** only when the parameter **include_children** is set to **1** **]**
 
         Examples of request:
         ```
-        - https://www.omicspred.org/rest/phecode/250.2
-        - https://www.omicspred.org/rest/phecode/250?include_children=1
+        - https://www.omicspred.org/rest/phenotype/250.2
+        - https://www.omicspred.org/rest/phenotype/250?include_children=1
         ```
       parameters:
-        - name: phecode_id
+        - name: phenotype_id
           in: path
           required: true
-          description: 'Phecode ID'
+          description: 'Phenotype ID'
           examples:
             "250 (Diabetes mellitus)":
               value: '250'
@@ -3089,13 +3118,13 @@ paths:
           required: false
           schema:
             type: integer
-          description: Include the list of PheCode child traits
+          description: Include the list of Phenotype child traits
           examples:
             exclude_asso_child_sel:
-              summary: Exclude the list of PheCode child traits
+              summary: Exclude the list of Phenotype child traits
               value: 0
             include_asso_child_sel:
-              summary: Include the list of PheCode child traits
+              summary: Include the list of Phenotype child traits
               value: 1
       responses:
         '200':
@@ -3103,9 +3132,9 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Phecode_extended'
-                  - $ref: '#/components/schemas/PhecodeScoresCount'
-          description: 'Phecode information'
+                  - $ref: '#/components/schemas/Phenotype_extended'
+                  - $ref: '#/components/schemas/PhenotypeScoresCount'
+          description: 'Phenotype information'
         '4XX':
           content:
               application/json:
@@ -3119,11 +3148,11 @@ paths:
     get:
       tags:
         - "PheWAS endpoints"
-      operationId: getAllPhecodeScores
+      operationId: getAllPhenotypeScores
       description: |
-        Retrieve all the Phecode Score associations, including for each of them:
+        Retrieve all the Phenotype Score associations, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
-          * Associated phecode information
+          * Associated phenotype information
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
@@ -3172,7 +3201,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/ScoreApplications'
           description: |
-            All the Phecode Score associations
+            All the Phenotype Score associations
 
             ---
 
@@ -3188,11 +3217,11 @@ paths:
     get:
       tags:
         - "PheWAS endpoints"
-      operationId: getPhecodeScore
+      operationId: getPhenotypeScore
       description: |
-        Retrieve all the Phecode Score associations for a given Score ID, including for each of them:
+        Retrieve all the Phenotype Score associations for a given Score ID, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
-          * Associated phecode information
+          * Associated phenotype information
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
@@ -3228,7 +3257,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/ScoreApplications'
           description: |
-            All the Phecode Score associations for a given Score ID
+            All the Phenotype Score associations for a given Score ID
 
             ---
 
@@ -3244,13 +3273,13 @@ paths:
     get:
       tags:
         - "PheWAS endpoints"
-      operationId: searchPhecodeScores
+      operationId: searchPhenotypeScores
       description: |
-        Search Phecode Score associations by OmicsPred Score ID or Phecode ID.
+        Search Phenotype Score associations by OmicsPred Score ID or Phenotype ID.
 
         Each result includes:
           * OmicsPred Genetic Score (OPGS) ID
-          * Associated phecode information
+          * Associated phenotype information
           * Associated molecular trait(s)
           * Platform information
           * Cohort information
@@ -3258,7 +3287,7 @@ paths:
 
         Examples of request:
         ```
-        - https://www.omicspred.org/rest/applications_score/search?phecode_id=250.2
+        - https://www.omicspred.org/rest/applications_score/search?phenotype_id=250.2
         - https://www.omicspred.org/rest/applications_score/search?pmid=36991119
         ```
       parameters:
@@ -3275,10 +3304,10 @@ paths:
               value: 'OPGS002402'
             OPGS003423:
               value: 'OPGS003423'
-        - name: phecode_id
+        - name: phenotype_id
           required: false
           in: query
-          description: Phecode ID - *optional*
+          description: Phenotype ID - *optional*
           schema:
             type: string
           examples:
@@ -3314,7 +3343,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/ScoreApplications'
           description: |
-           Phecode Score associations related to the request
+           Phenotype Score associations related to the request
         
             ---
 
@@ -3327,63 +3356,63 @@ paths:
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   ## Sample Application
-  /rest/applications_sample/all:
-    get:
-      tags:
-        - "Sample/Cohort endpoints"
-      operationId: getAllPhecodeSamples
-      description: |
-        Retrieve all the Phecode Sample associations, including for each of them:
-          * Phecode information
-          * Sample information (number, age, percentage of female, ...)
-          * Number of associated scores per platform 
+  # /rest/applications_sample/all:
+  #   get:
+  #     tags:
+  #       - "Sample/Cohort endpoints"
+  #     operationId: getAllPhenotypeSamples
+  #     description: |
+  #       Retrieve all the Phenotype Sample associations, including for each of them:
+  #         * Phenotype information
+  #         * Sample information (number, age, percentage of female, ...)
+  #         * Number of associated scores per platform
 
-        Example of request:
-        ```
-        https://www.omicspred.org/rest/applications_sample/all
-        ``` 
-        ---
-        ###### **Filtering**
+  #       Example of request:
+  #       ```
+  #       https://www.omicspred.org/rest/applications_sample/all
+  #       ```
+  #       ---
+  #       ###### **Filtering**
 
-        You can choose to filter the results of this endpoint to a specified list of Phecode IDs by providing a list of IDs in one of two ways:
-        1. A comma-seperated list of Phecode IDs in the request URL (this will not work for larger queries), e.g.:
-        ```
-        https://www.omicspred.org/rest/applications_sample/all?filter_ids=250.2,557.1
-        ```
-        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["250.2","557.1"] }`. Example with curl:
-        ```
-        curl -X GET 'https://www.omicspred.org/rest/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
-        ```
-      parameters:
-        - in: query
-          name: filter_ids
-          required: false
-          schema:
-            type: string
-          description: Comma-separated list of Phecode IDs.
-          examples:
-            pmid_sel:
-              summary: Select an example or type Phecode ID(s) - click on 'Try it out' first
-            "250.2 (Type 2 diabetes), 557.1 (Celiac disease)":
-              value: '250.2,557.1'
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/SampleApplications'
-          description: 'All the Phecode Sample Applications'
-        '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+  #       You can choose to filter the results of this endpoint to a specified list of Phenotype IDs by providing a list of IDs in one of two ways:
+  #       1. A comma-seperated list of Phenotype IDs in the request URL (this will not work for larger queries), e.g.:
+  #       ```
+  #       https://www.omicspred.org/rest/applications_sample/all?filter_ids=250.2,557.1
+  #       ```
+  #       2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["250.2","557.1"] }`. Example with curl:
+  #       ```
+  #       curl -X GET 'https://www.omicspred.org/rest/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
+  #       ```
+  #     parameters:
+  #       - in: query
+  #         name: filter_ids
+  #         required: false
+  #         schema:
+  #           type: string
+  #         description: Comma-separated list of Phenotype IDs.
+  #         examples:
+  #           pmid_sel:
+  #             summary: Select an example or type Phenotype ID(s) - click on 'Try it out' first
+  #           "250.2 (Type 2 diabetes), 557.1 (Celiac disease)":
+  #             value: '250.2,557.1'
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 results:
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/SampleApplicationsLegacy'
+  #         description: 'All the Phenotype Sample Applications'
+  #       '4XX':
+  #         content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Error_4XX'
+  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
 
   ## Other ##

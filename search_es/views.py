@@ -11,10 +11,11 @@ from elasticsearch_dsl import Search
 result_size = 25
 
 def query_fields():
-    return ['id^3','name^3','platform_name','omics_type','category','full_name',
-            'genes.external_id^2','genes.name^2','genes.description',
-            'proteins.external_id^2','proteins.names^2','proteins.description',
-            'metabolites.external_id^2','metabolites.name^2','metabolites.description']
+    return ['id^3','name^3','platform_name','omics_type',
+            'category','full_name','synonyms_list^2','description',
+            'genes.external_id^2','genes.name^2','genes.synonyms_list^2','genes.description',
+            'proteins.external_id^2','proteins.names^2','proteins.synonyms_list^2','proteins.description',
+            'metabolites.external_id^2','metabolites.name^2','metabolites.synonyms_list^2','metabolites.description']
 
 
 def get_search(query):

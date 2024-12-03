@@ -52,21 +52,24 @@ class ScoreDocument(Document):
         properties={
             'external_id': fields.TextField(),
             'name': fields.TextField(),
-            'description': fields.TextField()
+            'description': fields.TextField(),
+            'synonyms_list': fields.TextField()
         }
     )
     proteins = fields.ObjectField(
         properties={
             'external_id': fields.TextField(),
             'name': fields.TextField(),
-            'description': fields.TextField()
+            'description': fields.TextField(),
+            'synonyms_list': fields.TextField()
         }
     )
     metabolites = fields.ObjectField(
         properties={
             'external_id': fields.TextField(),
             'name': fields.TextField(),
-            'description': fields.TextField()
+            'description': fields.TextField(),
+            'synonyms_list': fields.TextField()
         }
     )
 
