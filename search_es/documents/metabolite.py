@@ -73,3 +73,4 @@ class MetaboliteDocument(Document):
         #     "pathway_group",
         #     "pathway_subgroup"
         # ]
+        fields = ['external_id_source']

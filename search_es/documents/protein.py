@@ -69,4 +69,4 @@ class ProteinDocument(Document):
 
         model = Protein # The model associated with this Document
         # Extra fields to store and return
-        # fields = []
+        fields = ['external_id_source']

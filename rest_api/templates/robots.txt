@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /rest/$
+Disallow: /rest/
