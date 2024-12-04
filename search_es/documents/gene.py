@@ -69,5 +69,6 @@ class GeneDocument(Document):
         model = Gene # The model associated with this Document
         # Extra fields to store and return
         fields = [
-            "biotype"
+            'biotype',
+            'external_id_source'
         ]

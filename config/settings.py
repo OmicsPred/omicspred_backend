@@ -327,8 +327,7 @@ ELASTICSEARCH_INDEX_SETTINGS = {
 ELASTICSEARCH_INDEX_NAMES = {
     'search_es.documents.gene': 'gene',
     'search_es.documents.metabolite': 'metabolite',
-    'search_es.documents.phecode': 'phecode',
-    'search_es.documents.platform': 'platform',
+    'search_es.documents.phenotype': 'phenotype',
     'search_es.documents.protein': 'protein',
     'search_es.documents.score': 'score'
 }

@@ -62,4 +62,4 @@ class PhenotypeDocument(Document):
         model = Phenotype # The model associated with this Document
         db = 'applications'
         # Extra fields to store and return
-        # fields = []
+        fields = ['source']
