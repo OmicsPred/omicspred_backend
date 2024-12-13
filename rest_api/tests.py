@@ -46,6 +46,8 @@ class BrowseEndpointTest(APITestCase):
     search_opgs_id = f'opgs_id={scores_list[0]}'
     search_phenotype = f'phenotype_id={phenotypes_list[0]}'
     search_gene = f'gene={genes_list[0]}'
+    seach_mt = f'molecular_trait_id={proteins_list[0]}'
+    search_combined = f'{search_opgs_id}&{search_pmid}'
 
     # Tuple: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples* )
     endpoints = [
@@ -94,7 +96,7 @@ class BrowseEndpointTest(APITestCase):
         ('Phenotype', 'phenotype', 0, {'path': phenotypes_list}),
         ('Applications - Score', 'applications_score/all', 1),
         ('Applications - Score', 'applications_score', 1, {'path': scores_list}),
-        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_pmid]}),
+        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_pmid,seach_mt,search_combined]}),
         ('Applications - Sample', 'applications_sample/all', 1),
         # Other endpoints
         ('Info', 'info', 0)

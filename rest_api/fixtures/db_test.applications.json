@@ -151,7 +151,8 @@
             "phenotype_id": "555.2",
             "platform_id": 1,
             "publication_id": 1,
-            "sample_id": 678
+            "sample_id": 678,
+            "molecular_traits": [ 23326 ]
         }
     },
     {
@@ -167,7 +168,8 @@
             "phenotype_id": "555.2",
             "platform_id": 2,
             "publication_id": 1,
-            "sample_id": 678
+            "sample_id": 678,
+            "molecular_traits": [ 23327 ]
         }
     },
     {
@@ -183,7 +185,8 @@
             "phenotype_id": "278.1",
             "platform_id": 4,
             "publication_id": 1,
-            "sample_id": 218
+            "sample_id": 218,
+            "molecular_traits": [ 23326, 23327 ]
         }
     },
     {

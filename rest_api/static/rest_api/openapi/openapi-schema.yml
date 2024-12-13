@@ -17,8 +17,8 @@ tags:
     description: Genetic Score metadata with associated molecular traits (genes, transcripts, proteins, metabolites), publications and platforms
   - name: "Publication endpoints"
     description: Publication metadata (PubMed IDs, doi, authors, associated platforms, ...)
-  - name: "PheWAS endpoints"
-    description: PheWAS metadata (Phenotype [ID, label, description, ...], associated Genetic Scores, ...)
+  - name: "Phenotype endpoints"
+    description: Phenotype metadata (Phenotype [ID, label, description, ...], associated Genetic Scores, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with associated scores, publications, samples and cohorts
   - name: "Dataset endpoints"
@@ -2341,96 +2341,96 @@ paths:
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   ## Score endpoints ##
-  /rest/score/all:
-    get:
-      tags:
-        - "Score endpoints"
-      operationId: getAllScores
-      description: |
-        Retrieve all the OmicsPred Genetic Scores, including for each of them:
-          * OmicsPred Genetic Score (OPGS) ID and name
-          * Method used
-          * Dataset name
-          * Publication information
-          * Platform information
-          * Reported molecular trait(s)
-          * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
-          * Variants number
-          * Variants genome build
-          * Score license
-          * Ancestry distribution (only when the parameter *include_ancestry=1* is used)
+  # /rest/score/all:
+  #   get:
+  #     tags:
+  #       - "Score endpoints"
+  #     operationId: getAllScores
+  #     description: |
+  #       Retrieve all the OmicsPred Genetic Scores, including for each of them:
+  #         * OmicsPred Genetic Score (OPGS) ID and name
+  #         * Method used
+  #         * Dataset name
+  #         * Publication information
+  #         * Platform information
+  #         * Reported molecular trait(s)
+  #         * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
+  #         * Variants number
+  #         * Variants genome build
+  #         * Score license
+  #         * Ancestry distribution (only when the parameter *include_ancestry=1* is used)
 
-        Example of request:
-        ```
-        - https://www.omicspred.org/rest/score/all
-        - https://www.omicspred.org/rest/score/all?include_ancestry=1
-        ```
-        ---
-        ###### **Filtering**
+  #       Example of request:
+  #       ```
+  #       - https://www.omicspred.org/rest/score/all
+  #       - https://www.omicspred.org/rest/score/all?include_ancestry=1
+  #       ```
+  #       ---
+  #       ###### **Filtering**
 
-        You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
-        1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
-        ```
-        https://www.omicspred.org/rest/score/all?filter_ids=OPGS002402,OPGS003423
-        ```
-        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
-        ```
-        curl -X GET 'https://www.omicspred.org/rest/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
-        ```
-      parameters:
-        - name: filter_ids
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Comma-separated list of OmicsPred Score IDs or JSON object with an array of OmicsPred Score IDs
-          examples:
-            opgs_ids_sel:
-              summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
-            opgs_ids_1:
-              summary: 'OPGS002402, OPGS003423'
-              value: 'OPGS002402,OPGS003423'
-        - name: include_ancestry
-          in: query
-          required: false
-          description: Flag to include or not the ancestry distribution for each score [default=0] - *optional*
-          schema:
-            type: integer
-          examples:
-            exclude_ancestry_sel:
-              summary: Hide the ancestry distribution
-              value: 0
-            include_ancestry_sel:
-              summary: Include the ancestry distribution
-              value: 1
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                allOf:
-                  - $ref: '#/components/schemas/Pagination'
-                properties:
-                  results:
-                    description: "List all the OmicsPred Genetic Scores"
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: '#/components/schemas/Score'
-                        - $ref: '#/components/schemas/Score_Ancestry'
-          description: |
-            List all the OmicsPred Genetic Scores
+  #       You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
+  #       1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
+  #       ```
+  #       https://www.omicspred.org/rest/score/all?filter_ids=OPGS002402,OPGS003423
+  #       ```
+  #       2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
+  #       ```
+  #       curl -X GET 'https://www.omicspred.org/rest/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
+  #       ```
+  #     parameters:
+  #       - name: filter_ids
+  #         in: query
+  #         required: false
+  #         schema:
+  #           type: string
+  #         description: Comma-separated list of OmicsPred Score IDs or JSON object with an array of OmicsPred Score IDs
+  #         examples:
+  #           opgs_ids_sel:
+  #             summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+  #           opgs_ids_1:
+  #             summary: 'OPGS002402, OPGS003423'
+  #             value: 'OPGS002402,OPGS003423'
+  #       - name: include_ancestry
+  #         in: query
+  #         required: false
+  #         description: Flag to include or not the ancestry distribution for each score [default=0] - *optional*
+  #         schema:
+  #           type: integer
+  #         examples:
+  #           exclude_ancestry_sel:
+  #             summary: Hide the ancestry distribution
+  #             value: 0
+  #           include_ancestry_sel:
+  #             summary: Include the ancestry distribution
+  #             value: 1
+  #     responses:
+  #       '200':
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               allOf:
+  #                 - $ref: '#/components/schemas/Pagination'
+  #               properties:
+  #                 results:
+  #                   description: "List all the OmicsPred Genetic Scores"
+  #                   type: array
+  #                   items:
+  #                     oneOf:
+  #                       - $ref: '#/components/schemas/Score'
+  #                       - $ref: '#/components/schemas/Score_Ancestry'
+  #         description: |
+  #           List all the OmicsPred Genetic Scores
         
-            ---
+  #           ---
 
-            __Notes:__ This endpoint uses pagination.
-        '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+  #           __Notes:__ This endpoint uses pagination.
+  #       '4XX':
+  #         content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Error_4XX'
+  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   /rest/score/{opgs_id}:
     get:
@@ -3087,7 +3087,7 @@ paths:
   /rest/phenotype/{phenotype_id}:
     get:
       tags:
-        - "PheWAS endpoints"
+        - "Phenotype endpoints"
       operationId: getPhenotype
       description: |
         Retrieve the Phenotype information, including:
@@ -3147,7 +3147,7 @@ paths:
   /rest/applications_score/all:
     get:
       tags:
-        - "PheWAS endpoints"
+        - "Phenotype endpoints"
       operationId: getAllPhenotypeScores
       description: |
         Retrieve all the Phenotype Score associations, including for each of them:
@@ -3216,7 +3216,7 @@ paths:
   /rest/applications_score/{opgs_id}:
     get:
       tags:
-        - "PheWAS endpoints"
+        - "Phenotype endpoints"
       operationId: getPhenotypeScore
       description: |
         Retrieve all the Phenotype Score associations for a given Score ID, including for each of them:
@@ -3272,7 +3272,7 @@ paths:
   /rest/applications_score/search:
     get:
       tags:
-        - "PheWAS endpoints"
+        - "Phenotype endpoints"
       operationId: searchPhenotypeScores
       description: |
         Search Phenotype Score associations by OmicsPred Score ID or Phenotype ID.
@@ -3289,6 +3289,7 @@ paths:
         ```
         - https://www.omicspred.org/rest/applications_score/search?phenotype_id=250.2
         - https://www.omicspred.org/rest/applications_score/search?pmid=36991119
+        - https://www.omicspred.org/rest/applications_score/search?pmid=36991119&molecular_trait_id=COL1A1
         ```
       parameters:
         - name: opgs_id
@@ -3329,6 +3330,21 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
+        - name: molecular_trait_id
+          required: false
+          in: query
+          description: Molecular trait ID - *optional*
+          schema:
+            type: string
+          examples:
+              mt_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              mt_1:
+                summary: "Gene COL1A1"
+                value: "COL1A1"
+              mt_2:
+                summary: "Protein P08887 (UniProt)"
+                value: "P08887"
       responses:
         '200':
           content:
@@ -3424,7 +3440,7 @@ paths:
       description: |
         Return diverse information related to the REST API and OmicsPred, including:
         * REST API version
-        * Data count (scores, PheWAS associations, ...)
+        * Data count (scores, phenotype associations, ...)
 
         Example of request:
         ```
@@ -3455,22 +3471,30 @@ paths:
                         type: number
                         description: "Number of Genetic Scores in OmicsPred"
                         example: 20805
-                      phewas:
-                        type: number
-                        description: "Number of PheWAS associations in OmicsPred"
-                        example: 18404
-                      pathways:
-                        type: number
-                        description: "Number of Pathways (Reactome) in OmicsPred"
-                        example: 202
-                      platforms:
-                        type: number
-                        description: "Number of different Platforms in OmicsPred"
-                        example: 5
                       publications:
                         type: number
                         description: "Number of Publications/Studies in OmicsPred"
                         example: 10
+                      platforms:
+                        type: number
+                        description: "Number of different Platforms in OmicsPred"
+                        example: 5
+                      pathways:
+                        type: number
+                        description: "Number of Pathways (Reactome) in OmicsPred"
+                        example: 202
+                      phenotypes:
+                        type: number
+                        description: "Number of Phenotypes in OmicsPred"
+                        example: 18404
+                      phenotype_associations:
+                        type: number
+                        description: "Number of Phenotype associations in OmicsPred"
+                        example: 20342
+                      tissues:
+                        type: number
+                        description: "Number of Tissues in OmicsPred"
+                        example: 4
             description: 'Diverse information about the project, such as REST API version, data counts, ...'
         '4XX':
           content:

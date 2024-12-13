@@ -20,7 +20,7 @@ rest_urls = {
     'metabolite':           'rest/metabolite/',
     'metabolomics':         'rest/metabolomics/',
     'pathway':              'rest/pathway/',
-    'phenotype':              'rest/phenotype/',
+    'phenotype':            'rest/phenotype/',
     'platform':             'rest/platform/',
     'plot':                 'rest/plot/',
     'performance':          'rest/performance/',
