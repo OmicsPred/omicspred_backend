@@ -1459,6 +1459,11 @@ class RestPhenotypeScoreSearch(generics.ListAPIView):
         if phenotype_id and re.match(r'^\d+\.?\d*$',phenotype_id):
             queryset = queryset.filter(phenotype__id=phenotype_id)
             params += 1
+        # Search by Phenotype ID
+        molecular_trait_id = self.request.query_params.get('molecular_trait_id')
+        if molecular_trait_id and molecular_trait_id is not None:
+            queryset = queryset.filter(Q(molecular_traits__name__iexact=molecular_trait_id) | Q(molecular_traits__external_id__iexact=molecular_trait_id))
+            params += 1
 
         # Filter data - FOR INTERN USE
         filter_term = self.request.query_params.get('filter')
@@ -1509,10 +1514,12 @@ class RestInfo(generics.RetrieveAPIView):
             },
             'data_count': {
                 'scores': Score.objects.count(),
-                'phewas': ScoreApplications.objects.using(applications_db).count(),
-                'pathways': Pathway.objects.count(),
+                'publications': Publication.objects.count(),
                 'platforms': PlatformMaster.objects.count(),
-                'publications': Publication.objects.count()
+                'pathways': Pathway.objects.count(),
+                'phenotypes': Phenotype.objects.using(applications_db).count(),
+                'phenotype_associations': ScoreApplications.objects.using(applications_db).count(),
+                'tissues': EFO.objects.filter(type='tissue').count()
             }
         }
 
