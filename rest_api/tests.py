@@ -140,7 +140,7 @@ class BrowseEndpointTest(APITestCase):
             'Metabolomics/Name / performance_metrics', f'metabolomics/{platforms_list_metabolomics[0]}', 1,
             {
                 'response_path': [],
-                'query': [f'include_performance_metrics'],
+                'query': ['include_performance_metrics'],
                 'response': ['performance_data']
             }
         ),
@@ -148,7 +148,7 @@ class BrowseEndpointTest(APITestCase):
             'Proteomics/Name / performance_metrics', f'proteomics/{platforms_list_proteomics[0]}', 1,
             {
                 'response_path': [],
-                'query': [f'include_performance_metrics'],
+                'query': ['include_performance_metrics'],
                 'response': ['performance_data']
             }
         ),
@@ -156,8 +156,16 @@ class BrowseEndpointTest(APITestCase):
             'Transcriptomics/Name / performance_metrics', f'transcriptomics/{platforms_list_transcriptomics[0]}', 1,
             {
                 'response_path': [],
-                'query': [f'include_performance_metrics'],
+                'query': ['include_performance_metrics'],
                 'response': ['performance_data']
+            }
+        ),
+        (
+            'Pathway / score_counts', f'pathway/all', 1,
+            {
+                'response_path':['metabolites',0],
+                'query': ['include_counts'],
+                'response': ['scores_count']
             }
         ),
         (

@@ -1,8 +1,8 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
-from search_es.analyzers import id_analyzer, word_delimiter_analyzer, name_delimiter_analyzer
-from omicspred.models import Score
+from search_es.analyzers import id_analyzer, name_delimiter_analyzer, word_delimiter_analyzer
+from omicspred.models import Pathway
 
 
 # PGS index analyzer
@@ -10,45 +10,40 @@ id_analyzer = id_analyzer()
 name_delimiter = name_delimiter_analyzer()
 word_delimiter = word_delimiter_analyzer()
 
+mt_attr_list = ['external_id','name','description','synonyms_list']
+
+def fetch_mt_data(objects_list):
+    mt_list = []
+    for mt in objects_list:
+        mt_entry = {}
+        for entity in mt_attr_list:
+            mt_entry[entity] = getattr(mt, entity)
+        mt_list.append(mt_entry)
+    return mt_list
+
 
 @registry.register_document
-class ScoreDocument(Document):
-    """ Score elasticsearch document """
-
-    id = fields.TextField(analyzer=id_analyzer)
+class PathwayDocument(Document):
+    """ Pathway elasticsearch document """
     name = fields.TextField(
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
-    # variants_number = fields.IntegerField()
-    platform_name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    omics_type = fields.TextField(
+    id = fields.TextField(attr="external_id", analyzer=id_analyzer)
+    synonyms_list = fields.TextField(
         analyzer=word_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
-    publication = fields.ObjectField(
-        properties={
-            'title': fields.TextField(),
-            'pmid': fields.TextField(analyzer=id_analyzer),
-            'doi': fields.TextField(analyzer=id_analyzer),
-            'firstauthor': fields.KeywordField(),
-        }
-    )
-    trait_reported = fields.TextField(
+    description = fields.TextField(
+        analyzer=word_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
-    trait_reported_id = fields.TextField(analyzer=id_analyzer)
     genes = fields.ObjectField(
         properties={
             'external_id': fields.TextField(
@@ -76,7 +71,7 @@ class ScoreDocument(Document):
     )
     proteins = fields.ObjectField(
         properties={
-           'external_id': fields.TextField(
+            'external_id': fields.TextField(
                 analyzer=id_analyzer
             ),
             'name': fields.TextField(
@@ -124,12 +119,20 @@ class ScoreDocument(Document):
             )
         }
     )
+    
+    def prepare_genes(self, instance):
+        genes = instance.pathway_genes.all()
+        return fetch_mt_data(genes)
+    
+    def prepare_proteins(self, instance):
+        proteins = instance.pathway_proteins.all()
+        return fetch_mt_data(proteins)
 
-    def prepare_platform_name(self, instance):
-        return [instance.dataset.platform.name]
+    def prepare_metabolites(self, instance):
+        metabolites = instance.pathway_metabolites.all().distinct()
+        return fetch_mt_data(metabolites)
 
-    def prepare_omics_type(self, instance):
-        return [instance.dataset.platform.platform_master.type]
+
 
 
     class Index:
@@ -139,12 +142,6 @@ class ScoreDocument(Document):
     class Django:
         """Inner nested class Django."""
 
-        model = Score  # The model associated with this Document
+        model = Pathway # The model associated with this Document
         # Extra fields to store and return
-        fields = [
-            "variants_number"
-        ]
-        # fields = [
-        #     "trait_reported",
-        #     "trait_reported_id"
-        # ]
+        fields = ['external_id_source']

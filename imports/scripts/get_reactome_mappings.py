@@ -1,5 +1,5 @@
 import os, csv, json
-from omicspred.models import Gene,Protein,Metabolite,Pathway,SuperPathway
+from omicspred.models import Gene,Metabolite,Pathway,SuperPathway
 
 default_reactome_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/Reactome'
 
@@ -323,7 +323,7 @@ def run(*args):
     if (mapped_genes):
         print(f"\n# Import Gene mappings ({len(mapped_genes.keys())})")
         count_gene_done = 0
-        genes = Gene.objects.prefetch_related('pathways').filter(external_id__in=mapped_genes.keys())
+        genes = Gene.objects.prefetch_related('pathways').filter(external_id__in=mapped_genes.keys()).prefetch_related('gene_protein').distinct()
         for gene in genes:
             print_progress(count_gene_done,'gene')
             # Remove the former list of Gene-Pathway asssociations
@@ -340,7 +340,11 @@ def run(*args):
                 except Exception as e:
                     print(f"Can't create the association between the Reactome entry {reactome_id} and the gene {gene.external_id}: {e}")
             gene.pathways.add(*new_gene_reactome)
-            # gene.save()
+            # Add Protein-Reactome associations (via the Gene)
+            proteins = gene.gene_protein.all()
+            if len(proteins):
+                for protein in proteins:
+                    protein.pathways.add(*new_gene_reactome)
             count_gene_done += 1
 
     

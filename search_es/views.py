@@ -11,14 +11,15 @@ from elasticsearch_dsl import Search
 result_size = 25
 
 def query_fields():
-    return ['id^3','name^3','platform_name','omics_type',
-            'category','full_name','synonyms_list^2','description',
+    return ['id^5','name^4','category','synonyms_list^3','description^3',
             'genes.external_id^2','genes.name^2','genes.synonyms_list^2','genes.description',
             'proteins.external_id^2','proteins.names^2','proteins.synonyms_list^2','proteins.description',
-            'metabolites.external_id^2','metabolites.name^2','metabolites.synonyms_list^2','metabolites.description']
+            'metabolites.external_id^2','metabolites.name^2','metabolites.synonyms_list^2','metabolites.description',
+            'phenotype_score.score_id']
 
 
 def get_search(query):
+    query = query.strip() # Remove whitespaces
     s = Search(index="*").extra(size=result_size).query("multi_match", query=query, fields=query_fields())
     response = s.execute()
 
@@ -38,8 +39,8 @@ def get_search(query):
                     '_index': hit.meta.index,
                     '_score': hit.meta.score
                 }
+                # print(f"- SOURCE: {hit_data['id']} | INDEX: {hit.meta.index} | SCORE: {hit.meta.score}")
                 data.append(new_entry)
-
     return data
 
 
@@ -55,5 +56,4 @@ class ESSearch(generics.RetrieveAPIView):
         print(f'search_query: {search_query}')
         if search_query and search_query is not None:
             response = get_search(search_query)
-
         return Response(response)

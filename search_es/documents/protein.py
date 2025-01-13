@@ -1,14 +1,14 @@
 from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
-from search_es.analyzers import id_analyzer, name_delimiter_analyzer, html_strip_analyzer
+from search_es.analyzers import id_analyzer, name_delimiter_analyzer, word_delimiter_analyzer
 from omicspred.models import Protein
 
 
 # PGS index analyzer
 id_analyzer = id_analyzer()
-html_strip = html_strip_analyzer()
 name_delimiter = name_delimiter_analyzer()
+word_delimiter = word_delimiter_analyzer()
 
 
 @registry.register_document
@@ -22,13 +22,13 @@ class ProteinDocument(Document):
     )
     id = fields.TextField(attr="external_id", analyzer=id_analyzer)
     synonyms_list = fields.TextField(
-        analyzer=name_delimiter,
+        analyzer=word_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
     description = fields.TextField(
-        analyzer=html_strip,
+        analyzer=word_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
@@ -41,7 +41,7 @@ class ProteinDocument(Document):
         }
     )
     omics_type = fields.TextField(
-        analyzer=name_delimiter,
+        analyzer=word_delimiter,
         fields={
             'raw': fields.KeywordField()
         }

@@ -167,23 +167,31 @@ class PathwaySerializer(serializers.ModelSerializer):
 
 
 #### Gene ####
-class GeneSerializer(serializers.ModelSerializer):
-    synonyms = serializers.SerializerMethodField()
+class GeneSerializerMinimal(serializers.ModelSerializer):
     descriptions = serializers.SerializerMethodField()
     class Meta:
         model = Gene
-        meta_fields = ('name','external_id','external_id_source','synonyms', 'descriptions', 'biotype')
+        meta_fields = ('name','external_id','descriptions')
         fields = meta_fields
         read_only_fields = meta_fields
-
-    def get_synonyms(self, obj):
-        if (obj.synonyms):
-            return obj.synonyms_list
-        return []
 
     def get_descriptions(self, obj):
         if (obj.description):
             return obj.description_list
+        return []
+
+
+class GeneSerializer(GeneSerializerMinimal):
+    synonyms = serializers.SerializerMethodField()
+    # descriptions = serializers.SerializerMethodField()
+    class Meta(GeneSerializerMinimal.Meta):
+        meta_fields = ('external_id_source','synonyms', 'biotype')
+        fields = GeneSerializerMinimal.Meta.fields + meta_fields
+        read_only_fields = GeneSerializerMinimal.Meta.read_only_fields + meta_fields
+
+    def get_synonyms(self, obj):
+        if (obj.synonyms):
+            return obj.synonyms_list
         return []
 
 
@@ -213,14 +221,21 @@ class TranscriptSerializer(serializers.ModelSerializer):
 
 
 #### Protein ####
-class ProteinSerializer(serializers.ModelSerializer):
-    synonyms = serializers.SerializerMethodField()
-    descriptions = serializers.SerializerMethodField()
+class ProteinSerializerMinimal(serializers.ModelSerializer):
     class Meta:
         model = Protein
-        meta_fields = ('name','external_id','external_id_source','synonyms','descriptions')
+        meta_fields = ('name','external_id')
         fields = meta_fields
         read_only_fields = meta_fields
+
+
+class ProteinSerializer(ProteinSerializerMinimal):
+    synonyms = serializers.SerializerMethodField()
+    descriptions = serializers.SerializerMethodField()
+    class Meta(ProteinSerializerMinimal.Meta):
+        meta_fields = ('external_id_source','synonyms','descriptions')
+        fields = ProteinSerializerMinimal.Meta.fields + meta_fields
+        read_only_fields = ProteinSerializerMinimal.Meta.read_only_fields + meta_fields
 
     def get_synonyms(self, obj):
         if (obj.synonyms):
@@ -235,34 +250,41 @@ class ProteinSerializer(serializers.ModelSerializer):
 
 class ProteinSerializerExtended(ProteinSerializer):
     gene = GeneSerializer(many=False, read_only=True)
-    pathways = serializers.SerializerMethodField('get_pathways')
+    pathways = PathwaySerializer(many=True, read_only=True)
+    # pathways = serializers.SerializerMethodField('get_pathways')
 
     class Meta(ProteinSerializer.Meta):
         meta_fields = ('gene','pathways')
         fields = ProteinSerializer.Meta.fields + meta_fields
         read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
 
-    def get_pathways(self, obj):
-        pathways = []
-        # Pathways
-        if obj.gene:
-            for pathway in obj.gene.pathways.prefetch_related('superpathways').all():
-                pathway_entry = {}
-                for field in PathwaySerializer.Meta.fields:
-                    # Superpathways
-                    if field == 'superpathways':
-                        sp_pathways = []
-                        superpathways = getattr(pathway, field)
-                        for superpathway in superpathways.all():
-                            sp_pathway_entry = {}
-                            for sp_field in SuperPathwaySerializer.Meta.fields:
-                                sp_pathway_entry[sp_field] = getattr(superpathway, sp_field)
-                            sp_pathways.append(sp_pathway_entry)
-                        pathway_entry[field] = sp_pathways
-                    else:
-                        pathway_entry[field] = getattr(pathway, field)
-                pathways.append(pathway_entry)
-        return pathways
+    # def get_pathways(self, obj):
+    #     pathways = []
+    #     # Pathways
+    #     if obj.gene:
+    #         for pathway in obj.gene.pathways.prefetch_related('superpathways').all():
+    #             pathway_entry = {}
+    #             for field in PathwaySerializer.Meta.fields:
+    #                 # Superpathways
+    #                 if field == 'superpathways':
+    #                     sp_pathways = []
+    #                     superpathways = getattr(pathway, field)
+    #                     for superpathway in superpathways.all():
+    #                         sp_pathway_entry = {}
+    #                         for sp_field in SuperPathwaySerializer.Meta.fields:
+    #                             sp_pathway_entry[sp_field] = getattr(superpathway, sp_field)
+    #                         sp_pathways.append(sp_pathway_entry)
+    #                     pathway_entry[field] = sp_pathways
+    #                 else:
+    #                     pathway_entry[field] = getattr(pathway, field)
+    #             pathways.append(pathway_entry)
+    #     return pathways
+
+class ProteinSerializerScoresCount(ProteinSerializer):
+    class Meta(ProteinSerializer.Meta):
+        meta_fields = ('scores_count',)
+        fields = ProteinSerializer.Meta.fields + meta_fields
+        read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
 
 
 #### Metabolite ####
@@ -287,17 +309,26 @@ class MetaboliteLightSerializer(serializers.ModelSerializer):
         else:
             return None
 
-# /!\ No inheritance yet - need to sort out the pathway_group/subgroup /!\
-class MetaboliteSerializer(serializers.ModelSerializer):
+
+class MetaboliteSerializerMinimal(serializers.ModelSerializer):
+
+    class Meta:
+        model = Metabolite
+        meta_fields = ('name', 'external_id')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+# /!\ Need to sort out the pathway_group/subgroup /!\
+class MetaboliteSerializer(MetaboliteSerializerMinimal):
     synonyms = serializers.SerializerMethodField()
     # pathway_group = PathwaySerializer(many=False, read_only=True)
     # pathway_subgroup = PathwaySerializer(many=False, read_only=True)
 
-    class Meta:
-        model = Metabolite
-        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs') #,'pathway_group', 'pathway_subgroup')
-        fields = meta_fields
-        read_only_fields = meta_fields
+    class Meta(MetaboliteSerializerMinimal.Meta):
+        meta_fields = ('external_id_source', 'synonyms', 'xrefs') #,'pathway_group', 'pathway_subgroup')
+        fields = MetaboliteSerializerMinimal.Meta.fields + meta_fields
+        read_only_fields = MetaboliteSerializerMinimal.Meta.read_only_fields + meta_fields
 
     def get_synonyms(self, obj):
         if (obj.synonyms):
@@ -327,17 +358,26 @@ class MetaboliteSerializerScoresCount(MetaboliteSerializer):
         read_only_fields = MetaboliteSerializer.Meta.read_only_fields + meta_fields
 
 
-#### Pathway - Extended (with genes and metabolites) ####
+#### Pathway - Extended (with genes, proteins and metabolites) ####
 class PathwaySerializerExtended(PathwaySerializer):
     # superpathways = SuperPathwaySerializer(many=True, read_only=True)
     genes = GeneSerializerScoresCount(source='pathway_genes', many=True, read_only=True)
+    proteins = ProteinSerializerScoresCount(source='pathway_proteins', many=True, read_only=True)
     metabolites = MetaboliteSerializerScoresCount(source='pathway_metabolites', many=True, read_only=True)
     class Meta(PathwaySerializer.Meta):
-        meta_fields = ('genes', 'metabolites')
-        # meta_fields = ('superpathways', 'genes', 'metabolites')
+        meta_fields = ('genes', 'proteins', 'metabolites')
         fields = PathwaySerializer.Meta.fields + meta_fields
         read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
 
+
+class PathwaySerializerExtended2(PathwaySerializer):
+    genes = GeneSerializerMinimal(source='pathway_genes', many=True, read_only=True)
+    proteins = ProteinSerializerMinimal(source='pathway_proteins', many=True, read_only=True)
+    metabolites = MetaboliteSerializerMinimal(source='pathway_metabolites', many=True, read_only=True)
+    class Meta(PathwaySerializer.Meta):
+        meta_fields = ('genes', 'proteins', 'metabolites')
+        fields = PathwaySerializer.Meta.fields + meta_fields
+        read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
 
 #### Score ####
 class ScoreLightSerializer(serializers.ModelSerializer):
