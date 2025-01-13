@@ -32,7 +32,13 @@ related_dict = {
     'proteins': [Prefetch('proteins', queryset=Protein.objects.only('id','name','external_id','external_id_source','description','synonyms').all().order_by('id'))],
     'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description').all().order_by('id'))],
     'molecular_traits': ['genes','transcripts','proteins','metabolites'],
-    'pathway_prefetch': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
+    'pathway_prefetch_with_counts': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_proteins','pathway_proteins__protein_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
+    'pathway_prefetch_no_counts': [
+        Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
+        Prefetch('pathway_genes', queryset=Gene.objects.only('id','name','external_id','description').all().order_by('name')),
+        Prefetch('pathway_proteins', queryset=Protein.objects.only('id','name','external_id').all().order_by('name')),
+        Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id','name','external_id').all().order_by('name')),
+    ], # Slight speed up
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
     'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
@@ -133,6 +139,24 @@ def get_ids_list(object):
     return ids_list
 
 
+def filter_ancestry(queryset, request):
+    ancestry = request.query_params.get('anc')
+    if ancestry and ancestry is not None:
+        anc_training_filter = Q(**{f'ancestry__dev__anc__{ancestry}__isnull':False})
+        anc_validation_filter = Q(**{f'ancestry__eval__anc__{ancestry}__isnull':False})
+        stage = request.query_params.get('stage')
+        match stage:
+            case 't': # Training
+                queryset = queryset.filter(anc_training_filter)
+            case 'v': # Validation
+                queryset = queryset.filter(anc_validation_filter)
+            case 'b': # Training and Validation
+                queryset = queryset.filter(anc_training_filter & anc_validation_filter)
+            case _: # No stage provided
+                queryset = queryset.filter(anc_training_filter | anc_validation_filter)
+    return queryset
+
+
 # Method used for the App Engine warmup
 def warmup(request):
     """
@@ -193,18 +217,28 @@ class RestListPathways(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the Pathways
-        queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch']).order_by(Lower('name'))
+
+        pathway_prefetch_list = related_dict['pathway_prefetch_with_counts']
+
+        # Exclude score counts - FOR PRIVATE USE CASE
+        include_counts = self.request.query_params.get('include_counts')
+        if include_counts and str(include_counts)=='0':
+            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
+            self.serializer_class = PathwaySerializerExtended2
+
+        queryset = Pathway.objects.all().prefetch_related(*pathway_prefetch_list).order_by(Lower('name'))
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__iexact=filter_term) |
                                        Q(pathway_genes__external_id__iexact=filter_term) | Q(pathway_genes__name__iexact=filter_term) |
+                                       Q(pathway_proteins__external_id__iexact=filter_term) | Q(pathway_proteins__name__iexact=filter_term) |
                                        Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
                                        Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term)).distinct()
         # Sort data
         queryset = sort_data_list(self.request,'pathway',queryset,'name')
-        return queryset
+        return queryset.distinct()
 
 
 class RestPathway(generics.RetrieveAPIView):
@@ -214,7 +248,7 @@ class RestPathway(generics.RetrieveAPIView):
 
     def get(self, request, pathway_id):
         try:
-            queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+            queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch_with_counts']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
         except Pathway.DoesNotExist:
             queryset = None
         serializer = PathwaySerializerExtended(queryset,many=False)
@@ -241,16 +275,24 @@ class RestProtein(generics.RetrieveAPIView):
     Retrieve one Protein
     """
 
+    # def get(self, request, protein_id):
+    #     param_extend_schema = self.request.query_params.get('extend_schema')
+    #     try:
+    #         queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
+    #     except Protein.DoesNotExist:
+    #         queryset = None
+    #     if (param_extend_schema and str(param_extend_schema)=='1'):
+    #         serializer = ProteinSerializerExtended(queryset,many=False)
+    #     else:
+    #         serializer = ProteinSerializer(queryset,many=False)
+    #     return Response(serializer.data)
+
     def get(self, request, protein_id):
-        param_extend_schema = self.request.query_params.get('extend_schema')
         try:
             queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
         except Protein.DoesNotExist:
             queryset = None
-        if (param_extend_schema and str(param_extend_schema)=='1'):
-            serializer = ProteinSerializerExtended(queryset,many=False)
-        else:
-            serializer = ProteinSerializer(queryset,many=False)
+        serializer = ProteinSerializerExtended(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -309,10 +351,14 @@ class RestMetabolomics(generics.ListAPIView):
                                        Q(trait_reported_id__iexact=filter_term) | Q(trait_reported__icontains=filter_term) |
                                        Q(metabolites__pathway_group__name__iexact=filter_term) | Q(metabolites__pathway_subgroup__name__iexact=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
+
         # Filter Dataset - FOR PRIVATE USE CASE
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
             queryset = queryset.filter(dataset__name=dataset)
+
+        # Filter Ancestry - FOR PRIVATE USE CASE
+        queryset = filter_ancestry(queryset,self.request)
 
         # Filter Publication
         pmid = self.request.query_params.get('pmid')
@@ -364,20 +410,21 @@ class RestProteomics(generics.ListAPIView):
             queryset = queryset.filter(dataset__platform__version__in=platform_versions_list)
 
         # Filter Ancestry - FOR PRIVATE USE CASE
-        ancestry = self.request.query_params.get('anc')
-        if ancestry and ancestry is not None:
-            anc_training_filter = Q(**{f'ancestry__dev__anc__{ancestry}__isnull':False})
-            anc_validation_filter = Q(**{f'ancestry__eval__anc__{ancestry}__isnull':False})
-            stage = self.request.query_params.get('stage')
-            match stage:
-                case 't': # Training
-                    queryset = queryset.filter(anc_training_filter)
-                case 'v': # Validation
-                    queryset = queryset.filter(anc_validation_filter)
-                case 'b': # Training and Validation
-                    queryset = queryset.filter(anc_training_filter & anc_validation_filter)
-                case _: # No stage provided
-                    queryset = queryset.filter(anc_training_filter | anc_validation_filter)
+        queryset = filter_ancestry(queryset,self.request)
+        # ancestry = self.request.query_params.get('anc')
+        # if ancestry and ancestry is not None:
+        #     anc_training_filter = Q(**{f'ancestry__dev__anc__{ancestry}__isnull':False})
+        #     anc_validation_filter = Q(**{f'ancestry__eval__anc__{ancestry}__isnull':False})
+        #     stage = self.request.query_params.get('stage')
+        #     match stage:
+        #         case 't': # Training
+        #             queryset = queryset.filter(anc_training_filter)
+        #         case 'v': # Validation
+        #             queryset = queryset.filter(anc_validation_filter)
+        #         case 'b': # Training and Validation
+        #             queryset = queryset.filter(anc_training_filter & anc_validation_filter)
+        #         case _: # No stage provided
+        #             queryset = queryset.filter(anc_training_filter | anc_validation_filter)
 
         # Filter Publication
         pmid = self.request.query_params.get('pmid')
@@ -415,10 +462,14 @@ class RestTranscriptomics(generics.ListAPIView):
         if filter_term and filter_term is not None:
             queryset = queryset.filter(Q(id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
+
         # Filter Dataset - FOR PRIVATE USE CASE
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
             queryset = queryset.filter(dataset__name=dataset)
+
+        # Filter Ancestry - FOR PRIVATE USE CASE
+        queryset = filter_ancestry(queryset,self.request)
 
         # Filter Publication
         pmid = self.request.query_params.get('pmid')

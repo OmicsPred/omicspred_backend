@@ -1,22 +1,17 @@
 from elasticsearch_dsl import analysis, analyzer, tokenizer
 
 
+# Documentation about analysers:
+# v7.17:
+# https://www.elastic.co/guide/en/elasticsearch/reference/7.17/analysis-keyword-tokenizer.html
+# https://www.elastic.co/guide/en/elasticsearch/reference/7.17/analysis-tokenizers.html
+
 def id_analyzer():
     ''' Analyser for the different IDs in the OmicsPred indexes '''
     return analyzer(
         'id_analyzer',
         tokenizer="keyword",
         filter=["lowercase", "remove_duplicates"]
-    )
-
-
-def html_strip_analyzer():
-    ''' Standard analyser for the OmicsPred indexes '''
-    return analyzer(
-        'html_strip',
-        tokenizer="standard",
-        filter=["lowercase", "stop", "snowball", "asciifolding", "remove_duplicates"],
-        char_filter=["html_strip"]
     )
 
 
@@ -29,15 +24,35 @@ def ngram_analyzer():
     )
 
 
+def word_delimiter_analyzer():
+    ''' Standard analyser for the OmicsPred indexes '''
+    length_from_2_char = analysis.token_filter(
+        'length_from_2_char',
+        type="length",
+        min=3
+    )
+    return analyzer(
+        'word_delimiter',
+        tokenizer="whitespace",
+        filter=[length_from_2_char, "lowercase", "stop", "snowball", "asciifolding", "remove_duplicates"]
+    )
+
+
 def name_delimiter_analyzer():
     ''' Analyzer for the fields with composed parts (dash, underscore, ...) '''
+    # Split sentence in words at non-alphanumeric characters
     word_delimiter_graph_preserve_original = analysis.token_filter(
         'word_delimiter_graph_preserve_original',
         type="word_delimiter_graph",
         preserve_original=True
     )
+    length_from_2_char = analysis.token_filter(
+        'length_from_2_char',
+        type="length",
+        min=2
+    )
     return analyzer(
         'name_delimiter',
         tokenizer="keyword",
-        filter=[word_delimiter_graph_preserve_original, "flatten_graph", "lowercase", "stop", "snowball", "asciifolding", "remove_duplicates"]
+        filter=[length_from_2_char, word_delimiter_graph_preserve_original, "flatten_graph", "lowercase", "stop", "snowball", "asciifolding", "remove_duplicates"]
     )

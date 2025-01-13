@@ -1473,6 +1473,10 @@ paths:
           * Protein name
           * Protein ID
           * Protein source (e.g. UniProt)
+          * Protein synonyms
+          * Protein description(s)
+          * Associated gene
+          * Associated pathways
 
         Example of request:
         ```
@@ -1509,7 +1513,6 @@ paths:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/Protein'
                 - $ref: '#/components/schemas/Protein_extended'
           description: 'Protein information'
         '4XX':
@@ -1529,6 +1532,10 @@ paths:
           * Protein name
           * Protein ID
           * Protein source (e.g. UniProt)
+          * Protein synonyms
+          * Protein description(s)
+          * Associated gene
+          * Associated pathways
 
         Example of request:
         ```
@@ -1559,7 +1566,7 @@ paths:
                     description: 'List of proteins'
                     type: array
                     items:
-                      $ref: '#/components/schemas/Protein'
+                      $ref: '#/components/schemas/Protein_extended'
           description: |
             List of proteins associated with the gene name/symbol or ID provided
         
