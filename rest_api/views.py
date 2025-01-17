@@ -33,12 +33,18 @@ related_dict = {
     'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description').all().order_by('id'))],
     'molecular_traits': ['genes','transcripts','proteins','metabolites'],
     'pathway_prefetch_with_counts': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_proteins','pathway_proteins__protein_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
-    'pathway_prefetch_no_counts': [
+    # 'pathway_prefetch_no_counts': [
+    #     Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
+    #     Prefetch('pathway_genes', queryset=Gene.objects.only('id','name','external_id','description').all().order_by('name')),
+    #     Prefetch('pathway_proteins', queryset=Protein.objects.only('id','name','external_id').all().order_by('name')),
+    #     Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id','name','external_id').all().order_by('name')),
+    # ], # Slight speed up
+    'pathway_prefetch_no_counts_test': [
         Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
-        Prefetch('pathway_genes', queryset=Gene.objects.only('id','name','external_id','description').all().order_by('name')),
-        Prefetch('pathway_proteins', queryset=Protein.objects.only('id','name','external_id').all().order_by('name')),
-        Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id','name','external_id').all().order_by('name')),
-    ], # Slight speed up
+        Prefetch('pathway_genes', queryset=Gene.objects.only('id').all()),
+        Prefetch('pathway_proteins', queryset=Protein.objects.only('id').all()),
+        Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id').all()),
+    ], # Big speed up
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
     'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
@@ -220,22 +226,32 @@ class RestListPathways(generics.ListAPIView):
 
         pathway_prefetch_list = related_dict['pathway_prefetch_with_counts']
 
-        # Exclude score counts - FOR PRIVATE USE CASE
-        include_counts = self.request.query_params.get('include_counts')
-        if include_counts and str(include_counts)=='0':
-            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
-            self.serializer_class = PathwaySerializerExtended2
+        # # Exclude score counts - FOR PRIVATE USE CASE
+        # include_counts = self.request.query_params.get('include_counts')
+        # if include_counts and str(include_counts)=='0':
+        #     pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
+        #     self.serializer_class = PathwaySerializerExtended2
+
+        # Only counts - FOR PRIVATE USE CASE
+        only_counts = self.request.query_params.get('only_counts')
+        if only_counts and str(only_counts)=='1':
+            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts_test']
+            self.serializer_class = PathwaySerializerExtendedCount
 
         queryset = Pathway.objects.all().prefetch_related(*pathway_prefetch_list).order_by(Lower('name'))
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__iexact=filter_term) |
-                                       Q(pathway_genes__external_id__iexact=filter_term) | Q(pathway_genes__name__iexact=filter_term) |
-                                       Q(pathway_proteins__external_id__iexact=filter_term) | Q(pathway_proteins__name__iexact=filter_term) |
-                                       Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
-                                       Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term)).distinct()
+            if only_counts and str(only_counts)=='1':
+                queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) |
+                                        Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__icontains=filter_term)).distinct()
+            else:
+                queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) |
+                                        Q(pathway_genes__external_id__iexact=filter_term) | Q(pathway_genes__name__icontains=filter_term) |
+                                        Q(pathway_proteins__external_id__iexact=filter_term) | Q(pathway_proteins__name__iexact=filter_term) |
+                                        Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
+                                        Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term)).distinct()
         # Sort data
         queryset = sort_data_list(self.request,'pathway',queryset,'name')
         return queryset.distinct()
