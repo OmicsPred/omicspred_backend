@@ -161,11 +161,11 @@ class BrowseEndpointTest(APITestCase):
             }
         ),
         (
-            'Pathway / score_counts', f'pathway/all', 1,
+            'Pathway / molecular_trait_counts', 'pathway/all', 0,
             {
-                'response_path':['metabolites',0],
-                'query': ['include_counts'],
-                'response': ['scores_count']
+                'response_path':[],
+                'query': ['only_counts'],
+                'response': ['metabolites_count']
             }
         ),
         (

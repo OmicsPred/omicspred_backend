@@ -370,14 +370,34 @@ class PathwaySerializerExtended(PathwaySerializer):
         read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
 
 
-class PathwaySerializerExtended2(PathwaySerializer):
-    genes = GeneSerializerMinimal(source='pathway_genes', many=True, read_only=True)
-    proteins = ProteinSerializerMinimal(source='pathway_proteins', many=True, read_only=True)
-    metabolites = MetaboliteSerializerMinimal(source='pathway_metabolites', many=True, read_only=True)
+# class PathwaySerializerExtended2(PathwaySerializer):
+#     genes = GeneSerializerMinimal(source='pathway_genes', many=True, read_only=True)
+#     proteins = ProteinSerializerMinimal(source='pathway_proteins', many=True, read_only=True)
+#     metabolites = MetaboliteSerializerMinimal(source='pathway_metabolites', many=True, read_only=True)
+#     class Meta(PathwaySerializer.Meta):
+#         meta_fields = ('genes', 'proteins', 'metabolites')
+#         fields = PathwaySerializer.Meta.fields + meta_fields
+#         read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
+
+
+class PathwaySerializerExtendedCount(PathwaySerializer):
+    genes_count = serializers.SerializerMethodField()
+    proteins_count = serializers.SerializerMethodField()
+    metabolites_count = serializers.SerializerMethodField()
     class Meta(PathwaySerializer.Meta):
-        meta_fields = ('genes', 'proteins', 'metabolites')
+        meta_fields = ('genes_count', 'proteins_count', 'metabolites_count')
         fields = PathwaySerializer.Meta.fields + meta_fields
         read_only_fields = PathwaySerializer.Meta.read_only_fields + meta_fields
+
+    def get_genes_count(self, obj):
+        return obj.pathway_genes.count()
+
+    def get_proteins_count(self, obj):
+        return obj.pathway_proteins.count()
+
+    def get_metabolites_count(self, obj):
+        return obj.pathway_metabolites.count()
+
 
 #### Score ####
 class ScoreLightSerializer(serializers.ModelSerializer):
