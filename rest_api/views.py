@@ -7,6 +7,7 @@ from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
 from django.db.models import Prefetch, Q, FloatField
 from django.db.models.functions import Cast, Lower
+from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings
 from omicspred.models import *
 from applications.models import *
@@ -291,23 +292,20 @@ class RestProtein(generics.RetrieveAPIView):
     Retrieve one Protein
     """
 
-    # def get(self, request, protein_id):
-    #     param_extend_schema = self.request.query_params.get('extend_schema')
-    #     try:
-    #         queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
-    #     except Protein.DoesNotExist:
-    #         queryset = None
-    #     if (param_extend_schema and str(param_extend_schema)=='1'):
-    #         serializer = ProteinSerializerExtended(queryset,many=False)
-    #     else:
-    #         serializer = ProteinSerializer(queryset,many=False)
-    #     return Response(serializer.data)
-
     def get(self, request, protein_id):
         try:
             queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
         except Protein.DoesNotExist:
             queryset = None
+        except MultipleObjectsReturned:
+            # Issue when more than 1 entry match the "protein_id" (usually the name).
+            # Returns the entry without an external ID or the first entry if there are more than 1 match.
+            try:
+                queryset = Protein.objects.get(Q(name__iexact=protein_id) & Q(external_id__isnull=True))
+            except MultipleObjectsReturned:
+                queryset = Protein.objects.filter(Q(name__iexact=protein_id) & Q(external_id__isnull=True)).first()
+            except Protein.DoesNotExist:
+                queryset = None
         serializer = ProteinSerializerExtended(queryset,many=False)
         return Response(serializer.data)
 

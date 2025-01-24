@@ -4,8 +4,6 @@ from imports.applications.models.phecode import PhecodeData
 from imports.applications.models.cohort import CohortData
 from imports.applications.models.platform import PlatformData
 from imports.applications.models.score import ScoreData
-from imports.applications.models.sample import SampleData
-from applications.models import Phecode
 
 path_root = '/Users/lg10/Workspace/git/clone/OmicsPred_bak/src/pages/Applications/data'
 phecode_full_asso_path = f'{path_root}/phecode.txt'
