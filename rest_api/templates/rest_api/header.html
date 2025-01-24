@@ -1,45 +1,56 @@
 {% load static %}
-{% with op_root_url="https://www.omicspred.org" %}
-  <header style="position:fixed;top:0;left:0;width:100%;z-index:10">
+{% with op_root_url="https://www.omicspred.org" project_name="OmicsPred"%}
+  <header>
     <nav position="fixed" class="navbar navbar-expand-md navbar-light sticky-top">
       <div class="container">
-        <a href="{{ op_root_url }}/" class="navbar-brand"><i class="bi bi-code-slash p-2" style="color:#FFF"></i>OmicsPred</a>
-        <button aria-controls="basic-navbar-nav" type="button" aria-label="Toggle navigation" class="navbar-toggler collapsed"><span class="navbar-toggler-icon"></span></button>
+        <a href="{{ op_root_url }}/" class="navbar-brand"><i class="bi bi-code-slash p-2" style="color:#FFF"></i>{{ project_name }}</a>
+        <button aria-controls="basic-navbar-nav" type="button" type="button" data-bs-toggle="collapse" data-bs-target="#basic-navbar-nav" aria-label="Toggle navigation" class="navbar-toggler collapsed">
+          <span class="navbar-toggler-icon"></span>
+        </button>
         <div class="navbar-collapse collapse" id="basic-navbar-nav">
           <div class="me-auto navbar-nav">
             <a href="{{ op_root_url }}/" data-rr-ui-event-key="{{ op_root_url }}/" class="nav-link">Home</a>
             <div class="nav-item dropdown">
               <a id="dropdownmenu_browse" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" href="#">Browse</a>
               <div class="dropdown-menu" aria-labelledby="dropdownmenu_browse">
-                <a href="{{ op_root_url }}/scores" class="dropdown-item">Scores</a>
-                <a href="{{ op_root_url }}/publications" class="dropdown-item">Publications</a>
-                <a href="{{ op_root_url }}/platforms" class="dropdown-item">Platforms</a>
-                <a href="{{ op_root_url }}/pathways" class="dropdown-item">Pathways</a>
+                <a href="{{ op_root_url }}/scores" data-rr-ui-dropdown-item="" class="dropdown-item">Genetic Scores</a>
+                <a href="{{ op_root_url }}/publications" data-rr-ui-dropdown-item="" class="dropdown-item">Publications</a>
+                <a href="{{ op_root_url }}/platforms" data-rr-ui-dropdown-item="" class="dropdown-item">Platforms</a>
+                <a href="{{ op_root_url }}/pathways" data-rr-ui-dropdown-item="" class="dropdown-item">Pathways</a>
               </div>
             </div>
             <div class="nav-item dropdown">
-              <a id="dropdownmenu_phewas" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" href="#">PheWAS</a>
-              <div class="dropdown-menu" aria-labelledby="dropdownmenu_phewas">
-                <a href="{{ op_root_url }}/applications/phecode/sum" data-rr-ui-dropdown-item="" class="dropdown-item">Summary</a>
-                <a href="{{ op_root_url }}/applications/phecode/full" data-rr-ui-dropdown-item="" class="dropdown-item">All Associations</a>
+              <a id="phenotype-nav-dropdown" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" tabindex="0" href="#">Phenotype</a>
+              <div class="dropdown-menu" aria-labelledby="phenotype-nav-dropdown">
+                <a href="{{ op_root_url }}/applications/phenotype/sum" data-rr-ui-dropdown-item="" class="dropdown-item">Summary</a>
+                <a href="{{ op_root_url }}/applications/phenotype/full" data-rr-ui-dropdown-item="" class="dropdown-item">All Associations</a>
               </div>
             </div>
             <a href="https://forms.gle/KLZGbvurrftF5vo46" target="_blank" data-rr-ui-event-key="https://forms.gle/KLZGbvurrftF5vo46" class="nav-link">Submit Score</a>
             <div class="nav-item dropdown">
               <a id="dropdownmenu_downloads" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" href="#">Downloads</a>
               <div class="dropdown-menu" aria-labelledby="dropdownmenu_downloads">
-                <a href="{{ op_root_url }}/downloads" data-rr-ui-event-key="{{ op_root_url }}/downloads" class="nav-link">Data files</a>
-                <a href="/rest" data-rr-ui-event-key="/rest" class="nav-link">REST API</a>
+                <a href="{{ op_root_url }}/downloads" data-rr-ui-event-key="{{ op_root_url }}/downloads" class="dropdown-item">Data files</a>
+                <a href="/rest" data-rr-ui-event-key="/rest" class="dropdown-item">REST API</a>
               </div>
             </div>
             <div class="nav-item dropdown">
-              <a id="dropdownmenu_about" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" href="#">About</a>
-              <div class="dropdown-menu" aria-labelledby="dropdownmenu_about">
-                <a href="{{ op_root_url }}/about" data-rr-ui-event-key="{{ op_root_url }}/about" class="nav-link">About OmicsPred</a>
-                <a href="{{ op_root_url }}/cohorts" data-rr-ui-event-key="{{ op_root_url }}/cohorts" class="nav-link">Cohorts</a>
-                <a href="{{ op_root_url }}/faqs" data-rr-ui-event-key="{{ op_root_url }}/faqs" class="nav-link">FAQs</a>
+              <a id="documentation-nav-dropdown" role="button" data-bs-toggle="dropdown" class="dropdown-toggle nav-link" tabindex="0" href="#">Documentation</a>
+              <div data-bs-popper="static" class="dropdown-menu" aria-labelledby="documentation-nav-dropdown">
+                <a href="{{ op_root_url }}/about" data-rr-ui-dropdown-item="" class="dropdown-item">About {{ project_name }}</a>
+                <a href="{{ op_root_url }}/docs" data-rr-ui-dropdown-item="" class="dropdown-item">Data Description</a>
+                <a href="{{ op_root_url }}/cohorts" data-rr-ui-dropdown-item="" class="dropdown-item">Cohorts</a>
+                <a href="{{ op_root_url }}/faqs" data-rr-ui-dropdown-item="" class="dropdown-item">FAQs</a>
               </div>
             </div>
+          </div>
+          <div id="nav_search_bar">
+            <form id="search_form">
+              <div class="d-flex">
+                <input placeholder="Search {{ project_name }}" aria-label="Search" class="me-2 search_input form-control" id="search_query" type="search">
+                <button type="button" class="btn-search" id="search_btn">Search</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
