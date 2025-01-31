@@ -3,4 +3,4 @@ requests==2.32.3
 django-extensions==3.2.3
 
 # For testing only:
-django-debug-toolbar==4.4.6
+django-debug-toolbar==5.0.1
