@@ -56,7 +56,11 @@ related_dict = {
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
     'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform'],
-    'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master']
+    'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
+    'score_search_cohort': [
+        Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','sample_id').all()),
+        Prefetch('score_performance__sample', queryset=Sample.objects.only('id','cohorts').all())
+    ]
 }
 missing_index = 0
 
@@ -906,7 +910,7 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(dataset__publication__pmid=pmid)
             params += 1
 
-        # Search by platform
+        # Search by Platform
         platform = self.request.query_params.get('platform')
         if platform and platform is not None:
             queryset = queryset.filter(dataset__platform__name__iexact=platform)
@@ -915,8 +919,7 @@ class RestScoreSearch(generics.ListAPIView):
         # Search by Cohort
         cohort = self.request.query_params.get('cohort')
         if cohort and cohort is not None:
-            # queryset = queryset.filter(dataset__platform__name__iexact=platform)
-            queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related('score_performance', 'score_performance__sample', 'score_performance__sample__cohorts')
+            queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related(*related_dict['score_search_cohort'])
             params += 1
 
 
