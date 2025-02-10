@@ -1,0 +1,32 @@
+{% load static %}
+{% with op_color_2="#1D65A6" op_color_5="#93C4F0" grey_color="#dee2e6" %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OmicsPred - Error 500</title>
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="MobileOptimized" content="width" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="{{ op_color_2 }}" /> <!-- Android Chrome mobile browser tab color -->
+    {% include "rest_api/src.html" %}
+  <body>
+
+    {% include "rest_api/header.html" %}
+
+    <div class="container-main">
+      <div class="container-fluid container-extra" style="margin-top:5rem;height:100%">
+        <div class="error_msg_container d-flex text-center flex-column mb-4">
+          <div>
+            <i class="bi bi-bug-fill"></i>
+          </div>
+          <h2>Internal error [error 500]</h2>
+          <div><b>Sorry, something went wrong on our end</b></div>
+        </div>
+      </div>
+    </div>
+
+{% include "rest_api/footer.html" %}
+</body>
+</html>
+{% endwith %}

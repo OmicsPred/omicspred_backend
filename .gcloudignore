@@ -20,11 +20,13 @@
 
 # Curation and release directories (not needed for the website)
 /imports/
-/misc/
-/search/
+/search_es/documents/
 
 # Migrations
 **/migrations/
+
+# Admin
+**/admin.py
 
 # Tests
 **/tests/
@@ -38,6 +40,7 @@
 
 # Other
 app.yaml_template
+app_*
 LICENSE.md
 README.md
 requirements_local.txt
