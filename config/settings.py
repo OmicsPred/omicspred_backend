@@ -80,7 +80,6 @@ INSTALLED_APPS = [
     'omicspred.apps.OmicspredConfig',
     'applications.apps.ApplicationsConfig',
     'plot.apps.PlotConfig',
-    # 'search_es.apps.SearchESConfig',
     'rest_api.apps.RestApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -89,12 +88,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    # 'django_elasticsearch_dsl',
     'corsheaders' # <= Added for test
 ]
 
 # Test skipped app installation
-if IS_TEST == False:
+if PUBLIC_SITE == False:
     elastic_search = [
         'search_es.apps.SearchESConfig',
         'django_elasticsearch_dsl'
@@ -337,9 +335,17 @@ ELASTICSEARCH_INDEX_NAMES = {
 #-----------------#
 #  CORS Settings  #
 #-----------------#
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https:\/\/\w+\.ebi\.ac\.uk$"
-# ]
-CORS_URLS_REGEX = r'^/(rest|es_search)/.*$'
+CORS_URLS_REGEX = r'^/(api|es_search)/.*$'
+if OP_ON_GAE == 1:
+    if PUBLIC_SITE == False:
+        CORS_ALLOWED_ORIGINS = [
+            'https//www.omicspred.org'
+        ]
+        CORS_ALLOWED_ORIGIN_REGEXES = [
+            r"^"+os.environ['CORS_REGEXP']
+        ]
+    else:
+        CORS_URLS_REGEX = r'^/api/.*$'
+
 CORS_ALLOW_METHODS = ['GET']
 CORS_ALLOW_ALL_ORIGINS = True

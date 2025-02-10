@@ -11,33 +11,30 @@ cache_time = 0
 slash = '/?'
 
 rest_urls = {
-    'applications_score':   'rest/applications_score/',
-    'applications_sample':  'rest/applications_sample/',
-    'cohort':               'rest/cohort/',
-    'dataset':              'rest/dataset/',
-    'gene':                 'rest/gene/',
-    'info':                 'rest/info',
-    'metabolite':           'rest/metabolite/',
-    'metabolomics':         'rest/metabolomics/',
-    'pathway':              'rest/pathway/',
-    'phenotype':            'rest/phenotype/',
-    'platform':             'rest/platform/',
-    'plot':                 'rest/plot/',
-    'performance':          'rest/performance/',
-    'protein':              'rest/protein/',
-    'proteomics':           'rest/proteomics/',
-    'publication':          'rest/publication/',
-    'sample':               'rest/sample/',
-    'score':                'rest/score/',
-    'transcriptomics':      'rest/transcriptomics/',
-    # 'table':               'rest/table/',
+    'applications_score':   'api/applications_score/',
+    'applications_sample':  'api/applications_sample/',
+    'cohort':               'api/cohort/',
+    'dataset':              'api/dataset/',
+    'gene':                 'api/gene/',
+    'info':                 'api/info',
+    'metabolite':           'api/metabolite/',
+    'metabolomics':         'api/metabolomics/',
+    'pathway':              'api/pathway/',
+    'phenotype':            'api/phenotype/',
+    'platform':             'api/platform/',
+    'plot':                 'api/plot/',
+    'performance':          'api/performance/',
+    'protein':              'api/protein/',
+    'proteomics':           'api/proteomics/',
+    'publication':          'api/publication/',
+    'sample':               'api/sample/',
+    'score':                'api/score/',
+    'transcriptomics':      'api/transcriptomics/'
 }
 
 urlpatterns = [
     # REST Documentation
-    path('rest/', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
-    # Setup URL used to warmup the Django app in the Google App Engine
-    path('_ah/warmup', warmup, name="Warmup"),
+    path('', TemplateView.as_view(template_name="rest_api/rest_doc.html")),
     # Cohorts
     re_path(r'^'+rest_urls['cohort']+'all'+slash, RestListCohorts.as_view(), name="getAllCohorts"),
     re_path(r'^'+rest_urls['cohort']+'(?P<cohort>[^/]+)'+slash, RestCohort.as_view(), name="getCohort"),
@@ -76,11 +73,6 @@ urlpatterns = [
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),
-    # re_path(r'^'+rest_urls['table']+'search'+slash, cache_page(cache_time)(RestTableSearch.as_view()), name="searchTables"),
-    # re_path(r'^'+rest_urls['table']+'metabolite/search'+slash, cache_page(cache_time)(RestMetaboliteTableSearch.as_view()), name="searchMetaboliteTables"),
-    # re_path(r'^'+rest_urls['table']+'protein/search'+slash, cache_page(cache_time)(RestProteinTableSearch.as_view()), name="searchProteinTables"),
-    # re_path(r'^'+rest_urls['table']+'transcript/search'+slash, cache_page(cache_time)(RestTranscriptTableSearch.as_view()), name="searchEnsemblTables"),
-
     # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
     # To generate plot data
@@ -96,4 +88,19 @@ urlpatterns = [
 
     re_path(r'^'+rest_urls['info']+slash, RestInfo.as_view(), name="getInfo"),
 
+    # Setup URL used to warmup the Django app in the Google App Engine
+    path('_ah/warmup', warmup, name="Warmup"),
+    # Robots file
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain"))
 ]
+
+if settings.PUBLIC_SITE == False:
+    # Plot
+    urlpatterns.extend(
+        [
+            re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
+            # To generate plot data
+            re_path(r'^'+rest_urls['plot']+'file/search'+slash, cache_page(cache_time)(RestPlotFileSearch.as_view()), name="searchFilePlots"),
+            re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots")
+        ]
+    )

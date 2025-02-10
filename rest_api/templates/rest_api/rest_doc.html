@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <title>OmicsPred REST API documentation</title>
-    <meta name="keywords" content="omicspred, polygenic score, polygenic risk score, pgs, prs, catalog, catalogue, database, genetic, genomic, programmatic, rest, api" /><!-- 3 to 10 keywords about the content of this page (not the whole project) -->
+    <meta name="keywords" content="omicspred, genetic score, omics, multi-omics, proteomics, metabolomics, transcriptomics, metadata, genomic, programmatic, rest, api" /><!-- 3 to 10 keywords about the content of this page (not the whole project) -->
     <meta name="author" content="Omicspred" /><!-- Your [project-name] here -->
     <meta name="description" content="Programmatic access to the OmicsPred metadata via a REST API." />
     <meta name="HandheldFriendly" content="true" />
@@ -13,14 +13,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="{{ op_color_2 }}" /> <!-- Android Chrome mobile browser tab color -->
 
-    <!-- CSS libraries -->
-    <link rel="stylesheet" type="text/css" href="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui.css' %}"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
-    <!-- Javascript libraries -->
-    <script src="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui-bundle.js' %}"></script>
-    <script src="{% static 'rest_api/openapi/swagger-dist-ui/swagger-ui-standalone-preset.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    {% include "rest_api/src.html" %}
     <script>
       window.onload = function() {
         // Begin Swagger UI call region
@@ -195,176 +188,6 @@
         }, 100);
       }
     </script>
-    <style>
-      header {
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        z-index:10;
-      }
-      .navbar {
-        background-color: {{ op_color_2 }};
-      }
-      .navbar-nav > a,  .nav-item > a{
-        color: #FFF !important;
-        white-space: nowrap;
-      }
-      .navbar-nav > a:hover,  .nav-item > a:hover {
-        color: {{ op_color_5 }} !important;
-      }
-      .dropdown-menu a:hover {
-        color: #FFF !important;
-        background-color: {{ op_color_2 }} !important;
-      }
-      .dropdown-menu a:active {
-        color: {{ op_color_5 }} !important;
-        background-color: {{ op_color_2 }} !important;
-      }
-      .dropdown-item {
-        color: {{ op_color_2 }};
-      }
-      a.navbar-brand {
-        color: {{ op_color_5 }} !important;
-      }
-      a.navbar-brand:hover {
-        color: #FFF !important;
-      }
-      .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,255,255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 8h24M4 16h24M4 24h24'/%3E%3C/svg%3E") !important;
-      }
-      .navbar-toggler {
-        border-color: #FFF !important;
-      }
-      .navbar-toggler:hover {
-        border-color: {{ op_color_5 }} !important;
-      }
-      .navbar-toggler:active {
-          outline: none !important;
-          box-shadow: none !important;
-      }
-      .navbar-toggler:ocus {
-          outline: none !important;
-          box-shadow: none !important;
-      }
-      .btn-search {
-        border: 1px solid #FFF !important;
-        color: #FFF;
-        background-color: {{ op_color_2 }};
-        border-radius: 6px;
-        padding: 6px 12px;
-      }
-      .btn-search:hover {
-        border-color: {{ op_color_5 }} !important;
-      }
-      footer {
-        background-color: {{ op_color_2 }};
-        min-width: 100% !important;
-      }
-      footer a {
-        text-decoration: none;
-        color: #FFF !important;
-      }
-      footer a:hover {
-        color: {{ op_color_5 }} !important;
-      }
-      footer a > i {
-        vertical-align: middle !important;
-        margin-top:1px;
-        font-size: 22px;
-      }
-      footer .op_copyright {
-        text-align:center;
-      }
-      .opblock-tag-section {
-        margin-top: 3rem !important;
-      }
-      .opblock-tag {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        border-radius: 4px;
-        border: 1px solid {{ grey_color }} !important;
-        margin-bottom: 1rem !important;
-      }
-      .opblock-tag:hover {
-        background-color: rgba(0, 0, 0, .02) !important;
-      }
-      .endpoints_list {
-        margin-top: 2rem !important;
-        display: flex;
-        justify-content: flex-start;
-        background-color: rgba(97, 175, 254, 0.1);
-        padding: .25rem 1rem;
-        border: 1px solid {{ grey_color }} !important;
-        border-radius: 4px;
-      }
-      .endpoints_list > div:first-child {
-        margin-top: .25rem;
-        margin-bottom: .25rem;
-      }
-      .endpoints_list > div:last-child {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-      }
-      .endpoints_list a {
-        margin-left: 0.8rem;
-        margin-top: .25rem !important;
-        margin-bottom: .25rem !important;
-      }
-      .btn {
-        border: none !important;
-        font-weight: 400 !important;
-      }
-      .swagger-ui .btn-group .btn {
-        margin: 0rem 1rem;
-        border-radius: 4px !important;
-      }
-      .opblock-summary-method , .btn {
-        background-color: {{ op_color_2 }} !important;
-        color: #FFF !important;
-      }
-      .opblock-summary-method:hover, .btn:hover,
-      .opblock.opblock-get:hover .opblock-summary-method {
-        background-color: {{ op_color_5 }} !important;
-      }
-      .opblock.opblock-get, .opblock-summary-get {
-        border-color: {{ op_color_2 }} !important;
-      }
-      .opblock.opblock-get:hover {
-        border-color: {{ op_color_5 }} !important;
-      }  d
-      .opblock.opblock-get:hover, .opblock.opblock-get:hover .opblock-summary-get {
-        border-color: {{ op_color_5 }} !important;
-      }
-      .opblock-summary:hover .opblock-summary-method {
-        background-color: {{ op_color_5 }} !important;
-      }
-
-      .model-box-control:focus, .models-control:focus, .opblock-summary-control:focus {
-        outline: none !important;
-      }
-      .tab-header {
-        flex: 0.15 !important;
-      }
-      .opblock.opblock-get .tab-header .tab-item.active h4 span:after {
-        background: {{ op_color_2 }} !important;
-      }
-      .renderedMarkdown code {
-        color: {{ op_color_2 }} !important;
-        font-weight: 200 !important;
-      }
-      .execute::before {
-        content:"\25B6";
-        vertical-align: baseline;
-        padding-right:0.5em;
-      }
-      .btn-clear:before {
-        font-size: 1.2rem;
-        content:"\2297";
-        vertical-align: baseline;
-        padding-right:0.5em;
-      }
-    </style>
   </head>
   <body>
 

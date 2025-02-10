@@ -15,7 +15,7 @@ class BrowseEndpointTest(APITestCase):
     settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = { 'anon': rate4test, 'user': rate4test }
 
     # Base URL of the server
-    server = '/rest/'
+    server = '/api/'
 
     fake_examples = {'string': 'ABC123CDE', 'integer': '00001', 'date': '1990-01-01'}
     empty_resp = ['{}', '{"size":0,"count":0,"next":null,"previous":null,"results":[]}', '[]']

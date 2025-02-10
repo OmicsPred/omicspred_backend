@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
-from django.db.models import Prefetch, Q, FloatField
+from django.db.models import Prefetch, Q, FloatField, Count
 from django.db.models.functions import Cast, Lower
 from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings
@@ -78,17 +78,26 @@ def sort_data_list(request,type,queryset,default_col='num'):
     sort = request.query_params.get('sort')
     if not sort_field or sort_field is None:
         sort_field = default_col
-    # Sorting order
+    ## Sorting order
     is_desc = False
     if sort and sort is not None:
         if sort == 'desc':
             is_desc = True
-    # Set sorting field
-    if sort_field.endswith('name'):
+    ## Set sorting field
+    # Order by generated count
+    if sort_field in ['genes_count','proteins_count','metabolites_count'] and type == 'pathway':
+        mt_type = sort_field.split('_')[0]
+        if is_desc == True:
+            queryset = queryset.annotate(mt_count=Count('pathway_'+mt_type)).order_by('-mt_count')
+        else:
+            queryset = queryset.annotate(mt_count=Count('pathway_'+mt_type)).order_by('mt_count')
+    # Order by name
+    elif sort_field.endswith('name'):
         if is_desc == True:
             queryset = queryset.order_by(Lower(sort_field).desc())
         else:
             queryset = queryset.order_by(Lower(sort_field))
+    # Order by other field
     else:
         if is_desc == True:
             sort_field = '-'+sort_field
@@ -941,341 +950,8 @@ class RestScoreSearch(generics.ListAPIView):
         return queryset
 
 
-## Tables - format by column ##
-
-# class RestTableSearch(generics.ListAPIView):
-#     serializer_class = ScoreExtendedSerializer
-
-#     def get_queryset(self):
-#         queryset = Score.objects.select_related('publication','platform').all().order_by('num')
-#         params = 0
-
-#         # Search by platform
-#         platform = self.request.query_params.get('platform')
-#         if platform and platform is not None:
-#             queryset = queryset.filter(platform__name__iexact=platform)
-#             params += 1
-
-#         if params == 0:
-#             queryset = []
-
-#         return queryset
-
-
-# class RestMetaboliteTableSearch(generics.RetrieveAPIView):
-
-#     def get(self,request):
-#         #queryset = Score.objects.select_related('platform').all().prefetch_related('metabolites').order_by('num')
-#         queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').all().prefetch_related(*related_dict['performances'],*related_dict['metabolites']).order_by('num')
-
-#         # Search by platform
-#         platform = self.request.query_params.get('platform')
-#         if platform and platform is not None:
-#             queryset = queryset.filter(platform__name__iexact=platform)
-#         else:
-#             queryset = []
-
-#         data = []
-#         score_col = { "name": "OMICSPRED ID", "data": {} }
-
-#         if platform == 'Metabolon':
-#             metabolon_col = { "name": "Metabolon ID", "data": {} }
-#         else:
-#             metabolon_col = None
-
-#         metabo_col = { "name": "Biochemical Name", "data": {} }
-#         pathway_grp_col = { "name": "Pathway Group", "data": {} }
-#         pathway_subgrp_col = { "name": "Pathway Subgroup", "data": {} }
-#         variants_nb_col = { "name": "#SNP", "data": {} }
-#         cohort_cols = {}
-#         cohort_cols_names = []
-
-#         idx = 0
-#         for score in queryset:
-#             # OMICPRED ID
-#             score_col["data"][idx] = score.id
-
-#             # Metabolite Information
-#             metabolite = score.metabolites.all()[0]
-#             # - Metabolon ID
-#             if metabolon_col:
-#                 metabolon_col["data"][idx] = metabolite.external_id
-#             # - Biochemical Name
-#             metabo_col["data"][idx] = metabolite.name
-#             # - Pathway Group
-#             pathway_group = None
-#             if metabolite.pathway_group:
-#                 pathway_group = metabolite.pathway_group.name
-#             pathway_grp_col["data"][idx] = pathway_group
-#             # - Pathway Subgroup
-#             pathway_subgroup = None
-#             if metabolite.pathway_subgroup:
-#                 pathway_subgroup = metabolite.pathway_subgroup.name
-#             pathway_subgrp_col["data"][idx] = pathway_subgroup
-
-#             # #SNP
-#             variants_nb_col["data"][idx] = score.variants_number
-
-#             for perf in score.score_performance.all():
-#                 cohort_name = perf.sample.cohorts.all()[0].name_short
-#                 for metric in perf.performance_metrics:
-#                     metric_name = metric['name_short']
-#                     if 'estimate' in metric.keys():
-#                         estimate = metric['estimate']
-#                     else:
-#                         estimate = ''
-
-#                     colname = f'{cohort_name}_{metric_name}'
-#                     collabel = f'{cohort_name} {metric_name}'
-#                     # Cohort estimate
-#                     if colname not in cohort_cols_names:
-#                         cohort_cols[colname] = { "name": collabel, "data": {} }
-#                         cohort_cols_names.append(colname)
-#                     cohort_cols[colname]["data"][idx] = estimate
-#                     # Cohort pvalue
-#                     # if 'pvalue' in metric.keys():
-#                     #     pvalue = metric['pvalue']
-#                     # else:
-#                     #     pvalue = ''
-#                     # pval_colname = f'{colname}_pvalue'
-#                     # pval_collabel = f'{colname} (p-value)'
-#                     # if pval_colname not in cohort_cols_names:
-#                     #     cohort_cols[pval_colname] = { "name": pval_collabel, "data": {} }
-#                     #     cohort_cols_names.append(pval_colname)
-#                     # cohort_cols[pval_colname]["data"][idx] = pvalue
-#             for col in cohort_cols.keys():
-#                 if idx not in cohort_cols[col]["data"].keys():
-#                     cohort_cols[col]["data"][idx] = ''
-#                 if idx != 0:
-#                     if missing_index not in cohort_cols[col]["data"].keys():
-#                         cohort_cols[col]["data"][missing_index] = ''
-#             idx += 1
-
-#         data.append(score_col)
-#         if metabolon_col:
-#             data.append(metabolon_col)
-#         data.append(metabo_col)
-#         data.append(pathway_grp_col)
-#         data.append(pathway_subgrp_col)
-#         data.append(variants_nb_col)
-
-#         for colname in cohort_cols_names:
-#             data.append(cohort_cols[colname])
-
-#         return Response(data)
-
-
-# class RestProteinTableSearch(generics.RetrieveAPIView):
-#     def get(self,request):
-#         queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').all().prefetch_related(*related_dict['performances'],*related_dict['genes'],*related_dict['proteins']).order_by('num')
-
-#         # Search by platform
-#         platform = self.request.query_params.get('platform')
-#         if platform and platform is not None:
-#             queryset = queryset.filter(platform__name__iexact=platform)
-#         else:
-#             queryset = []
-
-#         data = []
-#         score_col = { "name": "OMICSPRED ID", "data": {} }
-
-#         if platform == 'Somalogic':
-#             somascan_col = { "name": "SOMAscan ID", "data": {} }
-#         else:
-#             somascan_col = None
-
-#         uniprot_col = { "name": "UniProt ID", "data": {} }
-#         gene_col = { "name": "Gene", "data": {} }
-#         protein_col = { "name": "Protein", "data": {} }
-#         variants_nb_col = { "name": "#SNP", "data": {} }
-#         cohort_cols = {}
-#         cohort_cols_names = []
-
-#         idx = 0
-#         for score in queryset:
-#             # idx = f'"{idx}"'
-#             # OMICPRED ID
-#             score_col["data"][idx] = score.id
-#             # SOMAscan ID
-#             if somascan_col:
-#                 somascan_col["data"][idx] = score.name
-
-#             # Protein Information
-#             # Sorting later instead of using the queryset method "order_by" to avoid generating more SQL queries
-#             proteins = [x for x in score.proteins.all()]
-#             # - UniProt ID(s)
-#             uniprot_ids = set()
-#             for protein_id in sorted([x.external_id for x in proteins]):
-#                 if protein_id:
-#                     uniprot_ids.add(protein_id)
-#             uniprot_col["data"][idx] = ';'.join(uniprot_ids)
-#             # - Protein name(s)
-#             protein_names = set()
-#             for protein_name in sorted([x.name for x in proteins]):
-#                 if protein_name:
-#                     protein_names.add(protein_name)
-#             protein_col["data"][idx] = ';'.join(protein_names)
-
-#             # Gene informatiom
-#             gene_names = set()
-#             # Sorting later instead of using the queryset method "order_by" to avoid generating more SQL queries
-#             for gene_name in sorted([x.name for x in score.genes.all()]):
-#                 if gene_name:
-#                     gene_names.add(gene_name)
-#             gene_col["data"][idx] = ';'.join(gene_names)
-
-#             # #SNP
-#             variants_nb_col["data"][idx] = score.variants_number
-
-#             for perf in score.score_performance.all():
-#                 cohort_name = perf.sample.cohorts.all()[0].name_short
-#                 for metric in perf.performance_metrics:
-#                     metric_name = metric['name_short']
-#                     if 'estimate' in metric.keys():
-#                         estimate = metric['estimate']
-#                     else:
-#                         estimate = ''
-
-#                     colname = f'{cohort_name}_{metric_name}'
-#                     collabel = f'{cohort_name} {metric_name}'
-#                     # Cohort estimate
-#                     if colname not in cohort_cols_names:
-#                         cohort_cols[colname] = { "name": collabel, "data": {} }
-#                         cohort_cols_names.append(colname)
-#                     cohort_cols[colname]["data"][idx] = estimate
-#             #         # Cohort pvalue
-#             #         # if 'pvalue' in metric.keys():
-#             #         #     pvalue = metric['pvalue']
-#             #         # else:
-#             #         #     pvalue = ''
-#             #         # pval_colname = f'{colname}_pvalue'
-#             #         # pval_collabel = f'{colname} (p-value)'
-#             #         # if pval_colname not in cohort_cols_names:
-#             #         #     cohort_cols[pval_colname] = { "name": pval_collabel, "data": {} }
-#             #         #     cohort_cols_names.append(pval_colname)
-#             #         # cohort_cols[pval_colname]["data"][idx] = pvalue
-#             for col in cohort_cols.keys():
-#                 if idx not in cohort_cols[col]["data"].keys():
-#                     cohort_cols[col]["data"][idx] = ''
-#                 if idx != 0:
-#                     if missing_index not in cohort_cols[col]["data"].keys():
-#                         cohort_cols[col]["data"][missing_index] = ''
-#             idx += 1
-
-#         data.append(score_col)
-#         if somascan_col:
-#             data.append(somascan_col)
-#         data.append(uniprot_col)
-#         data.append(gene_col)
-#         data.append(protein_col)
-#         data.append(variants_nb_col)
-
-#         for colname in cohort_cols_names:
-#             data.append(cohort_cols[colname])
-
-#         return Response(data)
-
-
-# class RestTranscriptTableSearch(generics.RetrieveAPIView):
-
-#     def get(self,request):
-#         # queryset = Score.objects.select_related('platform').all().prefetch_related('genes').order_by('num')
-#         queryset = Score.objects.only(*only_dict['scores_table']).select_related('platform').all().prefetch_related(*related_dict['performances'],*related_dict['genes_sources']).order_by('num') # transcripts
-
-#         # Search by platform
-#         platform = self.request.query_params.get('platform')
-#         if platform and platform is not None:
-#             queryset = queryset.filter(platform__name__iexact=platform)
-#         else:
-#             queryset = []
-
-#         data = []
-#         score_col = { "name": "OMICSPRED ID", "data": {} }
-
-#         ensembl_col = { "name": "Ensembl ID", "data": {} }
-#         gene_col = { "name": "Gene", "data": {} }
-#         # transcript_col = { "name": "Transcript", "data": {} }
-#         variants_nb_col = { "name": "#SNP", "data": {} }
-#         cohort_cols = {}
-#         cohort_cols_names = []
-
-#         idx = 0
-#         for score in queryset:
-#             # idx = f"{idx}"
-#             # OMICPRED ID
-#             score_col["data"][idx] = score.id
-
-#             # Gene informatiom
-#             ensembl_ids = set()
-#             gene_names = set()
-#             # Sorting later instead of using the queryset method "order_by" to avoid generating more SQL queries
-#             genes = score.genes.all()
-#             for gene in sorted(genes, key=lambda x: x.name):
-#                 if gene.external_id and gene.external_id_source == 'Ensembl':
-#                         ensembl_ids.add(gene.external_id)
-#                 if gene.name:
-#                     gene_names.add(gene.name)
-#             ensembl_col["data"][idx] = ';'.join(ensembl_ids)
-#             gene_col["data"][idx] = ';'.join(gene_names)
-
-#             # # Transcript informatiom
-#             # transcript_names = set()
-#             # for transcript in score.transcripts.all().order_by('name'):
-#             #     if transcript.name:
-#             #         transcript_names.add(transcript.name)
-#             # transcript_col["data"][idx] = ';'.join(transcript_names)
-#             # #SNP
-#             variants_nb_col["data"][idx] = score.variants_number
-
-#             for perf in score.score_performance.all():
-#                 cohort_name = perf.sample.cohorts.all()[0].name_short
-#                 for metric in perf.performance_metrics:
-#                     metric_name = metric['name_short']
-#                     if 'estimate' in metric.keys():
-#                         estimate = metric['estimate']
-#                     else:
-#                         estimate = ''
-
-#                     colname = f'{cohort_name}_{metric_name}'
-#                     collabel = f'{cohort_name} {metric_name}'
-#                     # Cohort estimate
-#                     if colname not in cohort_cols_names:
-#                         cohort_cols[colname] = { "name": collabel, "data": {} }
-#                         cohort_cols_names.append(colname)
-#                     cohort_cols[colname]["data"][idx] = estimate
-
-#                     # Cohort pvalue
-#                     # if 'pvalue' in metric.keys():
-#                     #     pvalue = metric['pvalue']
-#                     # else:
-#                     #     pvalue = ''
-#                     # pval_colname = f'{colname}_pvalue'
-#                     # pval_collabel = f'{colname} (p-value)'
-#                     # if pval_colname not in cohort_cols_names:
-#                     #     cohort_cols[pval_colname] = { "name": pval_collabel, "data": {} }
-#                     #     cohort_cols_names.append(pval_colname)
-#                     # cohort_cols[pval_colname]["data"][idx] = pvalue
-
-#             for col in cohort_cols.keys():
-#                 if idx not in cohort_cols[col]["data"].keys():
-#                     cohort_cols[col]["data"][idx] = ''
-#                 if idx != 0:
-#                     if missing_index not in cohort_cols[col]["data"].keys():
-#                         cohort_cols[col]["data"][missing_index] = ''
-#             idx += 1
-
-#         data.append(score_col)
-#         data.append(ensembl_col)
-#         data.append(gene_col)
-#         data.append(variants_nb_col)
-
-#         for colname in cohort_cols_names:
-#             data.append(cohort_cols[colname])
-
-#         return Response(data)
-
-
 ## Plots ##
+# => Only for website
 from plot.models import Plot
 class RestPlotSearch(generics.ListAPIView):
 
