@@ -10,7 +10,7 @@ class CohortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cohort
         # meta_fields = ('name_short', 'name_full', 'name_others', 'url')
-        meta_fields = ('name_short', 'name_full', 'url')
+        meta_fields = ('name_short', 'name_full', 'description', 'url')
         fields = meta_fields
         read_only_fields = meta_fields
 
