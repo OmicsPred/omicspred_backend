@@ -116,6 +116,10 @@ components:
           type: string
           description: "Cohort full name"
           example: "INTERVAL"
+        description:
+          type: string
+          description: "Cohort additional information"
+          example: "A cohort of healthy blood donors in England"
         url:
           type: string
           description: "URL of the Cohort project"
@@ -1205,6 +1209,7 @@ paths:
         Retrieve all Cohorts, including for each of them:
           * Cohort short name
           * Cohort full name
+          * Cohort description
           * Cohort Project URL
           * List of ancestries
 
@@ -1248,6 +1253,7 @@ paths:
         Retrieve a Cohorts, including :
           * Cohort short name
           * Cohort full name
+          * Cohort description
           * Cohort Project URL
           * List of ancestries
 

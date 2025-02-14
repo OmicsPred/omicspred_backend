@@ -71,6 +71,7 @@ class Cohort(models.Model):
     name_full = models.CharField('Cohort Full Name', max_length=1000)
     name_others = models.TextField('Previous/other/additional names (e.g. sub-cohorts)', null=True)
     url = models.CharField('Cohort URL', max_length=100)
+    description = models.TextField('Cohort additional information', null=True)
 
     def __str__(self):
         return self.name_short

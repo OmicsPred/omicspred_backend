@@ -39,6 +39,7 @@
             "name_short": "INTERVAL",
             "name_full": "INTERVAL",
             "name_others": null,
+            "description": "A cohort of healthy blood donors in England",
             "url": "https://www.intervalstudy.org.uk/"
         }
     },
