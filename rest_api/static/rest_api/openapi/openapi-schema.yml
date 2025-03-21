@@ -1,6 +1,6 @@
 openapi: 3.0.3
 servers:
-  - url: https://rest-dev.omicspred.org/
+  - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
   version: '1.0'
@@ -362,11 +362,11 @@ components:
         next:
           type: string
           description: "URL to the next page of results"
-          example: "https://rest-dev.omicspred.org/<endpoint>/<endpoint-subtype>?limit=50&offset=100"
+          example: "https://rest.omicspred.org/<endpoint>/<endpoint-subtype>?limit=50&offset=100"
         previous:
           type: string
           description: "URL to the previous page of results"
-          example: "https://rest-dev.omicspred.org/<endpoint>/<endpoint-subtype>?limit=50"
+          example: "https://rest.omicspred.org/<endpoint>/<endpoint-subtype>?limit=50"
 
 
     # Pathway #
@@ -1215,7 +1215,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/cohort/all
+        https://rest.omicspred.org/api/cohort/all
         ```
       responses:
         '200':
@@ -1259,7 +1259,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/cohort/INTERVAL
+        https://rest.omicspred.org/api/cohort/INTERVAL
         ```
       parameters:
       - name: cohort
@@ -1302,7 +1302,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/sample/all
+        https://rest.omicspred.org/api/sample/all
         ```
       responses:
         '200':
@@ -1347,7 +1347,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/pathway/all
+        https://rest.omicspred.org/api/pathway/all
         ```
       responses:
         '200':
@@ -1392,7 +1392,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/pathway/R-HSA-9733458
+        https://rest.omicspred.org/api/pathway/R-HSA-9733458
         ```
       parameters:
       - name: pathway_id
@@ -1441,7 +1441,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/metabolite/CHEBI_25017
+        https://rest.omicspred.org/api/metabolite/CHEBI_25017
         ```
       parameters:
       - name: metabolite_id
@@ -1486,7 +1486,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/protein/P08887
+        https://rest.omicspred.org/api/protein/P08887
         ```
       parameters:
       - name: protein_id
@@ -1545,7 +1545,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/protein/search?gene=COL1A1
+        https://rest.omicspred.org/api/protein/search?gene=COL1A1
         ```
       parameters:
       - name: gene
@@ -1602,7 +1602,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/gene/COL1A1
+        https://rest.omicspred.org/api/gene/COL1A1
         ```
       parameters:
       - name: gene_id
@@ -1650,7 +1650,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/metabolomics/Metabolon
+        https://rest.omicspred.org/api/metabolomics/Metabolon
         ```
       parameters:
       - name: platform
@@ -1743,7 +1743,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/proteomics/Olink
+        https://rest.omicspred.org/api/proteomics/Olink
         ```
       parameters:
       - name: platform
@@ -1841,7 +1841,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/transcriptomics/Illumina RNAseq
+        https://rest.omicspred.org/api/transcriptomics/Illumina RNAseq
         ```
       
       parameters:
@@ -1965,7 +1965,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/performance/search?opgs_id=OPGS002402
+        https://rest.omicspred.org/api/performance/search?opgs_id=OPGS002402
         ```
       parameters:
         - name: opgs_id
@@ -2056,8 +2056,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/performance/search/gene/COL1A1
-        - https://rest-dev.omicspred.org/api/performance/search/protein/P08887
+        - https://rest.omicspred.org/api/performance/search/gene/COL1A1
+        - https://rest.omicspred.org/api/performance/search/protein/P08887
         ```
       parameters:
         - name: type
@@ -2166,7 +2166,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/publication/all
+        https://rest.omicspred.org/api/publication/all
         ```
         ---
         ###### **Filtering**
@@ -2174,11 +2174,11 @@ paths:
         You can choose to filter the results of this endpoint to a specified list of studies by providing a list of PubMed IDs (pmid) in one of two ways:
         1. A comma-seperated list of PubMed IDs in the request URL (this will not work for larger queries), e.g.:
         ```
-        https://rest-dev.omicspred.org/api/publication/all?filter_ids=36991119,35202437
+        https://rest.omicspred.org/api/publication/all?filter_ids=36991119,35202437
         ```
         2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["36991119","35202437"] }`. Example with curl:
         ```
-        curl -X GET 'https://rest-dev.omicspred.org/publication/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["36991119", "35202437"] }'
+        curl -X GET 'https://rest.omicspred.org/publication/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["36991119", "35202437"] }'
         ```
       parameters:
         - in: query
@@ -2238,7 +2238,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/publication/36991119
+        https://rest.omicspred.org/api/publication/36991119
         ```
       parameters:
       - name: pmid
@@ -2285,7 +2285,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/publication/search?pmid=36991119
+        https://rest.omicspred.org/api/publication/search?pmid=36991119
         ```
       parameters:
         - in: query
@@ -2375,8 +2375,8 @@ paths:
 
   #       Example of request:
   #       ```
-  #       - https://rest-dev.omicspred.org/api/score/all
-  #       - https://rest-dev.omicspred.org/api/score/all?include_ancestry=1
+  #       - https://rest.omicspred.org/api/score/all
+  #       - https://rest.omicspred.org/api/score/all?include_ancestry=1
   #       ```
   #       ---
   #       ###### **Filtering**
@@ -2384,11 +2384,11 @@ paths:
   #       You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
   #       1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
   #       ```
-  #       https://rest-dev.omicspred.org/api/score/all?filter_ids=OPGS002402,OPGS003423
+  #       https://rest.omicspred.org/api/score/all?filter_ids=OPGS002402,OPGS003423
   #       ```
   #       2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
   #       ```
-  #       curl -X GET https://rest-dev.omicspred.org/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
+  #       curl -X GET https://rest.omicspred.org/score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
   #       ```
   #     parameters:
   #       - name: filter_ids
@@ -2467,8 +2467,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/score/OPGS002402
-        - https://rest-dev.omicspred.org/api/score/OPGS002402?include_pathway=1
+        - https://rest.omicspred.org/api/score/OPGS002402
+        - https://rest.omicspred.org/api/score/OPGS002402?include_pathway=1
         ```
       parameters:
       - name: opgs_id
@@ -2534,7 +2534,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/score/search?pmid=36991119
+        https://rest.omicspred.org/api/score/search?pmid=36991119
         ```
       parameters:
         - name: opgs_ids
@@ -2656,8 +2656,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/score/search/gene/COL1A1
-        - https://rest-dev.omicspred.org/api/score/search/gene/COL1A1?include_performance_metrics=1
+        - https://rest.omicspred.org/api/score/search/gene/COL1A1
+        - https://rest.omicspred.org/api/score/search/gene/COL1A1?include_performance_metrics=1
         ```
       parameters:
         - name: type
@@ -2746,7 +2746,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/score/performance/OPGS002402
+        https://rest.omicspred.org/api/score/performance/OPGS002402
         ```
       parameters:
       - name: opgs_id
@@ -2791,7 +2791,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/platform/all
+        https://rest.omicspred.org/api/platform/all
         ```
       responses:
         '200':
@@ -2835,7 +2835,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/platform/Olink
+        https://rest.omicspred.org/api/platform/Olink
         ```
       parameters:
       - name: platform
@@ -2879,7 +2879,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/dataset/all
+        https://rest.omicspred.org/api/dataset/all
         ```
       responses:
         '200':
@@ -2926,7 +2926,7 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/dataset/INTERVAL
+        - https://rest.omicspred.org/api/dataset/INTERVAL
         ```
       parameters:
       - name: dataset
@@ -2980,8 +2980,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/dataset/search?platform=Olink
-        - https://rest-dev.omicspred.org/api/dataset/search?pmid=36991119
+        - https://rest.omicspred.org/api/dataset/search?platform=Olink
+        - https://rest.omicspred.org/api/dataset/search?pmid=36991119
         ```
       parameters:
       - name: pmid
@@ -3111,8 +3111,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/phenotype/250.2
-        - https://rest-dev.omicspred.org/api/phenotype/250?include_children=1
+        - https://rest.omicspred.org/api/phenotype/250.2
+        - https://rest.omicspred.org/api/phenotype/250?include_children=1
         ```
       parameters:
         - name: phenotype_id
@@ -3173,7 +3173,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/applications_score/all
+        https://rest.omicspred.org/api/applications_score/all
         ``` 
         ---
         ###### **Filtering**
@@ -3181,11 +3181,11 @@ paths:
         You can choose to filter the results of this endpoint to a specified list of genetic scores by providing a list of OmicsPred Genetic Score IDs (OPGS) in one of two ways:
         1. A comma-seperated list of scores in the request URL (this will not work for larger queries), e.g.:
         ```
-        https://rest-dev.omicspred.org/api/applications_score/all?filter_ids=OPGS002402,OPGS003423
+        https://rest.omicspred.org/api/applications_score/all?filter_ids=OPGS002402,OPGS003423
         ```
         2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPGS002402","OPGS003423"] }`. Example with curl:
         ```
-        curl -X GET 'https://rest-dev.omicspred.org/applications_score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
+        curl -X GET 'https://rest.omicspred.org/applications_score/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPGS002402", "OPGS003423"] }'
         ```
       parameters:
         - name: filter_ids
@@ -3242,7 +3242,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/applications_score/OPGS002402
+        https://rest.omicspred.org/api/applications_score/OPGS002402
         ```
       parameters:
       - name: opgs_id
@@ -3300,9 +3300,9 @@ paths:
 
         Examples of request:
         ```
-        - https://rest-dev.omicspred.org/api/applications_score/search?phenotype_id=250.2
-        - https://rest-dev.omicspred.org/api/applications_score/search?pmid=36991119
-        - https://rest-dev.omicspred.org/api/applications_score/search?pmid=36991119&molecular_trait_id=COL1A1
+        - https://rest.omicspred.org/api/applications_score/search?phenotype_id=250.2
+        - https://rest.omicspred.org/api/applications_score/search?pmid=36991119
+        - https://rest.omicspred.org/api/applications_score/search?pmid=36991119&molecular_trait_id=COL1A1
         ```
       parameters:
         - name: opgs_id
@@ -3398,7 +3398,7 @@ paths:
 
   #       Example of request:
   #       ```
-  #       https://rest-dev.omicspred.org/api/applications_sample/all
+  #       https://rest.omicspred.org/api/applications_sample/all
   #       ```
   #       ---
   #       ###### **Filtering**
@@ -3406,11 +3406,11 @@ paths:
   #       You can choose to filter the results of this endpoint to a specified list of Phenotype IDs by providing a list of IDs in one of two ways:
   #       1. A comma-seperated list of Phenotype IDs in the request URL (this will not work for larger queries), e.g.:
   #       ```
-  #       https://rest-dev.omicspred.org/api/applications_sample/all?filter_ids=250.2,557.1
+  #       https://rest.omicspred.org/api/applications_sample/all?filter_ids=250.2,557.1
   #       ```
   #       2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["250.2","557.1"] }`. Example with curl:
   #       ```
-  #       curl -X GET 'https://rest-dev.omicspred.org/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
+  #       curl -X GET 'https://rest.omicspred.org/applications_sample/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["250.2", "557.1"] }'
   #       ```
   #     parameters:
   #       - in: query
@@ -3457,7 +3457,7 @@ paths:
 
         Example of request:
         ```
-        https://rest-dev.omicspred.org/api/info/
+        https://rest.omicspred.org/api/info/
         ```
       parameters: []
       responses:

@@ -339,13 +339,15 @@ CORS_URLS_REGEX = r'^/(api|es_search)/.*$'
 if OP_ON_GAE == 1:
     if PUBLIC_SITE == False:
         CORS_ALLOWED_ORIGINS = [
-            'https//www.omicspred.org'
+            'https://www.omicspred.org',
+            'https://www.omicspred.org/'
         ]
         CORS_ALLOWED_ORIGIN_REGEXES = [
             r"^"+os.environ['CORS_REGEXP']
         ]
     else:
         CORS_URLS_REGEX = r'^/api/.*$'
+else:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = ['GET']
-CORS_ALLOW_ALL_ORIGINS = True

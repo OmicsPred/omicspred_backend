@@ -26,18 +26,19 @@ class MetricData(GenericData):
         'MissingRate': ('Missing Rate', 'Missing Rate')
     }
 
-    def __init__(self,name,value,pvalue=None):
+    def __init__(self,metric_data):
         GenericData.__init__(self)
-        if 'E' in str(value):
-            value = value.replace('E','e')
-            value = float(value)
-        self.name = name.strip()
+        estimate = metric_data['estimate']
+        if 'E' in str(estimate):
+            estimate = estimate.replace('E','e')
+            estimate = float(estimate)
+        self.name = metric_data['name'].strip()
         self.data = {
             'type': self.type_choices[self.name],
-            'estimate': value
+            'estimate': estimate
         }
-        if pvalue:
-            self.data['pvalue'] = pvalue
+        if 'pvalue' in metric_data.keys():
+            self.data['pvalue'] = metric_data['pvalue']
 
 
     def set_names(self):
@@ -67,5 +68,5 @@ class MetricData(GenericData):
                 self.model.performance = performance
                 self.model.save()
         except IntegrityError as e:
-            print('Error with the creation of the Metric')
+            print(f'Error with the creation of the Metric: {e}')
         return self.model

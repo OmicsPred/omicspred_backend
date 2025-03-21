@@ -11,10 +11,9 @@ class GeneData(GenericData):
         self.name = name
 
 
-    def check_gene(self):
+    def check_model_exist(self):
         '''
         Check if a Gene model already exists.
-        Return type: Gene model
         '''
         try:
             gene = None
@@ -54,7 +53,7 @@ class GeneData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.check_gene()
+                self.check_model_exist()
                 if not self.model:
                     self.model = Gene()
                     if self.name and self.name not in [None,np.nan,'nan','']:
@@ -68,7 +67,7 @@ class GeneData(GenericData):
                     self.update_gene()
         except IntegrityError as e:
             self.model = None
-            print('Error with the creation of the Gene')
+            print(f'Error with the creation of the Gene: {e}')
 
         return self.model
 
@@ -82,10 +81,9 @@ class ProteinData(GenericData):
         self.gene = gene
 
 
-    def check_protein(self):
+    def check_model_exist(self):
         '''
         Check if a Protein model already exists.
-        Return type: Protein model
         '''
         try:
             protein = None
@@ -113,7 +111,7 @@ class ProteinData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.check_protein()
+                self.check_model_exist()
                 if not self.model:
                     self.model = Protein()
                     if self.name and self.name not in [None,np.nan,'nan','']:
@@ -147,7 +145,7 @@ class MetaboliteData(GenericData):
             self.data['pathway_subgroup'] = pathway_subgroup
 
 
-    def check_metabolite(self):
+    def check_model_exist(self):
         '''
         Check if a Metabolite model already exists.
         Return type: Metabolite model
@@ -181,7 +179,7 @@ class MetaboliteData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.check_metabolite()
+                self.check_model_exist()
                 if not self.model:
                     self.model =  Metabolite()
                     for field, val in self.data.items():
@@ -189,8 +187,7 @@ class MetaboliteData(GenericData):
                     self.model.save()
         except IntegrityError as e:
             self.model = None
-            print('Error with the creation of the Metabolite')
-
+            print(f'Error with the creation of the Metabolite: {e}')
         return self.model
 
 
@@ -202,10 +199,9 @@ class PathwayData(GenericData):
         self.name = name
 
 
-    def check_pathway(self):
+    def check_model_exist(self):
         '''
         Check if a Pathway model already exists.
-        Return type: Pathway model
         '''
         try:
             pathway = None
@@ -236,7 +232,7 @@ class PathwayData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.check_pathway()
+                self.check_model_exist()
                 if not self.model:
                     if self.name not in [None,np.nan,'nan',''] or self.external_id:
                         self.model = Pathway()
@@ -247,6 +243,6 @@ class PathwayData(GenericData):
                         self.model.save()
         except IntegrityError as e:
             self.model = None
-            print('Error with the creation of the Pathway')
+            print(f'Error with the creation of the Pathway: {e}')
 
         return self.model

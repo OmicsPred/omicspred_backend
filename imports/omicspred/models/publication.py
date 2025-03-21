@@ -9,15 +9,14 @@ class PublicationData(GenericData):
     def __init__(self,pmid):
         GenericData.__init__(self)
         self.pmid = pmid
-        self.check_publication_context()
+        self.check_model_exist()
         if not self.model:
             self.fetch_publication_information()
 
 
-    def check_publication_context(self):
+    def check_model_exist(self):
         '''
         Check if a Publication model already exists.
-        Return type: Publication object (omicspred.models) or None
         '''
         try:
             publication = Publication.objects.get(pmid=self.pmid)
@@ -79,6 +78,7 @@ class PublicationData(GenericData):
         '''
         try:
             with transaction.atomic():
+                self.check_model_exist()
                 if not self.model:
                     self.model = Publication()
                     for field, val in self.data.items():
@@ -86,6 +86,6 @@ class PublicationData(GenericData):
                     self.model.save()
         except IntegrityError as e:
             self.model = None
-            print('Error with the creation of the Publication')
+            print(f'Error with the creation of the Publication: {e}')
 
         return self.model

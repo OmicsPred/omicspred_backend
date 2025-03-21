@@ -537,7 +537,7 @@ class Performance(models.Model):
         ('EV', 'External Validation'),
         ('E',  'Evaluation')
     ]
-    eval_type = models.CharField(max_length=2,
+    eval_type = models.CharField(max_length=25,
                             choices=EVALUATION_CHOICES,
                             default='',
                             verbose_name='Evaluation Type'
