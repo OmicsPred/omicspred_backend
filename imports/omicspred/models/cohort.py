@@ -5,42 +5,49 @@ from omicspred.models import Cohort
 
 class CohortData(GenericData):
 
-    def __init__(self,name,name_long,url=None):
+    def __init__(self,name_short:str,cohort_data:dict):
         GenericData.__init__(self)
-        self.name = name.strip()
-        self.name_long = name_long.strip()
-        self.url = url
-        if url:
-            self.url = url.strip()
-        else:
-            self.url = url
-        self.cohort_tuple = (self.name,self.name_long,self.url)
+        self.name_short = name_short
+        for item in cohort_data.keys():
+            if cohort_data[item]:
+                 self.data[item] = cohort_data[item]
+        # self.cohort_tuple = (self.name,self.name_long,self.url)
 
-    def check_cohort(self):
+    def get_data(self,attribute:str):
+        if attribute in self.data.keys():
+            return self.data[attribute]
+
+    def check_model_exist(self):
         '''
         Check if a Cohort model already exists.
-        Return type: Cohort model
         '''
+        name = self.get_data('name_short')
+        name_long = self.get_data('name_long')
         try:
-            cohort = Cohort.objects.get(name_short__iexact=self.name, name_full__iexact=self.name_long)
-            self.model = cohort
+            if name_long:
+                cohort = Cohort.objects.get(name_short__iexact=name, name_full__iexact=name_long)
+            else:
+                cohort = Cohort.objects.get(name_short__iexact=name)
+            if cohort:
+                self.model = cohort
             #print(f'Cohort {self.name} found in the DB')
         except Cohort.DoesNotExist:
             self.model = None
             try:
-                cohort = Cohort.objects.get(name_short__iexact=self.name)
-                # Short name = long name
-                if self.name == self.name_long:
-                    self.model = cohort
-                else:
-                    print(f'A existing cohort has been found in the DB with the ID "{self.name}" ({self.name_long}). However the long name differs.')
+                if name_long:
+                    cohort = Cohort.objects.get(name_short__iexact=name)
+                    # Short name = long name
+                    if name == name_long:
+                        self.model = cohort
+                    else:
+                        print(f'A existing cohort has been found in the DB with the ID "{name}" ({name_long}). However the long name differs.')
             except Cohort.DoesNotExist:
-                print(f'New cohort "{self.name}" / "{self.name_long}".')
+                print(f'New cohort "{name}" / "{name_long}".')
                 self.model = None
             except:
-                print(f'ERROR with cohort {self.name} duplicated!')
+                print(f'ERROR with cohort {name} duplicated!')
         except:
-            print(f'ERROR with cohort {self.name} ({self.name_long}) duplicated!')
+            print(f'ERROR with cohort {name} ({name_long}) duplicated!')
 
 
     @transaction.atomic
@@ -51,12 +58,15 @@ class CohortData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.check_cohort()
+                self.check_model_exist()
                 if not self.model:
                     self.model = Cohort()
-                    self.model.name_short=self.name
-                    self.model.name_full=self.name_long
-                    self.model.url=self.url
+                    if 'name_short' in self.data.keys():
+                        self.model.name_short=self.data['name_short']
+                    if 'name_full' in self.data.keys():
+                        self.model.name_full=self.data['name_long']
+                    if 'url' in self.data.keys():
+                        self.model.url=self.data['url']
                     self.model.save()
         except IntegrityError as e:
             self.model = None
