@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
-from django.db.models import Prefetch, Q, FloatField, Count
+from django.db.models import Prefetch, Q, FloatField, Count, Case, When
 from django.db.models.functions import Cast, Lower
 from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings
@@ -46,21 +46,23 @@ related_dict = {
         Prefetch('pathway_proteins', queryset=Protein.objects.only('id').all()),
         Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id').all()),
     ], # Big speed up
-    'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication','efo').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
+    'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
-    'perf_select': ['score', 'sample', 'efo', 'dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
+    'perf_select': ['score', 'sample', 'dataset', 'dataset__publication','dataset__platform','dataset__platform__platform_master'],
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
     'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
     'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
+    'score_applications_prefetch': ['genes','proteins','metabolites'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform'],
-    'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master'],
+    'score_dataset_full': ['dataset','dataset__publication','dataset__platform','dataset__platform__platform_master','dataset__tissue'],
     'score_search_cohort': [
         Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','sample_id').all()),
         Prefetch('score_performance__sample', queryset=Sample.objects.only('id','cohorts').all())
-    ]
+    ],
+    'tissue_prefetch': [Prefetch('tissue_dataset',queryset=Dataset.objects.only('id','tissue_id','scores_count').all())],
 }
 missing_index = 0
 
@@ -84,7 +86,6 @@ def sort_data_list(request,type,queryset,default_col='num'):
         if sort == 'desc':
             is_desc = True
     ## Set sorting field
-    # Order by generated count
     if sort_field in ['genes_count','proteins_count','metabolites_count'] and type == 'pathway':
         mt_type = sort_field.split('_')[0]
         if is_desc == True:
@@ -94,9 +95,9 @@ def sort_data_list(request,type,queryset,default_col='num'):
     # Order by name
     elif sort_field.endswith('name'):
         if is_desc == True:
-            queryset = queryset.order_by(Lower(sort_field).desc())
+            queryset = queryset.order_by(Lower(sort_field).desc(nulls_last=True))
         else:
-            queryset = queryset.order_by(Lower(sort_field))
+            queryset = queryset.order_by(Lower(sort_field).asc(nulls_last=True))
     # Order by other field
     else:
         if is_desc == True:
@@ -595,8 +596,8 @@ class RestPerformanceSearchByMolecularTrait(generics.ListAPIView):
             query_name_filter = {f'score__{molecular_trait_type}s__name__iexact': molecular_trait}
             query_id_filter = {f'score__{molecular_trait_type}s__external_id__iexact': molecular_trait}
             query_list = [Q(**query_name_filter), Q(**query_id_filter)]
-        if query_list:
 
+        if query_list:
             queryset = Performance.objects.select_related(*related_dict['perf_select']).filter(reduce(operator.or_,query_list)).prefetch_related('sample__cohorts','performance_metric',f'score__{molecular_trait_type}s').order_by('id')
 
             # Search by Score ID
@@ -642,9 +643,10 @@ class RestPlatform(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
+## Datasets ##
 class RestListDatasets(generics.ListAPIView):
     """
-    Retrieve all the Dataset
+    Retrieve all the Datasets
     """
     serializer_class = DatasetSerializer
     queryset = Dataset.objects.select_related(*related_dict['dataset_select']).all().prefetch_related(*related_dict['dataset_prefetch'])
@@ -692,9 +694,37 @@ class RestDatasetSearch(generics.ListAPIView):
             platform = self.request.query_params.get('platform')
             if platform and platform is not None:
                 queryset = queryset.filter(platform__name__iexact=platform)
+            # Search by Tissue ID
+            tissue_id = self.request.query_params.get('tissue_id')
+            if tissue_id and tissue_id is not None:
+                tissue_id = tissue_id.upper().replace(':','_')
+                queryset = queryset.filter(tissue__id__iexact=tissue_id)
+                params += 1
         except Dataset.DoesNotExist:
             queryset = []
         return queryset
+
+
+## Tissue ##
+class RestListTissues(generics.ListAPIView):
+    """
+    Retrieve all the Tissues
+    """
+    serializer_class = TissueSerializerScoresCount
+    queryset = EFO.objects.prefetch_related(*related_dict['tissue_prefetch']).all().order_by('label')
+
+
+class RestTissue(generics.ListAPIView):
+    """
+    Retrieve the Tissue information from a given tissue
+    """
+    def get(self, request, tissue):
+        try:
+            queryset = EFO.objects.get(Q(label__iexact=tissue) | Q(id__iexact=tissue))
+        except EFO.DoesNotExist:
+            queryset = None
+        serializer = TissueSerializerScoresCount(queryset,many=False)
+        return Response(serializer.data)
 
 
 ## Publications ##
@@ -813,7 +843,7 @@ class RestListScores(generics.ListAPIView):
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
                                        Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) | 
                                        Q(dataset__publication__firstauthor__iexact=filter_term))
-         # Sort data
+        # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
         return queryset
 
@@ -931,6 +961,13 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related(*related_dict['score_search_cohort'])
             params += 1
 
+        # Search by Tissue ID
+        tissue_id = self.request.query_params.get('tissue_id')
+        if tissue_id and tissue_id is not None:
+            tissue_id = tissue_id.upper().replace(':','_')
+            queryset = queryset.filter(dataset__tissue__id__iexact=tissue_id)
+            params += 1
+
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
@@ -944,6 +981,8 @@ class RestScoreSearch(generics.ListAPIView):
         if params == 0:
             queryset = []
         else:
+            # Sort data
+            queryset = sort_data_list(self.request,'score',queryset)
             queryset = queryset.distinct()
 
         # Avoid duplicated entries when a cohort is used several times for a score (with different ancestries/samples)
@@ -1150,7 +1189,8 @@ class RestListPhenotypeScore(generics.ListAPIView):
 
     def get_queryset(self):
         # Fetch all the ScoresApplications
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
+        # queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related(*related_dict['score_applications_prefetch']).annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
@@ -1163,7 +1203,9 @@ class RestListPhenotypeScore(generics.ListAPIView):
             queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) | Q(platform__platform_master__type__iexact=filter_term) |
                                        Q(phenotype__id__iexact=filter_term) | Q(phenotype__name__icontains=filter_term) | Q(phenotype__category__icontains=filter_term) |
                                        Q(cohort__name_short__iexact=filter_term) | Q(cohort__name_full__iexact=filter_term) |
-                                       Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
+                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
         # Sort data
         queryset = sort_data_list(self.request,'score_application',queryset,'phenotype_as_float')
         return queryset.distinct()
@@ -1178,7 +1220,8 @@ class RestPhenotypeScore(generics.ListAPIView):
 
     def get_queryset(self):
         opgs_id = self.kwargs['opgs_id'].upper()
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').filter(score_id=opgs_id)
+        # queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').filter(score_id=opgs_id)
+        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related(*related_dict['score_applications_prefetch']).filter(score_id=opgs_id)
         return queryset
 
 
@@ -1189,7 +1232,8 @@ class RestPhenotypeScoreSearch(generics.ListAPIView):
     serializer_class = ScoreApplicationsSerializer
 
     def get_queryset(self):
-        queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related('molecular_traits').all()
+        # queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related('molecular_traits').all()
+        queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related(*related_dict['score_applications_prefetch']).all()
         params = 0
 
         # Search by Score ID
@@ -1208,16 +1252,22 @@ class RestPhenotypeScoreSearch(generics.ListAPIView):
         if phenotype_id and re.match(r'^\d+\.?\d*$',phenotype_id):
             queryset = queryset.filter(phenotype__id=phenotype_id)
             params += 1
-        # Search by Phenotype ID
-        molecular_trait_id = self.request.query_params.get('molecular_trait_id')
-        if molecular_trait_id and molecular_trait_id is not None:
-            queryset = queryset.filter(Q(molecular_traits__name__iexact=molecular_trait_id) | Q(molecular_traits__external_id__iexact=molecular_trait_id))
+        # # Search by Molecular Trait ID/name (gene, protein, metabolite)
+        molecular_trait = self.request.query_params.get('molecular_trait')
+        if molecular_trait and molecular_trait is not None:
+            queryset = queryset.filter(Q(genes__name__iexact=molecular_trait) | Q(genes__external_id__iexact=molecular_trait) |
+                                       Q(proteins__name__iexact=molecular_trait) | Q(proteins__external_id__iexact=molecular_trait) |
+                                       Q(metabolites__name__iexact=molecular_trait) | Q(metabolites__external_id__iexact=molecular_trait))
             params += 1
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
+            # queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
+            queryset = queryset.filter(Q(score_id__iexact=filter_term) |
+                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
+                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
 
         if params == 0:
             queryset = []
@@ -1259,7 +1309,7 @@ class RestInfo(generics.RetrieveAPIView):
 
         data = {
             'rest_api': {
-                "version": "1.0"
+                "version": settings.REST_API_VERSION
             },
             'data_count': {
                 'scores': Score.objects.count(),

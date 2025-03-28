@@ -52,55 +52,6 @@ class PublicationApplications(models.Model):
         return pub_date.strftime('%Y')
 
 
-# class Phecode(models.Model):
-#     """ Class for individual Phecode entry """
-#     # PheWAS identifiers
-#     id = models.CharField('PheWAS ID', max_length=30, primary_key=True)
-#     name = models.CharField('PheWAS Name', max_length=150, null=True)
-#     category = models.CharField('PheWAS Category', max_length=100, null=True)
-
-#     child_phecode = models.ManyToManyField('self', verbose_name='Children Phecode', symmetrical=False, related_name='parent_phecode')
-
-#     @property
-#     def scores_count(self):
-#         # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
-#         scores = self.phecode_score.count()
-#         return scores
-
-
-#     @property
-#     def score_number(self):
-#         # scores = self.phecode_score
-#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
-#         data = {}
-#         for score in scores.all():
-#             platform = score.platform.name
-#             if platform in data.keys():
-#                 data[platform] += 1
-#             else:
-#                 data[platform] = 1
-#         return data
-
-
-#     @property
-#     def platforms(self):
-#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform').filter(phecode=self)
-#         platforms = set()
-#         for score in scores.all():
-#             platform = score.platform.name
-#             platforms.add(platform)
-#         return list(platforms)
-
-#     @property
-#     def omics_types(self):
-#         scores = ScoreApplications.objects.using(applications_db).select_related('phecode','platform','platform__platform_master').filter(phecode=self)
-#         types = set()
-#         for score in scores.all():
-#             type = score.platform.platform_master.type
-#             types.add(type)
-#         return list(types)
-
-
 class Phenotype(models.Model):
     """ Class for individual Phenotype entry """
     # PheWAS identifiers
@@ -113,7 +64,6 @@ class Phenotype(models.Model):
 
     @property
     def scores_count(self):
-        # scores = ScoreApplications.objects.using(applications_db).only('score_id','phecode__id').select_related('phecode').filter(phecode=self).count()
         scores = self.phenotype_score.count()
         return scores
 
@@ -197,6 +147,7 @@ class SampleApplications(models.Model):
     sample_age_sd = models.FloatField('Mean standard deviation of Age', null=True)
 
 
+# TODO: To be removed from the schema
 class MolecularTraitApplications(models.Model):
     TYPE_CHOICES = [
         ('gene', 'gene'),
@@ -211,6 +162,21 @@ class MolecularTraitApplications(models.Model):
     )
 
 
+class GeneApplications(models.Model):
+    name = models.CharField('Gene name', max_length=150, null=True)
+    external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
+
+
+class ProteinApplications(models.Model):
+    name = models.CharField('Protein name', max_length=150, null=True)
+    external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
+
+
+class MetaboliteApplications(models.Model):
+    name = models.CharField('Metabolite name', max_length=150, null=True)
+    external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
+
+
 class ScoreApplications(models.Model):
     """ Class for score association for the application """
     score_id = models.CharField('Omicspred ID', max_length=30, db_index=True)
@@ -220,6 +186,9 @@ class ScoreApplications(models.Model):
     platform = models.ForeignKey(PlatformApplications, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     cohort = models.ForeignKey(CohortApplications, on_delete=models.PROTECT, related_name='cohort_score', verbose_name='Cohort')
     molecular_traits = models.ManyToManyField(MolecularTraitApplications, related_name='molecular_trait_score', verbose_name='Molecular traits')
+    genes = models.ManyToManyField(GeneApplications, related_name='genes_score', verbose_name='Genes')
+    proteins = models.ManyToManyField(ProteinApplications, related_name='proteins_score', verbose_name='Proteins')
+    metabolites = models.ManyToManyField(MetaboliteApplications, related_name='metabolites_score', verbose_name='Metabolites')
     # Values
     r2 = models.FloatField(verbose_name='R2', null=False)
     hr = models.FloatField(verbose_name='Hazard Ratio', null=False)

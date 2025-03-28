@@ -39,23 +39,22 @@ def format_percentage(percent):
 
 def run():
     count = 1
-    scores = Score.objects.all().prefetch_related('score_performance','score_performance__sample')
-    # scores = Score.objects.filter(id='OPGS017228').prefetch_related('score_performance','score_performance__sample')
-    # distinct_dist = set()
+    scores = Score.objects.filter(dataset__id__gte=8).prefetch_related('score_performance','score_performance__sample')
+    # scores = Score.objects.all().prefetch_related('score_performance','score_performance__sample')
     multi_anc = 'MAO'
 
     # debug_count = 0
     for score in scores:
 
         # Init variables
-        sample_training_dist = {'anc':{},'count':0}
-        sample_validation_dist = {'anc':{},'count':0}
+        sample_training_dist = { 'anc':{}, 'count':0 }
+        sample_validation_dist = { 'anc':{}, 'count':0 }
 
         for performance in score.score_performance.all():
             sample = performance.sample
             sample_number = sample.sample_number
             ancestry = sample.ancestry_broad
-            type = 'Training' if performance.eval_type == 'T' else 'Validation'
+            type = 'Training' if performance.eval_type in ['T', 'Training'] else 'Validation'
 
             # Training sample
             if type == 'Training':

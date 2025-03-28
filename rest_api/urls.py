@@ -29,6 +29,7 @@ rest_urls = {
     'publication':          'api/publication/',
     'sample':               'api/sample/',
     'score':                'api/score/',
+    'tissue':               'api/tissue/',
     'transcriptomics':      'api/transcriptomics/'
 }
 
@@ -73,6 +74,9 @@ urlpatterns = [
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),
+    # Tissue
+    re_path(r'^'+rest_urls['tissue']+'all'+slash, cache_page(cache_time)(RestListTissues.as_view()), name="getAllTissues"),
+    re_path(r'^'+rest_urls['tissue']+'(?P<tissue>[^/]+)'+slash, RestTissue.as_view(), name="getTissue"),
     # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
     # To generate plot data

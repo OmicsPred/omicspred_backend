@@ -170,6 +170,16 @@
         }
     },
     {
+        "model": "omicspred.EFO",
+        "pk": "BTO_0000133",
+        "fields": {
+            "label": "blood serum",
+            "description": "The cell-free portion of the blood from which the fibrinogen has been separated in the process of clotting.",
+            "url": "http://purl.obolibrary.org/obo/BTO_0000133",
+            "type": "tissue"
+        }
+    },
+    {
         "model": "omicspred.Dataset",
         "pk": 1,
         "fields": {
@@ -210,7 +220,7 @@
             "platform": 2,
             "publication": 1,
             "species_id": 9606,
-            "tissue_id": "UBERON_0001969",
+            "tissue_id": "BTO_0000133",
             "samples_training": [ 1 ],
             "samples_validation": [ 2 ]
         }
@@ -447,7 +457,6 @@
             "performance_additional": "2,384 genes",
             "cohort_label": "INTERVAL",
             "covariates": null,
-            "efo_id": "UBERON_0001969",
             "sample_id": 1,
             "score_id": 5,
             "dataset_id": 1
@@ -461,7 +470,6 @@
             "performance_additional": "2,129 proteins genes",
             "cohort_label": "UKB",
             "covariates": "Age, sex, sample collection site, and the first 10 genetic principal components",
-            "efo_id": "UBERON_0001969",
             "sample_id": 2,
             "score_id": 5,
             "dataset_id": 1
@@ -475,7 +483,6 @@
             "performance_additional": "308 genes",
             "cohort_label": "INTERVAL",
             "covariates": null,
-            "efo_id": "UBERON_0001969",
             "sample_id": 1,
             "score_id": 2385,
             "dataset_id": 2
@@ -489,7 +496,6 @@
             "performance_additional": "302 proteins genes",
             "cohort_label": "UKB",
             "covariates": "Age, sex, sample collection site, and the first 10 genetic principal components",
-            "efo_id": "UBERON_0001969",
             "sample_id": 2,
             "score_id": 2385,
             "dataset_id": 2
@@ -503,7 +509,6 @@
             "performance_additional": "726 genes",
             "cohort_label": "INTERVAL",
             "covariates": null,
-            "efo_id": "UBERON_0001969",
             "sample_id": 1,
             "score_id": 3006,
             "dataset_id": 3
@@ -517,7 +522,6 @@
             "performance_additional": "527 metabolites genes",
             "cohort_label": "UKB",
             "covariates": "Age, sex, batch, recruitment centre, ...",
-            "efo_id": "UBERON_0001969",
             "sample_id": 2,
             "score_id": 3006,
             "dataset_id": 3
@@ -531,7 +535,6 @@
             "performance_additional": "13,668 genes",
             "cohort_label": "INTERVAL",
             "covariates": null,
-            "efo_id": "UBERON_0001969",
             "sample_id": 1,
             "score_id": 3568,
             "dataset_id": 5
@@ -545,7 +548,6 @@
             "performance_additional": "12,958 genes genes",
             "cohort_label": "INTERVAL withheld subset",
             "covariates": "Age, sex, batch, recruitment centre, ...",
-            "efo_id": "UBERON_0001969",
             "sample_id": 2,
             "score_id": 3568,
             "dataset_id": 5

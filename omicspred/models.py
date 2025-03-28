@@ -121,14 +121,21 @@ class Platform(models.Model):
 
 
 class EFO(models.Model):
-    """ Class to store EFO entries """
-    id = models.CharField('EFO ID', max_length=30, primary_key=True)
-    label = models.CharField('EFO Label', max_length=500, db_index=True)
-    description = models.TextField('EFO Description', null=True)
-    url = models.CharField('EFO URL', max_length=500)
+    """ Class to store Tissue/Trait Ontology entries """
+    id = models.CharField('Ontology ID', max_length=30, primary_key=True)
+    label = models.CharField('Ontology Label', max_length=500, db_index=True)
+    description = models.TextField('Tissue/Trait Description', null=True)
+    url = models.CharField('Ontology URL', max_length=500)
     type = models.CharField('Entry type', max_length=100, null=True)
 
-    child_efos = models.ManyToManyField('self', verbose_name='Children EFO', symmetrical=False, related_name='parent_efos')
+    child_efos = models.ManyToManyField('self', verbose_name='Children Ontology Entry', symmetrical=False, related_name='parent_efos')
+
+    @property
+    def scores_count(self):
+        total_count = 0
+        for dataset in self.tissue_dataset.all():
+            total_count += dataset.scores_count
+        return total_count
 
 
 class Sample(models.Model):
@@ -526,10 +533,7 @@ class Performance(models.Model):
     """ Class for Performance Metric """
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_performance') # \Score that the metrics are associated with
     dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_performance', verbose_name='Dataset')
-    # publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='Peformance Source', related_name='publication_performance') # Study that reported performance metrics
-    sample = models.ForeignKey(Sample, on_delete=models.PROTECT, verbose_name='Peformance Sample', related_name='sample_performance') # Sample that is associated with
-    # platform = models.ForeignKey(Platform, on_delete=models.PROTECT, verbose_name='Peformance Platform', related_name='platform_performance') # Platform that is associated with
-    efo = models.ForeignKey(EFO, on_delete=models.PROTECT, verbose_name='Peformance EFO', related_name='efo_performance', null=True) # EFO trait that is associated with
+    sample = models.ForeignKey(Sample, on_delete=models.PROTECT, verbose_name='Performance Sample', related_name='sample_performance') # Sample that is associated with
     # Evaluation Type
     EVALUATION_CHOICES = [
         ('T',  'Training'),
@@ -537,11 +541,12 @@ class Performance(models.Model):
         ('EV', 'External Validation'),
         ('E',  'Evaluation')
     ]
-    eval_type = models.CharField(max_length=25,
-                            choices=EVALUATION_CHOICES,
-                            default='',
-                            verbose_name='Evaluation Type'
-                            )
+    eval_type = models.CharField(
+        max_length=25,
+        choices=EVALUATION_CHOICES,
+        default='',
+        verbose_name='Evaluation Type'
+    )
     performance_additional = models.TextField('Additional Information', default='')
     source_gwas_catalog = models.CharField('GWAS Catalog Study ID (GCST...)', max_length=20, null=True)
     source_doi = models.CharField('Source DOI', max_length=100, null=True)
