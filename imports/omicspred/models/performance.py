@@ -73,6 +73,15 @@ class PerformanceData(GenericData):
         return cohort_label
 
 
+    def update_eval_type(self):
+        eval_type = self.data['eval_type']
+        eval_type_choices = Performance.eval_type.field.choices
+        eval_types =  {}
+        for choice in eval_type_choices:
+            eval_types[choice[1]] = choice[0]
+        if eval_type in eval_types.keys():
+            self.data['eval_type'] = eval_types[eval_type]
+
 
     @transaction.atomic
     def create_model(self):
@@ -82,6 +91,7 @@ class PerformanceData(GenericData):
         '''
         try:
             with transaction.atomic():
+                self.update_eval_type()
                 self.model = Performance(**self.data)
                 self.model.save()
 

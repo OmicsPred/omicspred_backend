@@ -22,15 +22,13 @@ class DatasetData(GenericData):
         self.publication = publication
         self.platform = platform
         self.tissue = tissue
-        self.scores_count = 1
-        self.omics_count = 1
         if name:
             self.name = name
             self.data['name'] = name
         if data_type in self.omics_data_types.keys():
             self.data['omics_type'] = self.omics_data_types[data_type]
-        self.data['scores_count'] = 0
-        self.data['omics_count'] = 0
+        self.data['scores_count'] = 1
+        self.data['omics_count'] = 1
         # Species
         try:
             species_model = Species.objects.get(name_latin__iexact=species)

@@ -2,7 +2,7 @@ import pandas as pd
 from imports.omicspred.models.score import ScoreData
 from imports.omicspred.models.performance import PerformanceData
 from imports.omicspred.models.omics import MetaboliteData, PathwayData
-from imports.omicspred.models.efo import EFOData
+from imports.omicspred.models.tissue import EFOData
 
 
 
