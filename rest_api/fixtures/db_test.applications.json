@@ -113,30 +113,27 @@
         }
     },
     {
-        "model": "applications.MolecularTraitApplications",
+        "model": "applications.GeneApplications",
         "pk": 23326,
         "fields": {
             "name": "FCGR2B",
-            "external_id": "ENSG00000072694",
-            "type": "gene"
+            "external_id": "ENSG00000072694"
         }
     },
     {
-        "model": "applications.MolecularTraitApplications",
+        "model": "applications.ProteinApplications",
         "pk": 23327,
         "fields": {
             "name": "Low affinity immunoglobulin gamma Fc region receptor II-b",
-            "external_id": "P31994",
-            "type": "protein"
+            "external_id": "P31994"
         }
     },
     {
-        "model": "applications.MolecularTraitApplications",
+        "model": "applications.MetaboliteApplications",
         "pk": 19736,
         "fields": {
             "name": "cholesterol",
-            "external_id": "CHEBI_16113",
-            "type": "metabolite"
+            "external_id": "CHEBI_16113"
         }
     },
     {
@@ -153,7 +150,9 @@
             "platform_id": 1,
             "publication_id": 1,
             "sample_id": 678,
-            "molecular_traits": [ 23326 ]
+            "genes": [ 23326 ],
+            "proteins": [],
+            "metabolites": []
         }
     },
     {
@@ -170,7 +169,9 @@
             "platform_id": 2,
             "publication_id": 1,
             "sample_id": 678,
-            "molecular_traits": [ 23327 ]
+            "genes": [ 23326 ],
+            "proteins": [ 23327 ],
+            "metabolites": []
         }
     },
     {
@@ -187,7 +188,9 @@
             "platform_id": 4,
             "publication_id": 1,
             "sample_id": 218,
-            "molecular_traits": [ 23326, 23327 ]
+            "genes": [],
+            "proteins": [],
+            "metabolites": [ 19736 ]
         }
     },
     {

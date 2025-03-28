@@ -3,8 +3,82 @@ servers:
   - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
-  version: '1.0'
-  description: 'Programmatic access to the OmicsPred metadata.'
+  version: '1.1'
+  description: |
+    Programmatic access to the OmicsPred metadata.
+
+    ---
+
+    ###### REST API settings
+
+    * `pagination`: This REST API is using pagination for the endpoints returning more than 1 results. It is currently set to **250** results per page.
+      <a id="pagination">More information</a>
+      <div id="content_pagination">
+
+        ###### **Pagination structure**
+
+        Here is an example of the pagination result structure in JSON:
+
+        ```
+          {
+            "size": 250,
+            "count": 5624,
+            "next": "https://rest.omicspred.org/api/proteomics/Olink?limit=250&offset=250",
+            "previous": null,
+            "results": [
+              < list the results 1 to 250 >
+            ]
+          }
+        ```
+        * **size**: is the number of results in the current page.
+        * **count**: is the overall number of results.
+        * **next**: is the URL to the following page of results.
+        * **previous**: is the URL to the preceding page of results (only present if you are not on the first page).
+        * **results**: contains the list of results of the current page.
+        <pre></pre>
+        ###### **Pagination parameters**
+        * **limit**: The number of results per page can be overwritten using this parameter, e.g:
+          * <code>.../api/proteomics/Olink/?limit=100</code>: returns the first 100 results.
+
+          The default value is **250**. The maximum value is **500**. Over this maximum value, the REST API returns an error 400.
+
+        * **offset**: This parameter indicates the starting position (0 based) of the query in relation to the complete set of results. It provides access to a desired range of results, e.g.:
+          * <code>.../api/proteomics/Olink/?offset=75</code> provides results from the number **76** to **325**, as the number of results per page is **250** by default (equivalent to "limit=250")
+          * <code>.../api/proteomics/Olink/?offset=75&limit=60</code> provides results from the number **76** to **135**
+
+      </div>
+
+
+    * `rate limit`: The limit number of queries is set to **100** queries per minute.
+      <a id="rate_limit">More information</a>
+      <div id="content_rate_limit">
+        Here is an example of the JSON message returned if the rate limit is reached:
+
+        ```
+          {
+            "message": "request limit exceeded",
+            "availableIn": "33 seconds"
+          }
+        ```
+        * **message**: description of the error.
+        * **availableIn**: number of seconds before the rate limit is reset.
+      </div>
+
+    ---
+
+    <a id="changelog">REST API version changelog</a>
+    <div id="content_changelog">
+
+      * <span class="badge badge-pill">1.1</span> - April 2025:
+        * New endpoint `/api/tissue/` (`/api/tissue/all` and `/api/tissue/<tissue_id_or_name>`).
+        * New search parameter *tissue_id* in `/api/score/search` and `/api/dataset/search`.
+        * New field **tissue** in the Score schemas (`/api/score/` endpoints), containing the mapped tissue ontology (identifier, label, description)
+
+      * <span class="badge badge-pill">1.0</span> - January 2025:
+        * First version of the OmicsPred REST API
+    </div>
+
+    ---
   license:
     name: 'Apache 2.0'
     url: https://www.apache.org/licenses/LICENSE-2.0.html
@@ -25,6 +99,8 @@ tags:
     description: "Dataset metadata (name, publication, platform, samples, ...)"
   - name: "Platform endpoints"
     description: "Platform metadata (name, type, version, technic, ...)"
+  - name: "Tissue endpoints"
+    description: "Tissue ontology information (name, label, description, ...)"
   - name: "Sample/Cohort endpoints"
     description: Sample metadata (number of individuals, ancestry, cohorts)
   - name: "Omics endpoints"
@@ -139,31 +215,73 @@ components:
               example: ['European','South Asian']
 
 
-    # Trait #
-    EFO:
+    # Dataset #
+    Dataset:
       type: object
-      description: "Structure containing information about a Trait. Mainly extracted from the Experimental Factor Ontology (EFO)."
+      description: "Structure containing information about a Dataset (EXCEPT the linked Publication information)"
       properties:
-        id:
+        name:
           type: string
-          description: "A trait identifier that links to an Ontology (e.g. EFO)"
-          example: "'UBERON_0001969"
-        label:
+          description: "Dataset name"
+          example: "UKB European"
+        platform:
+          $ref: '#/components/schemas/Platform'
+        scores_count:
+          type: integer
+          description: "Number of scores linked with the platform"
+          example: 2384
+        omics_type:
           type: string
-          description: "Trait label/name"
-          example: "blood plasma"
-        description:
-          type: string
-          description: "Detailed description of the trait."
-          example: "The liquid component of blood, in which erythrocytes are suspended.."
-        url:
-          type: string
-          description: "External link to the Ontology entry"
-          example: "http://purl.obolibrary.org/obo/UBERON_0001969"
-        type:
-          type: string
-          description: "Type of trait"
-          example: "tissue"
+          description: "Type of molecular trait detected by the platform"
+          example: "protein"
+        omics_count:
+          type: integer
+          description: "Number of molecular trait detected by the platform"
+          example: 2384
+        tissue:
+          $ref: '#/components/schemas/Tissue'
+        samples_training:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+        samples_validation:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+        scoring_files_urls:
+          type: array
+          items:
+            type: object
+            properties:
+              gwas_sumstats:
+                type: string
+                description: "GWAS summary stats file"
+                example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
+              scoring_files:
+                type: string
+                description: "Scoring files"
+                example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
+              score_variant_info:
+                type: string
+                description: "Variant information file"
+                example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
+              validation_results:
+                type: string
+                description: "PGS performance metrics"
+                example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
+              scoring_files_pgsc_calc:
+                type: string
+                description: "Scoring files - pgsc_calc compatible"
+                example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
+
+    Dataset_extended:
+      description: "Based on the **Dataset** schema, with the addition of the '**publication**'."
+      allOf:
+        - $ref: '#/components/schemas/Dataset'
+        - type: object
+          properties:
+            publication:
+              $ref: '#/components/schemas/Publication'
 
 
     # Error message #
@@ -180,9 +298,9 @@ components:
 
 
     # Gene #
-    Gene:
+    Gene_basic:
       type: object
-      description: "Structure containing information about a Gene."
+      description: "Basic structure containing information about a Gene."
       properties:
         name:
           type: string
@@ -192,26 +310,33 @@ components:
           type: string
           description: "Gene ID"
           example: "ENSG00000165953"
-        external_id_source:
-          type: string
-          description: "Source of the Gene ID"
-          example: "Ensembl"
-        synonyms:
-          type: array
-          description: "Gene synonym(s)"
-          items:
-            type: string
-            example: 'IL27B'
-        descriptions:
-          type: array
-          items:
-            type: string
-          description: "Gene descriptions/definitions"
-          example: ['serpin family A member 12.']
-        biotype:
-          type: string
-          description: "Biotype of the gene"
-          example: "protein_coding"
+
+    Gene:
+      description: "Structure containing information about a Gene."
+      allOf:
+        - $ref: '#/components/schemas/Gene_basic'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Gene ID"
+              example: "Ensembl"
+            synonyms:
+              type: array
+              description: "Gene synonym(s)"
+              items:
+                type: string
+                example: 'IL27B'
+            descriptions:
+              type: array
+              items:
+                type: string
+              description: "Gene descriptions/definitions"
+              example: ['serpin family A member 12.']
+            biotype:
+              type: string
+              description: "Biotype of the gene"
+              example: "protein_coding"
 
     Gene_extended:
       description: "Based on the **Gene** schema, with the addition of the '**pathways**'."
@@ -225,22 +350,11 @@ components:
               items:
                 $ref: '#/components/schemas/Pathway'
 
-    GeneScoresCount:
-      description: "Based on the **Gene** schema, with the addition of the '**scores_count**'."
-      allOf:
-        - $ref: '#/components/schemas/Gene'
-        - type: object
-          properties:
-            scores_count:
-              type: integer
-              description: "Number of scores linked to the gene."
-              example: 10
-
 
     # Metabolite #
-    Metabolite:
+    Metabolite_basic:
       type: object
-      description: "Structure containing information about a Metabolite."
+      description: "Basic structure containing information about a Metabolite."
       properties:
         name:
           type: string
@@ -250,28 +364,35 @@ components:
           type: string
           description: "Metabolite ID"
           example: "CHEBI_25017"
-        external_id_source:
-          type: string
-          description: "Source of the Metabolite ID"
-          example: "ChEBI"
-        synonyms:
-          type: array
-          description: "Metabolite synonym(s)"
-          items:
-            type: string
-            example: "Hleu"
-        xrefs:
-          type: array
-          description: "Metabolite external reference(s)"
-          items:
-            type: object
-            properties:
-              name:
+
+    Metabolite:
+      description: "Structure containing information about a Metabolite."
+      allOf:
+        - $ref: '#/components/schemas/Metabolite_basic'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Metabolite ID"
+              example: "ChEBI"
+            synonyms:
+              type: array
+              description: "Metabolite synonym(s)"
+              items:
                 type: string
-                example: "C16439"
-              source:
-                type: string
-                example: "KEGG COMPOUND"
+                example: "Hleu"
+            xrefs:
+              type: array
+              description: "Metabolite external reference(s)"
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "C16439"
+                  source:
+                    type: string
+                    example: "KEGG COMPOUND"
 
     Metabolite_extended:
       description: "Based on the **Metabolite** schema, with the addition of the '**description**' and '**pathways**'."
@@ -290,17 +411,6 @@ components:
               description: "List of pathways linked to the gene."
               items:
                 $ref: '#/components/schemas/Pathway'
-
-    MetaboliteScoresCount:
-      description: "Based on the **Metabolite** schema, with the addition of the '**scores_count**'."
-      allOf:
-        - $ref: '#/components/schemas/Metabolite'
-        - type: object
-          properties:
-            scores_count:
-              type: integer
-              description: "Number of scores linked to the metabolite."
-              example: 10
 
 
     # Metric #
@@ -329,22 +439,22 @@ components:
 
 
     #  Molecular Trait #
-    MolecularTraitApplications:
-      description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
-      type: object
-      properties:
-        name:
-          type: string
-          description: "Protein name"
-          example: "Serpin A12"
-        external_id:
-          type: string
-          description: "Protein ID"
-          example: "Q8IW75"
-        type:
-          type: string
-          description: "Type of molecular trait"
-          example: "protein"
+    # MolecularTraitApplications:
+    #   description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       description: "Protein name"
+    #       example: "Serpin A12"
+    #     external_id:
+    #       type: string
+    #       description: "Protein ID"
+    #       example: "Q8IW75"
+    #     type:
+    #       type: string
+    #       description: "Type of molecular trait"
+    #       example: "protein"
 
 
     # Pagination #
@@ -470,49 +580,9 @@ components:
               $ref: '#/components/schemas/Sample'
             platform:
               $ref: '#/components/schemas/Platform'
-            efo:
-              $ref: '#/components/schemas/EFO'
+            tissue:
+              $ref: '#/components/schemas/Tissue'
         - $ref: '#/components/schemas/Performance'
-
-      # type: object
-      # description: "Performance Metric of a score"
-      # properties:
-      #   id:
-      #     type: integer
-      #     description: "Internal ID"
-      #     example: 1
-      #   associated_opgs_id:
-      #     type: string
-      #     description: "Associated OmicsPred Score ID"
-      #     example: "OPGS002402"
-      #   publication:
-      #     $ref: '#/components/schemas/Publication'
-      #   sample:
-      #     $ref: '#/components/schemas/Sample'
-      #   platform:
-      #     $ref: '#/components/schemas/Platform'
-      #   efo:
-      #     $ref: '#/components/schemas/EFO'
-      #   performance_metrics:
-      #     type: array
-      #     description: "List of associated performance metrics"
-      #     items:
-      #       $ref: '#/components/schemas/Metrics'
-      #   cohort_label:
-      #     type: string
-      #     description: "Name of the cohort used to calculate the performance metric"
-      #     example: "INTERVAL"
-      #   evaluation_type:
-      #     type: string
-      #     description: "Type of evaluation performed"
-      #     example: "Training"
-      #   performance_additional:
-      #     description: "Additional information about the performance metric"
-      #     example: "Performed on 308 genes"
-      #   covariates:
-      #     type: string
-      #     description: "Covariates used in the prediction model to evaluate the PGS."
-      #     example: "Age, sex and the first 10 genetic principal components"
 
 
     # Phenotype #
@@ -603,79 +673,10 @@ components:
               example: 2384
 
 
-    # Dataset #
-    Dataset:
-      type: object
-      description: "Structure containing information about a Dataset (EXCEPT the linked Publication information)"
-      properties:
-        name:
-          type: string
-          description: "Dataset name"
-          example: "UKB European"
-        platform:
-          $ref: '#/components/schemas/Platform'
-        scores_count:
-          type: integer
-          description: "Number of scores linked with the platform"
-          example: 2384
-        omics_type:
-          type: string
-          description: "Type of molecular trait detected by the platform"
-          example: "protein"
-        omics_count:
-          type: integer
-          description: "Number of molecular trait detected by the platform"
-          example: 2384
-        tissue:
-          $ref: '#/components/schemas/EFO'
-        samples_training:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sample'
-        samples_validation:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sample'
-        scoring_files_urls:
-          type: array
-          items:
-            type: object
-            properties:
-              gwas_sumstats:
-                type: string
-                description: "GWAS summary stats file"
-                example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
-              scoring_files:
-                type: string
-                description: "Scoring files"
-                example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
-              score_variant_info:
-                type: string
-                description: "Variant information file"
-                example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
-              validation_results:
-                type: string
-                description: "PGS performance metrics"
-                example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
-              scoring_files_pgsc_calc:
-                type: string
-                description: "Scoring files - pgsc_calc compatible"
-                example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
-
-    Dataset_extended:
-      description: "Based on the **Dataset** schema, with the addition of the '**publication**'."
-      allOf:
-        - $ref: '#/components/schemas/Dataset'
-        - type: object
-          properties:
-            publication:
-              $ref: '#/components/schemas/Publication'
-
-
     # Protein #
-    Protein:
+    Protein_basic:
       type: object
-      description: "Structure containing information about a Protein."
+      description: "Basic structure containing information about a Protein."
       properties:
         name:
           type: string
@@ -685,22 +686,29 @@ components:
           type: string
           description: "Protein ID"
           example: "Q8IW75"
-        external_id_source:
-          type: string
-          description: "Source of the Protein ID"
-          example: "UniProt"
-        synonyms:
-          type: array
-          description: "Protein synonym(s)"
-          items:
-            type: string
-            example: 'Visceral adipose-specific serpin'
-        descriptions:
-          type: array
-          items:
-            type: string
-          description: "Protein descriptions/definitions"
-          example: ['Adipokine that modulates insulin action by specifically inhibiting its target protease KLK7 in white adipose tissues.']
+
+    Protein:
+      description: "Structure containing information about a Protein."
+      allOf:
+        - $ref: '#/components/schemas/Protein_basic'
+        - type: object
+          properties:
+            external_id_source:
+              type: string
+              description: "Source of the Protein ID"
+              example: "UniProt"
+            synonyms:
+              type: array
+              description: "Protein synonym(s)"
+              items:
+                type: string
+                example: 'Visceral adipose-specific serpin'
+            descriptions:
+              type: array
+              items:
+                type: string
+              description: "Protein descriptions/definitions"
+              example: ['Adipokine that modulates insulin action by specifically inhibiting its target protease KLK7 in white adipose tissues.']
 
     Protein_extended:
       description: "Based on the **Protein** schema, with the addition of the '**gene**' and '**pathways**'."
@@ -828,10 +836,7 @@ components:
           type: string
           description: "Any additional description about the samples and what they were used for that is not captured by the structured categories (e.g. sub-cohort information)."
           example: "Phase 1"
-        # tissue_name:
-        #   type: string
-        #   description: "Name of the sample tissue (if available)."
-        #   example: "Blood"
+
 
     # Sample Applications #
     SampleApplications:
@@ -862,41 +867,6 @@ components:
           type: integer
           description: "Standard deviation of the mean age in the sample population"
           example: 8.01
-
-    # SampleApplicationsLegacy:
-    #   type: object
-    #   description: "Structure containing information about a SampleAppliction - Legacy schema"
-    #   properties:
-    #     sample_number:
-    #       type: integer
-    #       description: "Number of participants in the sample"
-    #       example: 403874
-    #     sample_cases:
-    #       type: integer
-    #       description: "Number of cases in the sample"
-    #       example: 723
-    #     sample_percent_female:
-    #       type: number
-    #       description: "Percentage of female participants"
-    #       example: 54.0
-    #     sample_age:
-    #       type: integer
-    #       description: "Mean age in the sample population"
-    #       example: 53.8
-    #     sample_age_sd:
-    #       type: integer
-    #       description: "Standard deviation of the mean age in the sample population"
-    #       example: 8.01
-    #     phenotype:
-    #       $ref: '#/components/schemas/Phenotype'
-    #     platform_counts:
-    #       type: object
-    #       description: "List and count the number of platforms that have been using the sample."
-    #       additionalProperties:
-    #         type: integer
-    #       example:
-    #         SomaScan: 1
-    #         Olink: 1
 
 
     # Score #
@@ -936,6 +906,8 @@ components:
           $ref: '#/components/schemas/Publication'
         platform:
           $ref: '#/components/schemas/Platform'
+        tissue:
+          $ref: '#/components/schemas/Tissue'
         genes:
           type: array
           items:
@@ -1084,10 +1056,22 @@ components:
               type: number
               description: "False Discovery Rate adjusted P-value"
               example: 0.0404
-        molecular_traits:
+        genes:
           type: array
           items:
-            $ref: '#/components/schemas/MolecularTraitApplications'
+            $ref: '#/components/schemas/Gene_basic'
+        proteins:
+          type: array
+          items:
+            $ref: '#/components/schemas/Protein_basic'
+        metabolites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metabolite_basic'
+        # molecular_traits:
+        #   type: array
+        #   items:
+        #     $ref: '#/components/schemas/MolecularTraitApplications'
 
 
     # Score - Molecular Trait #
@@ -1176,6 +1160,45 @@ components:
         #         type: string
         #         example: "Human Disease Ontology"
 
+    # Tissue #
+    Tissue:
+      type: object
+      description: "Structure containing information about a Tissue. Mainly extracted from the EMBL-EBI Ontology Lookup Service (OLS)."
+      properties:
+        id:
+          type: string
+          description: "An identifier that links to an Ontology (e.g. UBERON)"
+          example: "'UBERON_0001969"
+        label:
+          type: string
+          description: "Tissue label/name"
+          example: "blood plasma"
+        description:
+          type: string
+          description: "Detailed description of the trait."
+          example: "The liquid component of blood, in which erythrocytes are suspended.."
+        url:
+          type: string
+          description: "External link to the Ontology entry"
+          example: "http://purl.obolibrary.org/obo/UBERON_0001969"
+        type:
+          type: string
+          description: "Type of trait"
+          example: "tissue"
+
+    TissueScoresCount:
+      description: "Based on the **Tissue** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Tissue'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores linked to the tissue."
+              example: 10
+
+
+    # Transcript #
     Transcript:
       type: object
       description: "Structure containing information about a Transcript."
@@ -1960,7 +1983,7 @@ paths:
           * Publication information
           * Sample information (including the associated cohort(s))
           * Platform information
-          * EFO/Trait information
+          * Tissue information
           * Performance Metric(s)
 
         Example of request:
@@ -2051,7 +2074,7 @@ paths:
           * Publication information
           * Sample information (including the associated cohort(s))
           * Platform information
-          * EFO/Trait information
+          * Tissue information
           * Performance Metric(s)
 
         Examples of request:
@@ -2366,6 +2389,7 @@ paths:
   #         * Dataset name
   #         * Publication information
   #         * Platform information
+  #         * Tissue information
   #         * Reported molecular trait(s)
   #         * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
   #         * Variants number
@@ -2457,6 +2481,7 @@ paths:
           * Dataset name
           * Publication information
           * Platform information
+          * Tissue information
           * Reported molecular trait(s)
           * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
             * with pathways **[** only when the parameter **include_pathway** is set to **1** **]**
@@ -2517,7 +2542,7 @@ paths:
         - "Score endpoints"
       operationId: searchScores
       description: |
-        Search OmicsPred Genetic Score(s) by OmicsPred Score ID, PubMed ID and/or platform.
+        Search OmicsPred Genetic Score(s) by OmicsPred Score ID, PubMed ID, tissue ID, cohort and/or platform.
 
         Each result includes:
           * Score ID and name
@@ -2525,6 +2550,7 @@ paths:
           * Dataset name
           * Publication information
           * Platform information
+          * Tissue information
           * Reported molecular trait(s)
           * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
           * Variants number
@@ -2574,6 +2600,19 @@ paths:
               value: 'Olink'
             Nightingale:
               value: 'Nightingale'
+        - name: tissue_id
+          in: query
+          required: false
+          description: A tissue ID.
+          schema:
+            type: string
+          examples:
+            cohort_sel:
+              summary: Select an example or type a tissue ID - click on 'Try it out' first
+            UBERON_0001969:
+              value: 'UBERON_0001969'
+            BTO_0000133:
+              value: 'BTO_0000133'
         - name: cohort
           in: query
           required: false
@@ -2646,6 +2685,7 @@ paths:
           * Dataset name
           * Publication information
           * Platform information
+          * Tissue information
           * Reported molecular trait(s)
           * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
           * Variants number
@@ -2735,6 +2775,7 @@ paths:
           * Dataset name
           * Publication information
           * Platform information
+          * Tissue information
           * Reported molecular trait(s)
           * Mapped molecular trait(s): Gene(s), Transcript(s), Protein(s) and Metabolite(s)
           * Variants number
@@ -2968,7 +3009,9 @@ paths:
         - "Dataset endpoints"
       operationId: searchDataset
       description: |
-        Retrieve all the datasets associated with a platform, including:
+        Retrieve all the datasets associated with a platform, PubMed ID and/or a tissue ID.
+
+        Each result includes:
           * Dataset name
           * Publication information
           * Platform information
@@ -3009,6 +3052,19 @@ paths:
             value: 'Olink'
           Nightingale:
             value: 'Nightingale'
+      - name: tissue_id
+        in: query
+        required: false
+        description: A tissue ID.
+        schema:
+          type: string
+        examples:
+          cohort_sel:
+            summary: Select an example or type a tissue ID - click on 'Try it out' first
+          UBERON_0001969:
+            value: 'UBERON_0001969'
+          BTO_0000133:
+            value: 'BTO_0000133'
       responses:
         '200':
           content:
@@ -3028,6 +3084,95 @@ paths:
             ---
 
             __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Tissue endpoints ##
+  /api/tissue/all:
+    get:
+      tags:
+        - "Tissue endpoints"
+      operationId: getAllTissues
+      description: |
+        Retrieve all the Tissues in OmicsPred, including for each of them:
+          * Tissue ontology ID and label
+          * Description
+          * URL to ontology record
+          * Type (e.g. tissue)
+          * Number of Genetic Scores
+
+        Examples of request:
+        ```
+        - https://rest.omicspred.org/api/tissue/all
+        ```
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List all the Tissues"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TissueScoresCount'
+          description: |
+            List all the Tissues in OmicsPred
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /api/tissue/{tissue_id}:
+    get:
+      tags:
+        - "Tissue endpoints"
+      operationId: getTissue
+      description: |
+        Retrieve the Tissue information, including:
+          * Tissue ontology ID and label
+          * Description
+          * URL to ontology record
+          * Type (e.g. tissue)
+          * Number of Genetic Scores
+
+        Examples of request:
+        ```
+        - https://rest.omicspred.org/api/tissue/UBERON_0001969
+        ```
+      parameters:
+        - name: tissue_id
+          in: path
+          required: true
+          description: 'Tissue ID or tissue label'
+          examples:
+            "UBERON_0001969":
+              value: 'UBERON_0001969'
+            "blood plasma":
+              value: 'blood plasma'
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TissueScoresCount'
+          description: 'Tissue ontology information'
         '4XX':
           content:
               application/json:
@@ -3166,7 +3311,7 @@ paths:
         Retrieve all the Phenotype Score associations, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s)
+          * Linked molecular trait(s) (genes, proteins and metabolites)
           * Platform information
           * Cohort information
           * Associated performances
@@ -3235,7 +3380,7 @@ paths:
         Retrieve all the Phenotype Score associations for a given Score ID, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s)
+          * Linked molecular trait(s) (genes, proteins and metabolites)
           * Platform information
           * Cohort information
           * Associated performances
@@ -3293,7 +3438,7 @@ paths:
         Each result includes:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s)
+          * Linked molecular trait(s) (genes, proteins and metabolites)
           * Platform information
           * Cohort information
           * Associated performances
@@ -3302,7 +3447,7 @@ paths:
         ```
         - https://rest.omicspred.org/api/applications_score/search?phenotype_id=250.2
         - https://rest.omicspred.org/api/applications_score/search?pmid=36991119
-        - https://rest.omicspred.org/api/applications_score/search?pmid=36991119&molecular_trait_id=COL1A1
+        - https://rest.omicspred.org/api/applications_score/search?pmid=36991119&molecular_trait=COL1A1
         ```
       parameters:
         - name: opgs_id
@@ -3343,15 +3488,15 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
-        - name: molecular_trait_id
+        - name: molecular_trait
           required: false
           in: query
-          description: Molecular trait ID - *optional*
+          description: Molecular trait name or ID (gene, protein or metabolite) - *optional*
           schema:
             type: string
           examples:
               mt_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
+                summary: Select an example or type a name/ID - click on 'Try it out' first
               mt_1:
                 summary: "Gene COL1A1"
                 value: "COL1A1"

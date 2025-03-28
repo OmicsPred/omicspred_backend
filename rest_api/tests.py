@@ -1,7 +1,10 @@
 from rest_framework.test import APITestCase
 from django.conf import settings
 import re
+from time import sleep
 
+
+sleep_time = 60
 
 class BrowseEndpointTest(APITestCase):
     """ Test the REST endpoints """
@@ -11,7 +14,7 @@ class BrowseEndpointTest(APITestCase):
     databases = {'default', 'applications'}
 
     # Change throttle rates for the tests
-    rate4test = '200/min'
+    rate4test = '300/min'
     settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = { 'anon': rate4test, 'user': rate4test }
 
     # Base URL of the server
@@ -22,19 +25,21 @@ class BrowseEndpointTest(APITestCase):
 
     # Data example
     filter_ids = 'filter_ids'
-    cohorts_list = ['INTERVAL','UKB']
-    publications_list = ['36991119','123456']
+    cohorts_list = ['INTERVAL', 'UKB']
+    publications_list = ['36991119', '123456']
 
-    platforms_list_proteomics = ['Somalogic','Olink']
+    platforms_list_proteomics = ['Somalogic', 'Olink']
     platforms_list_metabolomics = ['Metabolon']
     platforms_list_transcriptomics = ['Illumina RNAseq']
     platforms_list = [*platforms_list_proteomics,*platforms_list_metabolomics,*platforms_list_transcriptomics]
-    scores_list = ['OPGS000005','OPGS002385','OPGS003006']
+    scores_list = ['OPGS000005', 'OPGS002385', 'OPGS003006']
     genes_list = ['FCGR2B']
     proteins_list = ['P31994']
     metabolites_list = ['CHEBI_16113']
-    pathways_list = ['R-HSA-191273','R-HSA-198933']
-    phenotypes_list = ['555.2','250','278.1']
+    pathways_list = ['R-HSA-191273', 'R-HSA-198933']
+    phenotypes_list = ['555.2','250', '278.1']
+    tissue_ids_list = ['UBERON_0001969', 'BTO_0000133']
+    tissue_labels_list = ['blood plasma', 'blood serum']
 
     index_result_mutliplicity = 2
     index_example = 3
@@ -46,8 +51,10 @@ class BrowseEndpointTest(APITestCase):
     search_opgs_id = f'opgs_id={scores_list[0]}'
     search_phenotype = f'phenotype_id={phenotypes_list[0]}'
     search_gene = f'gene={genes_list[0]}'
-    seach_mt = f'molecular_trait_id={proteins_list[0]}'
+    seach_mt = f'molecular_trait={proteins_list[0]}'
     search_combined = f'{search_opgs_id}&{search_pmid}'
+
+    omics_common_columns = ['id', 'trait_reported_id', 'trait_reported', 'variants_number', 'dataset__publication', 'dataset__platform__version', 'dataset__name']
 
     # Tuple: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples* )
     endpoints = [
@@ -91,6 +98,10 @@ class BrowseEndpointTest(APITestCase):
         # Platform endpoints
         ('Platforms', 'platform/all', 1),
         ('Platform/Name', 'platform', 0, {'path': platforms_list}),
+        # Tissue endpoints
+        ('Tissues', 'tissue/all', 1),
+        ('Tissue/ID', 'tissue', 0, {'path': tissue_ids_list}),
+        ('Tissue/label', 'tissue', 0, {'path': tissue_labels_list}),
 
         # Applications
         ('Phenotype', 'phenotype', 0, {'path': phenotypes_list}),
@@ -187,9 +198,47 @@ class BrowseEndpointTest(APITestCase):
     )
 
 
+    endpoints_with_sorting_param = (
+        (
+            'Metabolomics', f'metabolomics/{platforms_list_metabolomics[0]}',
+            [*omics_common_columns, 'metabolites__name', 'metabolites__external_id']
+        ),
+        (
+            'Proteomics', f'proteomics/{platforms_list_proteomics[0]}',
+            [*omics_common_columns, 'proteins__name', 'proteins__external_id', 'genes__name']
+        ),
+        (
+            'Transcriptomics', f'transcriptomics/{platforms_list_transcriptomics[0]}',
+            [*omics_common_columns, 'genes__name', 'genes__external_id']
+        ),
+        (
+            'Scores', f'score/all',
+            ['id', 'genes__name', 'proteins__external_id', 'metabolites__external_id', 'dataset__platform__platform_master__type', 'dataset__platform__platform_master__name', 'dataset__publication__firstauthor']
+        ),
+        (
+            'ScoreApplications', f'applications_score/all',
+            ['phenotype_id', 'phenotype_name', 'phenotype__category', 'score_id', 'cohort', 'platform__platform_master__type', 'platform__name', 'genes__name', 'proteins__name', 'metabolites__name', 'hr', 'fdr']
+        ),
+        (
+            'SampleApplications', f'applications_sample/all',
+            ['phenotype_id', 'phenotype_name', 'phenotype__category', 'sample_age', 'sample_cases', 'sample_percent_female']
+        ),
+    )
+
+
+    def client_response(self,url:str):
+        resp = self.client.get(url)
+        # In case the number of REST API calls is too high (i.e. greater than the modified 'rate4test' variable)
+        if resp.status_code == 429:
+            print(f"\nNeed to put the test on sleep for {sleep_time}s as it reaches the maximum number of calls/min.\nMight be worth increasing the value of the 'rate4test' variable (currently {self.rate4test}).")
+            sleep(sleep_time)
+            resp = self.client.get(url)
+        return resp
+
+
     def check_response(self,url:str,is_included:int,path_structure:list,included_key:str):
         """ Check that the response contains (or not) the 'included_key' item/data """
-        resp = self.client.get(f'{url}={is_included}')
+        resp = self.client_response(f'{url}={is_included}')
         # Get releavant data content
         content = resp.data
         tmp_content_keys = content.keys()
@@ -213,13 +262,13 @@ class BrowseEndpointTest(APITestCase):
     def check_filter_ids(self,url:str,ids_list:list):
         """ Compare the number of results with the number of IDs provided in the filter_ids parameter """
         ids_list_string = ",".join(ids_list)
-        resp = self.client.get(f'{url}?filter_ids={ids_list_string}')
+        resp = self.client_response(f'{url}?filter_ids={ids_list_string}')
         self.assertEqual(len(resp.data['results']), len(ids_list))
 
 
     def send_request(self, url:str):
         """ Send REST API request and check the reponse status code """
-        resp = self.client.get(url)
+        resp = self.client_response(url)
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode("utf-8")
         for empty_content in self.empty_resp:
@@ -228,28 +277,28 @@ class BrowseEndpointTest(APITestCase):
 
     def get_empty_response(self, url:str, index:int):
         """ Send REST API request and check the reponse status code """
-        resp = self.client.get(url)
+        resp = self.client_response(url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content.decode("utf-8"), self.empty_resp[index])
 
 
     def get_not_found_response(self, url:str):
         """ Send REST API request on non existing endpoint and check reponse status code """
-        resp = self.client.get(url)
+        resp = self.client_response(url)
         self.assertEqual(resp.status_code, 404)
 
 
     def get_paginated_response(self, url:str):
         """ Send REST API request with limit and offset parameters, and check the reponse status code """
-        resp = self.client.get(url+'?limit=20&offset=20')
+        resp = self.client_response(url+'?limit=20&offset=20')
         self.assertEqual(resp.status_code, 200)
 
 
     def test_endpoints(self):
         """ Test the status code of each endpoint """
+        print("\n>> Test the status code of each endpoint ")
         for endpoint in self.endpoints:
             url_endpoint = self.server+endpoint[1]
-
             if len(endpoint) > self.index_example:
                 # Endpoint with parameter within the URL path
                 if ('path' in endpoint[self.index_example]):
@@ -270,8 +319,8 @@ class BrowseEndpointTest(APITestCase):
 
 
     def test_endpoints_with_slash(self):
-
         """ Test the status code of each endpoint, with a trailing slash """
+        print("\n>> Test the status code of each endpoint, with a trailing slash ")
         for endpoint in self.endpoints:
             url_endpoint = self.server+endpoint[1]+'/'
 
@@ -296,6 +345,7 @@ class BrowseEndpointTest(APITestCase):
 
     def test_empty_endpoints(self):
         """ Test the status code and empty response of each endpoint listed above """
+        print("\n>> Test the status code and empty response of each endpoint")
         for endpoint in self.endpoints:
             url_endpoint = self.server+endpoint[1]+'/'
             ex = None
@@ -324,11 +374,13 @@ class BrowseEndpointTest(APITestCase):
 
     def test_endpoint_not_found(self):
         """ Test an endpoint that doens't exist """
+        print("\n>> Test an endpoint that doens't exist")
         self.get_not_found_response(self.server+'chocolate')
 
 
     def test_endpoint_with_include_flag(self):
         """ Test the 'include flag' used on some of the endpoints """
+        print("\n>> Test the 'include flag' used on some of the endpoints")
         for endpoint in self.endpoints_with_include_flag:
             url_endpoint = self.server+endpoint[1]
             query_list = endpoint[self.index_example]['query']
@@ -345,6 +397,17 @@ class BrowseEndpointTest(APITestCase):
 
     def test_endpoint_with_filter_ids_param(self):
         """ Test the 'filter_ids' parameter used on some of the endpoints """
+        print("\n>> Test the 'filter_ids' parameter used on some of the endpoints")
         for endpoint in self.endpoints_with_filter_ids:
             url_endpoint = self.server+endpoint[1]
             self.check_filter_ids(url_endpoint,endpoint[2])
+
+
+    def test_endpoint_with_sorting_param(self):
+        """ Test the 'sort_field' parameter used on some of the endpoints """
+        print("\n>> Test the 'sort_field' parameter used on some of the endpoints")
+        for endpoint in self.endpoints_with_sorting_param:
+            url_endpoint = self.server+endpoint[1]
+            for column in endpoint[2]:
+                sorting_endpoint = url_endpoint+'?sort=asc&sort_field='+column
+                self.send_request(sorting_endpoint)

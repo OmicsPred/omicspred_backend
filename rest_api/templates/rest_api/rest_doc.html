@@ -144,7 +144,7 @@
           models_to_remove = ['Pagination','Error_4XX','ScoreOmics'];
           var schema_obj = document.getElementsByClassName("json-schema-2020-12__title");
           for (var i = 0; i < schema_obj.length; i++) {
-            for (j=0;j<models_to_remove.length;j++) {
+            for (var j = 0;j < models_to_remove.length; j++) {
               var element = schema_obj[i];
               if (element) {
                 if (element.textContent == models_to_remove[j]) {
@@ -183,6 +183,41 @@
             var query_val = search_input.value;
             if (query_val && query_val != '') {
               window.location.href = "https://www.omicspred.org/search?q="+query_val.toString();
+            }
+          }
+          // Toggle buttons
+          var button_ids = ['pagination', 'rate_limit', 'changelog'];
+          for (var i=0; i < button_ids.length; i++){
+            let btn_id = button_ids[i];
+            console.log(btn_id);
+            // Content container
+            let btn_div_container = document.getElementById('content_'+btn_id);
+            btn_div_container.classList.add('toggle_content');
+            btn_div_container.style.display='none';
+            // Toggle button
+            let btn_to_toggle = document.getElementById(btn_id);
+            btn_to_toggle.classList.add('toggle_btn','btn_plus');
+            btn_to_toggle.addEventListener("click", function (event) {
+              toggle_btn(btn_to_toggle, btn_div_container);
+            });
+          }
+
+          function toggle_btn(element, btn_div_container) {
+
+            var plus_btn_class = "btn_plus";
+            var minus_btn_class = "btn_minus";
+
+            if (element.classList.contains(plus_btn_class)) {
+              console.log("Clicked - expand "+element.id);
+              element.classList.remove(plus_btn_class);
+              element.classList.add(minus_btn_class);
+              btn_div_container.style.display = "block";
+            }
+            else {
+              console.log("Clicked - collapse "+element.id);
+              element.classList.remove(minus_btn_class);
+              element.classList.add(plus_btn_class);
+              btn_div_container.style.display = "none";
             }
           }
         }, 100);
