@@ -44,23 +44,24 @@ class PerformanceData(GenericData):
         self.data['dataset'] = dataset_model
 
 
-    def add_metric(self,metric_values):
+    def add_metrics(self,metrics_data):
         '''
-        Method creating MetricData objects and add them to the metrics array.
+        Method adding MetricData objects to the metrics array.
         '''
-        for metric_type in metric_values.keys():
-            metric_val = None
-            pvalue_val = None
-            if 'pvalue' not in metric_type:
-                pval_col = f'{metric_type}_pvalue'
-                if pval_col in metric_values.keys():
-                    if metric_values[pval_col] not in [None,np.nan,'nan','']:
-                        pvalue_val = metric_values[pval_col]
-                if metric_values[metric_type] not in [None,np.nan,'nan','']:
-                    metric_val = metric_values[metric_type]
-                if metric_val != None:
-                    metric_data = MetricData(metric_type,metric_val,pvalue_val)
-                    self.metrics.append(metric_data)
+        self.metrics = metrics_data
+        # for metric_type in metric_values.keys():
+        #     metric_val = None
+        #     pvalue_val = None
+        #     if 'pvalue' not in metric_type:
+        #         pval_col = f'{metric_type}_pvalue'
+        #         if pval_col in metric_values.keys():
+        #             if metric_values[pval_col] not in [None,np.nan,'nan','']:
+        #                 pvalue_val = metric_values[pval_col]
+        #         if metric_values[metric_type] not in [None,np.nan,'nan','']:
+        #             metric_val = metric_values[metric_type]
+        #         if metric_val != None:
+        #             metric_data = MetricData(metric_type,metric_val,pvalue_val)
+        #             self.metrics.append(metric_data)
 
 
     def get_cohort_label(self, sample_model:Sample) -> str:

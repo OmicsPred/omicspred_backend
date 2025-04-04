@@ -17,7 +17,9 @@ class MetadataTemplate():
     # empty_template = './imports/templates/OmicsPred_Submission_Template.xlsx'
     loc_schema = f'./imports/templates/TemplateColumns2Models.xlsx'
 
-    def __init__(self, file_loc):
+    default_license = 'Creative Commons Attribution 4.0 International (CC BY 4.0)'
+
+    def __init__(self, file_loc:str, license:str=None):
         self.file_loc = file_loc
         self.parsed_publication = None
         self.parsed_scores = {}
@@ -32,6 +34,9 @@ class MetadataTemplate():
             'Sample': 'Sample Information & Performanc', # <= Might need to fix the missing "e"
             'Cohort': 'Cohort Information'
         }
+        if license:
+            self.license = license if license else self.default_license
+
         self.report = { 'error': {}, 'warning': {}, 'import': {} }
 
 
@@ -56,7 +61,7 @@ class MetadataTemplate():
             self.parsed_publication = list(publication_data.values())[0]
 
             # Score spreadsheet (including Platform and Tissue)
-            score_spreadsheet = ScoreSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Score'],omics_type,self.parsed_publication,dataset_prefix)
+            score_spreadsheet = ScoreSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Score'],omics_type,self.parsed_publication,self.license,dataset_prefix)
             score_spreadsheet.extract_data()
             self.parsed_scores = score_spreadsheet.export_parser_data()
             self.parsed_datasets = score_spreadsheet.export_datasets()
@@ -72,7 +77,6 @@ class MetadataTemplate():
 
 
     def import_curation(self):
-
 
         print("- Import datasets")
         dataset_models = {}

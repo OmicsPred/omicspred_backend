@@ -37,12 +37,50 @@ class SpreadSheet():
         - current_schema: the template, indexed by the "Column"
         Return types: list of Django model, string
         '''
+
+        data_indexes = {
+            "Pearson's correlation__p-value": 0,
+            "Spearman's rank correlation__p-value": 1,
+            'Additional validation performance metrics/details (multiple columns can be applied)': 2
+        }
+        col_label = None
+        col_name = None
         model = None
         field = None
-        if col[1] in current_schema.index:
-            model, field = current_schema.loc[col[1]][:2]
+        col_len = len(col)
+        # Third header
+        if col_len >= 3:
+            if col[2] in current_schema.index:
+                col_name = col[2]
+                col_label = f'{col[1]}__{col[2]}'
+            # Try with 2nd header (sometimes the 3rd header is labelled as "Unnamed...")
+            elif col[1] in current_schema.index:
+                col_name = col[1]
+                col_label = col_name
+        # Second header
+        elif col_len >= 2:
+            if col[1] in current_schema.index:
+                col_name = col[1]
+                col_label = col_name
+                # if col_name in data_indexes.keys():
+                #     data = current_schema.loc[col_name][:2]
+                #     model, field = data.iloc[data_indexes[col_name]][:2]
+        # First header
         elif col[0] in current_schema.index:
-            model, field = current_schema.loc[col[0]][:2]
+            col_name = col[0]
+            col_label = col_name
+            # model, field = current_schema.loc[col[0]][:2]
+            # data = current_schema.loc[col[0]][:2]
+            # print(f'COL0 {col[0]}: {current_schema.loc[col[0]][:2]} <<<')
+            # print(f"DATA: {len(data)}")
+
+        if col_name:
+            # print(f"- COLNAME: {col_label}")
+            if col_label in data_indexes.keys():
+                data = current_schema.loc[col_name][:2]
+                model, field = data.iloc[data_indexes[col_label]][:2]
+            else:
+                model, field = current_schema.loc[col_name][:2]
         return model, field
 
 
@@ -69,7 +107,7 @@ class CohortSpreadSheet(SpreadSheet):
             print(f"\t# Cohort: {cohort_name}")
             # Loop throught the columns
             for col, val in cohort_info.items():
-                m, f = self.get_model_field_from_schema(col,self.spreadsheet_schema)
+                m, f = self.get_model_field_from_schema(col, self.spreadsheet_schema)
                 if m == model:
                     parsed_cohort.add_data(f, val)
             self.parsed_data[cohort_name] = parsed_cohort
@@ -104,11 +142,12 @@ class PublicationSpreadSheet(SpreadSheet):
 
 class ScoreSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str,publication:PublicationData,dataset_prefix:str=''):
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str,publication:PublicationData,license:str,dataset_prefix:str=''):
         super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type,[0, 1])
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
         self.dataset_prefix = dataset_prefix
         self.publication = publication
+        self.license = license
         self.datasets = {}
         self.tissues = {}
 
@@ -121,7 +160,7 @@ class ScoreSpreadSheet(SpreadSheet):
         logger.info(f"Start to parse the {model} spreadsheet")
         # Loop throught the rows (i.e. score)
         for score_name, score_info in self.dataframe.iterrows():
-            parsed_score = ScoreData({'name': score_name})
+            parsed_score = ScoreData({'name': score_name, 'license': self.license})
             print(f"  # SCORE: {score_name}")
             platform_master = None
             tissue = ''
@@ -131,7 +170,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 # print(f"  >> {col}: {val}")
                 if pd.isnull(val) is False:
                     # Map to schema
-                    m, f = self.get_model_field_from_schema(col,self.spreadsheet_schema)
+                    m, f = self.get_model_field_from_schema(col, self.spreadsheet_schema)
                     # print(f"  >> {m}: {f} | {val}")
                     if m == model:
                         parsed_score.add_data(f, val)
@@ -217,7 +256,9 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
         logger.info(f"Start to parse the {model} spreadsheet")
         metric_types = {
             'r score': 'R2',
-            'Rho score': 'Rho'
+            'Rho score': 'Rho',
+            "Pearson's correlation__p-value": 'R2',
+            "Spearman's rank correlation__p-value": 'Rho'
         }
         metric_types_keys = metric_types.keys()
         # Loop throught the rows (i.e. score)
@@ -229,12 +270,11 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
             metric_type = None
             # Loop throught the columns
             for col, val in sample_info.items():
-                # print(f"  >> {col}: {val}")
+                # print(f"SamplePerformanceSpreadSheet  >> {col}: {val}")
                 if pd.isnull(val) is False:
                     # Map to schema
-                    m, f = self.get_model_field_from_schema(col,self.spreadsheet_schema)
-                    # print(f"  >> {m}: {f} | {val}")
-                    # sample_number,ancestry,cohort,percent_male=None,sample_age=None, sample_age_sd=Non
+                    m, f = self.get_model_field_from_schema(col, self.spreadsheet_schema)
+                    # print(f"====> {m}: {f} | {val}")
                     if m == 'Sample':
                         ## WARNING! TEMPORARY CODE TO SKIP sample_age ##
                         if f == 'sample_age':
@@ -250,14 +290,19 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
                             sample_data['cohorts'] = cohorts
                         else:
                             sample_data[f] = val
-                            print(f">> Sample {f}: {val}")
+                            # print(f">> Sample {f}: {val}")
                     elif m == 'Performance':
                         performance_data[f] = val.strip()
                     elif m == 'Metric':
-                        if col in metric_types_keys and f == 'estimate':
-                            metric_type = metric_types[col]
-                            metric_data[metric_type] = { 'name': metric_type, f : val }
+                        # print(f":::> Metric: {col} | {f} | {val}")
+                        if f == 'estimate':
+                            col_len = len(col)
+                            col_label = col[2] if col_len >= 3 else col[1]
+                            if col_label in metric_types_keys:
+                                metric_type = metric_types[col_label]
+                                metric_data[metric_type] = { 'name': metric_type, f : val }
                         elif f == 'pvalue':
+                            # Use metric_type from the estimate in the previous loop iteration
                             metric_data[metric_type][f] = val
 
             # Sample
@@ -268,10 +313,13 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
             for m_type in metric_data.keys():
                 metric = MetricData(metric_data[m_type])
                 metrics.append(metric)
+            # print(f"==> Metrics: {len(metrics)}")
             # Perforance
             performance = PerformanceData(score_name, metrics)
             for p_key, p_val in performance_data.items():
                 performance.add_data(p_key, p_val)
+            performance.add_metrics(metrics)
+            # print(f"==> Performance Metrics: {performance.metrics}")
 
             # Take into account when there are more than 1 performance per score
             if not score_name in self.parsed_data.keys():
