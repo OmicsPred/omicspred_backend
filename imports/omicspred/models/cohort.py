@@ -24,6 +24,7 @@ class CohortData(GenericData):
         name = self.get_data('name_short')
         name_long = self.get_data('name_long')
         try:
+            cohort = None
             if name_long:
                 cohort = Cohort.objects.get(name_short__iexact=name, name_full__iexact=name_long)
             else:
@@ -60,6 +61,7 @@ class CohortData(GenericData):
             with transaction.atomic():
                 self.check_model_exist()
                 if not self.model:
+                    print(f"Cohort {self.name_short}: new model")
                     self.model = Cohort()
                     if 'name_short' in self.data.keys():
                         self.model.name_short=self.data['name_short']
@@ -68,6 +70,8 @@ class CohortData(GenericData):
                     if 'url' in self.data.keys():
                         self.model.url=self.data['url']
                     self.model.save()
+                else:
+                    print(f"Cohort {self.name_short}: existing model")
         except IntegrityError as e:
             self.model = None
             print(f'Error with the creation of the Cohort: {e}')
