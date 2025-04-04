@@ -73,6 +73,9 @@ info:
         * New endpoint `/api/tissue/` (`/api/tissue/all` and `/api/tissue/<tissue_id_or_name>`).
         * New search parameter *tissue_id* in `/api/score/search` and `/api/dataset/search`.
         * New field **tissue** in the Score schemas (`/api/score/` endpoints), containing the mapped tissue ontology (identifier, label, description)
+        * Rename the field **efo** to **tissue** in the Performance endpoints (`/api/performance/`).
+        * Replace the field **molecular_traits** by the fields **genes**, **proteins** and **metabolites** in the Phenotype endpoints (`/api/applications_score/`).
+        * Rename the search parameter *molecular_trait_id* by *molecular_trait* in the Phenotype endpoint `/api/applications_score/search/`.
 
       * <span class="badge badge-pill">1.0</span> - January 2025:
         * First version of the OmicsPred REST API
@@ -3311,7 +3314,7 @@ paths:
         Retrieve all the Phenotype Score associations, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s) (genes, proteins and metabolites)
+          * Linked molecular trait(s): genes, proteins and metabolites
           * Platform information
           * Cohort information
           * Associated performances
@@ -3380,7 +3383,7 @@ paths:
         Retrieve all the Phenotype Score associations for a given Score ID, including for each of them:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s) (genes, proteins and metabolites)
+          * Linked molecular trait(s): genes, proteins and metabolites
           * Platform information
           * Cohort information
           * Associated performances
@@ -3438,7 +3441,7 @@ paths:
         Each result includes:
           * OmicsPred Genetic Score (OPGS) ID
           * Associated phenotype information
-          * Linked molecular trait(s) (genes, proteins and metabolites)
+          * Linked molecular trait(s): genes, proteins and metabolites
           * Platform information
           * Cohort information
           * Associated performances
