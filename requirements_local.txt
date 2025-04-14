@@ -1,6 +1,6 @@
 #### Others ####
 requests==2.32.3
-django-extensions==3.2.3
+django-extensions==4.0
 openpyxl==3.1.5
 
 # For testing only:

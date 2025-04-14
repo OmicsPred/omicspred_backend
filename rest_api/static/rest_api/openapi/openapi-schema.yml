@@ -70,12 +70,23 @@ info:
     <div id="content_changelog">
 
       * <span class="badge badge-pill">1.1</span> - April 2025:
-        * New endpoint `/api/tissue/` (`/api/tissue/all` and `/api/tissue/<tissue_id_or_name>`).
-        * New search parameter *tissue_id* in `/api/score/search` and `/api/dataset/search`.
-        * New field **tissue** in the Score schemas (`/api/score/` endpoints), containing the mapped tissue ontology (identifier, label, description)
-        * Rename the field **efo** to **tissue** in the Performance endpoints (`/api/performance/`).
-        * Replace the field **molecular_traits** by the fields **genes**, **proteins** and **metabolites** in the Phenotype endpoints (`/api/applications_score/`).
-        * Rename the search parameter *molecular_trait_id* by *molecular_trait* in the Phenotype endpoint `/api/applications_score/search/`.
+        * Dataset
+          * Replace the endpoint parameter `/api/dataset/<name>` to `/api/dataset/<opd_id>`.
+          * New field **id** in the Dataset schemas (`/api/dataset/` endpoints), containing the OmicsPred Dataset ID (OPD ID).
+          * New field **dataset_id** in the Score schemas (`/api/score/` endpoints), containing the OmicsPred Dataset ID (OPD ID).
+          * New search parameter *opd_id* in `/api/score/search`.
+        * Molecular trait
+          * Replace the field **molecular_traits** by the fields **genes**, **proteins** and **metabolites** in the Phenotype endpoints (`/api/applications_score/`).
+          * Rename the search parameter *molecular_trait_id* by *molecular_trait* in the Phenotype endpoint `/api/applications_score/search/`.
+        * Publication
+          * The endpoint `/api/publication/` now can use the parameter `pmid` or `opp_id` (`/api/publication/<pmid>` or `/api/publication/<opp_id>`).
+          * New field **id** in the Publication schemas (`/api/publication/` endpoints), containing the OmicsPred Publication ID (OPP ID).
+          * New search parameter *opp_id* in `/api/metabolomics/`, `/api/proteomics/`, `/api/transcriptomics/`, `/api/performance`, `/api/score/search`, `/api/dataset/search` and `/api/applications_score/search`.`
+        * Tissue
+          * New endpoint `/api/tissue/` (`/api/tissue/all` and `/api/tissue/<tissue_id_or_name>`).
+          * New search parameter *tissue_id* in `/api/score/search` and `/api/dataset/search`.
+          * New field **tissue** in the Score schemas (`/api/score/` endpoints), containing the mapped tissue ontology (identifier, label, description)
+          * Rename the field **efo** to **tissue** in the Performance endpoints (`/api/performance/`).
 
       * <span class="badge badge-pill">1.0</span> - January 2025:
         * First version of the OmicsPred REST API
@@ -223,6 +234,10 @@ components:
       type: object
       description: "Structure containing information about a Dataset (EXCEPT the linked Publication information)"
       properties:
+        id:
+          type: string
+          description: "OmicsPred Dataset ID"
+          example: "OPD000001"
         name:
           type: string
           description: "Dataset name"
@@ -524,7 +539,7 @@ components:
             $ref: '#/components/schemas/SuperPathway'
 
     Pathway_extended:
-      description: "Based on the **Pathway** schema, with the addition of the '**genes**' and '**metabolites**'."
+      description: "Based on the **Pathway** schema, with the addition of the '**genes**',  '**proteins**' and '**metabolites**'."
       allOf:
         - $ref: '#/components/schemas/Pathway'
         - type: object
@@ -534,6 +549,11 @@ components:
               description: "Linked gene(s)"
               items:
                 $ref: '#/components/schemas/Gene'
+            proteins:
+              type: array
+              description: "Linked protein(s)"
+              items:
+                $ref: '#/components/schemas/Protein'
             metabolites:
               type: array
               description: "Linked metabolite(s)"
@@ -732,6 +752,10 @@ components:
       type: object
       description: "Structure containing information about a Publication."
       properties:
+        id:
+          type: string
+          description: "OmicsPred Publication ID"
+          example: "OPP000001"
         title:
           type: string
           description: "Publication title"
@@ -901,6 +925,10 @@ components:
           type: string
           description: "A description of the relevant inputs and parameters relevant to the genetic score development method/process."
           example: "P<5x10-8"
+        dataset_id:
+          type: string
+          description: "OmicsPred Dataset ID"
+          example: "OPD000001"
         dataset_name:
           type: string
           description: "Dataset name"
@@ -966,6 +994,10 @@ components:
         variants_number:
           type: integer
           example: 182
+        dataset_id:
+          type: string
+          description: "OmicsPred Dataset ID"
+          example: "OPD000001"
         dataset_name:
           type: string
           description: "Dataset name"
@@ -1368,8 +1400,7 @@ paths:
         Retrieve all Pathways, including for each of them:
           * Pathway name and ID
           * Top level pathway(s)
-          * Linked genes
-          * Linked metabolites
+          * Linked molecular traits (genes, proteins, metabolites)
 
         Example of request:
         ```
@@ -1411,8 +1442,7 @@ paths:
         Retrieve a Pathway, including:
           * Pathway name and ID
           * Top level pathway(s)
-          * Linked genes
-          * Linked metabolites
+          * Linked molecular traits (genes, proteins, metabolites)
 
         The `pathway_id` corresponds to a Reactome ID.
 
@@ -1460,7 +1490,7 @@ paths:
           * Metabolite source (e.g. ChEBI)
           * Metabolite synonyms
           * Metabolite external references
-          * Metabolite description
+          * Metabolite description(s)
           * Linked pathways
 
         The `pathway_id` corresponds to a Reactome ID.
@@ -1526,19 +1556,6 @@ paths:
             value: 'Vitronectin'
         schema:
           type: string
-      - in: query
-        name: extend_schema
-        required: false
-        schema:
-          type: integer
-        description: Include theLinked gene and pathway(s)
-        examples:
-          exclude_extended_schema_sel:
-            summary: Use the default schema
-            value: 0
-          include_extended_schema_sel:
-            summary: Use the extended schema (withLinked gene and pathway(s))
-            value: 1
       responses:
         '200':
           content:
@@ -1623,7 +1640,7 @@ paths:
           * Gene ID
           * Gene source (e.g. Ensembl)
           * Gene synonyms
-          * Gene description
+          * Gene description(s)
           * Linked pathways
 
         Example of request:
@@ -1667,6 +1684,7 @@ paths:
         Retrieve all the scores linked with the given metabolomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Dataset ID and name
           * Platform version
           * Publication information
           * Ancestry distribution
@@ -1715,6 +1733,17 @@ paths:
             pmid_1:
               summary: 'PMID: 36991119'
               value: 36991119
+      - name: opp_id
+        in: query
+        required: false
+        description: OmicsPred Publication ID - *optional*
+        schema:
+          type: integer
+        examples:
+            opp_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPP000001:
+              value: 'OPP000001'
       - name: version
         in: query
         required: false
@@ -1760,6 +1789,7 @@ paths:
         Retrieve all the scores linked with the given proteomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Dataset ID and name
           * Platform version
           * Publication information
           * Ancestry distribution
@@ -1808,6 +1838,17 @@ paths:
             pmid_1:
               summary: 'PMID: 36991119'
               value: 36991119
+      - name: opp_id
+        in: query
+        required: false
+        description: OmicsPred Publication ID - *optional*
+        schema:
+          type: integer
+        examples:
+            opp_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPP000001:
+              value: 'OPP000001'
       - name: version
         in: query
         required: false
@@ -1859,6 +1900,7 @@ paths:
         Retrieve all the scores linked with the given transcriptomics platform, including for each of the scores:
           * OmicsPred Score ID
           * Variants number
+          * Dataset ID and name
           * Platform version
           * Publication information
           * Ancestry distribution
@@ -1905,6 +1947,17 @@ paths:
             pmid_1:
               summary: 'PMID: 36991119'
               value: 36991119
+      - name: opp_id
+        in: query
+        required: false
+        description: OmicsPred Publication ID - *optional*
+        schema:
+          type: integer
+        examples:
+            opp_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPP000001:
+              value: 'OPP000001'
       - name: version
         in: query
         required: false
@@ -1979,7 +2032,7 @@ paths:
         - "Performance Metrics endpoints"
       operationId: searchPerformanceMetrics
       description: |
-        Search Performance Metric(s) by OmicsPred Score ID, PubMed ID and/or Platform.
+        Search Performance Metric(s) by OmicsPred Score ID, OmicsPred Publication ID, PubMed ID and/or Platform.
 
         Each result includes:
           * Associated OmicsPred Score ID
@@ -2019,10 +2072,21 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
+        - name: opp_id
+          in: query
+          required: false
+          description: OmicsPred Publication ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: 'OPP000001'
         - name: platform
           required: false
           in: query
-          description: The platform name.
+          description: The platform name - *optional*
           schema:
             type: string
           examples:
@@ -2132,6 +2196,17 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
+        - name: opp_id
+          in: query
+          required: false
+          description: OmicsPred Publication ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: 'OPP000001'
         - name: platform
           required: false
           in: query
@@ -2181,6 +2256,7 @@ paths:
       operationId: getAllPublications
       description: |
         Retrieve all the Publications, including for each of them:
+          * OmicsPred Publication ID
           * Pubmed ID and doi
           * Publication title, journal, date and authors
           * Associated Dataset(s):
@@ -2198,13 +2274,13 @@ paths:
         ###### **Filtering**
 
         You can choose to filter the results of this endpoint to a specified list of studies by providing a list of PubMed IDs (pmid) in one of two ways:
-        1. A comma-seperated list of PubMed IDs in the request URL (this will not work for larger queries), e.g.:
+        1. A comma-seperated list of OmicsPred Publication IDs in the request URL (this will not work for larger queries), e.g.:
         ```
-        https://rest.omicspred.org/api/publication/all?filter_ids=36991119,35202437
+        https://rest.omicspred.org/api/publication/all?filter_ids=OPP000001,OPP000002
         ```
-        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["36991119","35202437"] }`. Example with curl:
+        2. A json-formatted list of IDs, e.g.: `{ "filter_ids" : ["OPP000001","OPP000002"] }`. Example with curl:
         ```
-        curl -X GET 'https://rest.omicspred.org/publication/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["36991119", "35202437"] }'
+        curl -X GET 'https://rest.omicspred.org/publication/all' -H 'Content-type:application/json' -d '{ "filter_ids" : ["OPP000001", "OPP000002"] }'
         ```
       parameters:
         - in: query
@@ -2212,13 +2288,12 @@ paths:
           required: false
           schema:
             type: string
-          description: Comma-separated list of PubMed IDs (without the prefix "PMID:")
+          description: Comma-separated list of OmicsPred Publication IDs (OPP IDs)
           examples:
-            pmid_sel:
-              summary: Select an example or type PubMed ID(s) - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
+            opp_id_sel:
+              summary: Select an example or type OmicsPred Publication ID(s) - click on 'Try it out' first
+            OPP000001:
+              value: "OPP000001"
       responses:
         '200':
           content:
@@ -2246,13 +2321,14 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /api/publication/{pmid}:
+  /api/publication/{opp_id}:
     get:
       tags:
         - "Publication endpoints"
       operationId: getPublication
       description: |
-        Retrieve a Publication, including:
+        Retrieve a Publication from its OmicsPred Publication ID (OPP ID) or its PubMed ID (PMID), including:
+          * OmicsPred Publication ID
           * Pubmed ID and doi
           * Publication title, journal, date and authors
           * Associated Dataset(s):
@@ -2264,15 +2340,18 @@ paths:
 
         Example of request:
         ```
-        https://rest.omicspred.org/api/publication/36991119
+        - https://rest.omicspred.org/api/publication/OPP000001
+        - https://rest.omicspred.org/api/publication/36991119
         ```
       parameters:
-      - name: pmid
+      - name: opp_id
         in: path
         required: true
-        description: 'PubMed ID'
+        description: 'OmicsPred Publication ID or PubMed ID'
         examples:
-          pmid_sel:
+          OPP000001:
+            value: 'OPP000001'
+          pmid_1:
             summary: 'PMID: 36991119'
             value: 36991119
         schema:
@@ -2300,6 +2379,7 @@ paths:
         Search Publication(s) by OmicsPred Score ID, PubMed ID and/or author.
 
         Each result includes:
+          * OmicsPred Publication ID
           * Pubmed ID and doi
           * Publication title, journal, date and authors
           * Associated Dataset(s):
@@ -2389,7 +2469,7 @@ paths:
   #       Retrieve all the OmicsPred Genetic Scores, including for each of them:
   #         * OmicsPred Genetic Score (OPGS) ID and name
   #         * Method used
-  #         * Dataset name
+  #         * Dataset ID and name
   #         * Publication information
   #         * Platform information
   #         * Tissue information
@@ -2481,7 +2561,7 @@ paths:
         Retrieve an OmicsPred Genetic Score, including:
           * Score ID and name
           * Method used
-          * Dataset name
+          * Dataset ID and name
           * Publication information
           * Platform information
           * Tissue information
@@ -2545,12 +2625,12 @@ paths:
         - "Score endpoints"
       operationId: searchScores
       description: |
-        Search OmicsPred Genetic Score(s) by OmicsPred Score ID, PubMed ID, tissue ID, cohort and/or platform.
+        Search OmicsPred Genetic Score(s) by OmicsPred Score ID, OmicsPred Publication ID, PubMed ID, tissue ID, cohort and/or platform.
 
         Each result includes:
           * Score ID and name
           * Method used
-          * Dataset name
+          * Dataset ID and name
           * Publication information
           * Platform information
           * Tissue information
@@ -2590,10 +2670,21 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
+        - name: opp_id
+          in: query
+          required: false
+          description: OmicsPred Publication ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: 'OPP000001'
         - name: platform
           in: query
           required: false
-          description: The platform name.
+          description: The platform name - *optional*
           schema:
             type: string
           examples:
@@ -2603,10 +2694,21 @@ paths:
               value: 'Olink'
             Nightingale:
               value: 'Nightingale'
+        - name: opd_id
+          in: query
+          required: false
+          description: An OmicsPred Dataset ID (OPD ID) - *optional*
+          schema:
+            type: string
+          examples:
+            cohort_sel:
+              summary: Select an example or type a dataset ID - click on 'Try it out' first
+            OPD000001:
+              value: 'OPD000001'
         - name: tissue_id
           in: query
           required: false
-          description: A tissue ID.
+          description: A tissue ID - *optional*
           schema:
             type: string
           examples:
@@ -2619,7 +2721,7 @@ paths:
         - name: cohort
           in: query
           required: false
-          description: A cohort name.
+          description: A cohort name - *optional*
           schema:
             type: string
           examples:
@@ -2685,7 +2787,7 @@ paths:
         Each result includes:
           * Score ID and name
           * Method used
-          * Dataset name
+          * Dataset ID and name
           * Publication information
           * Platform information
           * Tissue information
@@ -2775,7 +2877,7 @@ paths:
         Retrieve an OmicsPred Genetic Score (OPGS) with its performance metrics, including:
           * Score ID and name
           * Method used
-          * Dataset name
+          * Dataset ID and name
           * Publication information
           * Platform information
           * Tissue information
@@ -2912,6 +3014,7 @@ paths:
       operationId: getAllDatasets
       description: |
         Retrieve all the Dataset data, including for each of them:
+          * OmicsPred Dataset ID
           * Dataset name
           * Publication information
           * Platform information
@@ -2952,13 +3055,14 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  /api/dataset/{dataset}:
+  /api/dataset/{opd_id}:
     get:
       tags:
         - "Dataset endpoints"
-      operationId: getDatasets
+      operationId: getDataset
       description: |
-        Retrieve all the datasets associated with a dataset name, including:
+        Retrieve a Dataset, including:
+          * OmicsPred Dataset ID
           * Dataset name
           * Publication information
           * Platform information
@@ -2970,14 +3074,14 @@ paths:
 
         Examples of request:
         ```
-        - https://rest.omicspred.org/api/dataset/INTERVAL
+        - https://rest.omicspred.org/api/dataset/OPD000001
         ```
       parameters:
-      - name: dataset
+      - name: opd_id
         in: path
         required: true
-        description: "Dataset name"
-        example: "UKB European"
+        description: "OmicsPred Dataset ID"
+        example: "OPD000001"
         schema:
           type: string
       responses:
@@ -2985,25 +3089,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                allOf:
-                  - $ref: '#/components/schemas/Pagination'
-                properties:
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Dataset_extended'
-          description: |
-            List of Dataset data from the given dataset name
-
-            ---
-
-            __Notes:__ This endpoint uses pagination.
+                $ref: '#/components/schemas/Dataset_extended'
+          description: 'Dataset information'
         '4XX':
           content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
   /api/dataset/search:
@@ -3012,9 +3104,10 @@ paths:
         - "Dataset endpoints"
       operationId: searchDataset
       description: |
-        Retrieve all the datasets associated with a platform, PubMed ID and/or a tissue ID.
+        Retrieve all the datasets associated with a platform, OmicsPred Publication ID, PubMed ID and/or a tissue ID.
 
         Each result includes:
+          * OmicsPred Dataset ID
           * Dataset name
           * Publication information
           * Platform information
@@ -3042,10 +3135,21 @@ paths:
           pmid_1:
             summary: 'PMID: 36991119'
             value: 36991119
+      - name: opp_id
+        in: query
+        required: false
+        description: OmicsPred Publication ID - *optional*
+        schema:
+          type: integer
+        examples:
+            opp_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPP000001:
+              value: 'OPP000001'
       - name: platform
         required: false
         in: query
-        description: "Platform name"
+        description: "Platform name - *optional*"
         schema:
           type: string
         examples:
@@ -3058,7 +3162,7 @@ paths:
       - name: tissue_id
         in: query
         required: false
-        description: A tissue ID.
+        description: A tissue ID - *optional*
         schema:
           type: string
         examples:
@@ -3491,6 +3595,17 @@ paths:
               pmid_1:
                 summary: 'PMID: 36991119'
                 value: 36991119
+        - name: opp_id
+          in: query
+          required: false
+          description: OmicsPred Publication ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: 'OPP000001'
         - name: molecular_trait
           required: false
           in: query

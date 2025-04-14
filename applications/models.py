@@ -19,6 +19,9 @@ class CohortApplications(models.Model):
 
 class PublicationApplications(models.Model):
     """ Class for publications  """
+    num = models.IntegerField('Publication Number (OPP)', primary_key=True)
+    id = models.CharField('Publication ID (OPP)', max_length=20, db_index=True)
+
     pmid = models.IntegerField('PubMed ID (PMID)', null=False)
 
     # Key information (also) in the spreadsheet

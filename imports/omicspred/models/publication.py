@@ -81,6 +81,7 @@ class PublicationData(GenericData):
                 self.check_model_exist()
                 if not self.model:
                     self.model = Publication()
+                    self.model.set_publication_ids(self.next_id_number(Publication, 'num'))
                     for field, val in self.data.items():
                         setattr(self.model, field, val)
                     self.model.save()

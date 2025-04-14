@@ -58,7 +58,7 @@ urlpatterns = [
     # Publication
     re_path(r'^'+rest_urls['publication']+'all'+slash, cache_page(cache_time)(RestListPublications.as_view()), name="getAllPublications"),
     re_path(r'^'+rest_urls['publication']+'search'+slash, cache_page(cache_time)(RestPublicationSearch.as_view()), name="searchPublications"),
-    re_path(r'^'+rest_urls['publication']+'(?P<pmid>[^/]+)'+slash, RestPublication.as_view(), name="getPublication"),
+    re_path(r'^'+rest_urls['publication']+'(?P<opp_id>[^/]+)'+slash, RestPublication.as_view(), name="getPublication"),
     # Samples
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
     # Scores
@@ -70,7 +70,7 @@ urlpatterns = [
     # Dataset
     re_path(r'^'+rest_urls['dataset']+'all'+slash, cache_page(cache_time)(RestListDatasets.as_view()), name="getAllDatasets"),
     re_path(r'^'+rest_urls['dataset']+'search'+slash, cache_page(cache_time)(RestDatasetSearch.as_view()), name="searchDatasets"),
-    re_path(r'^'+rest_urls['dataset']+'(?P<dataset>[^/]+)'+slash, cache_page(cache_time)(RestDataset.as_view()), name="getDatasets"),
+    re_path(r'^'+rest_urls['dataset']+'(?P<opd_id>[^/]+)'+slash, RestDataset.as_view(), name="getDataset"),
     # Platform
     re_path(r'^'+rest_urls['platform']+'all'+slash, cache_page(cache_time)(RestListPlatforms.as_view()), name="getAllPlatforms"),
     re_path(r'^'+rest_urls['platform']+'(?P<platform>[^/]+)'+slash, RestPlatform.as_view(), name="getPlatform"),

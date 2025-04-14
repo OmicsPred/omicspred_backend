@@ -17,7 +17,8 @@ class DatasetData(GenericData):
         'Metabolomics': 'metabolite'
     }
 
-    def __init__(self,publication:PublicationData,platform:PlatformData,tissue:TissueData,data_type:str,species:str,name:str=None):
+    def __init__(self, publication:PublicationData, platform:PlatformData, tissue:TissueData,
+                 data_type:str, species:Species, name:str=None):
         GenericData.__init__(self)
         self.publication = publication
         self.platform = platform
@@ -29,17 +30,7 @@ class DatasetData(GenericData):
             self.data['omics_type'] = self.omics_data_types[data_type]
         self.data['scores_count'] = 1
         self.data['omics_count'] = 1
-        # Species
-        try:
-            species_model = Species.objects.get(name_latin__iexact=species)
-            self.data['species'] = species_model
-        except Species.DoesNotExist:
-            try:
-                species_model = Species.objects.get(name__iexact=species)
-                self.data['species'] = species_model
-            except Species.DoesNotExist:
-                print(f"Can't find the species '{species}' in the database")
-
+        self.data['species'] = species
 
     def add_score(self):
         self.data['scores_count'] += 1
@@ -86,6 +77,7 @@ class DatasetData(GenericData):
                 self.check_model_exist()
                 if not self.model:
                     self.model = Dataset()
+                    self.model.set_dataset_ids(self.next_id_number(Dataset, 'num'))
                     self.data['publication'] = self.publication.create_model()
                     self.data['platform'] = self.platform.create_model()
                     self.data['tissue'] = self.tissue.create_model()

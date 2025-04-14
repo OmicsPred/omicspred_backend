@@ -61,7 +61,7 @@ class TissueSerializerScoresCount(TissueSerializer):
 class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
-        meta_fields = ('title', 'doi', 'pmid', 'journal', 'firstauthor', 'date_publication')
+        meta_fields = ('id', 'title', 'doi', 'pmid', 'journal', 'firstauthor', 'date_publication')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -117,7 +117,7 @@ class DatasetLightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        meta_fields = ('name', 'platform', 'scores_count', 'omics_count', 'omics_type',
+        meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'omics_type',
                        'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -127,8 +127,8 @@ class DatasetSerializer(DatasetLightSerializer):
 
     class Meta(DatasetLightSerializer.Meta):
         meta_fields = ('publication',)
-        fields = meta_fields + DatasetLightSerializer.Meta.fields
-        read_only_fields = meta_fields + DatasetLightSerializer.Meta.fields
+        fields = DatasetLightSerializer.Meta.fields + meta_fields
+        read_only_fields = DatasetLightSerializer.Meta.fields + meta_fields
 
 
 #### Publication - Extended (with Platform) ####
@@ -407,6 +407,7 @@ class PathwaySerializerExtendedCount(PathwaySerializer):
 
 #### Score ####
 class ScoreLightSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.SerializerMethodField()
     dataset_name = serializers.SerializerMethodField()
     publication = serializers.SerializerMethodField()
     platform = serializers.SerializerMethodField()
@@ -423,10 +424,14 @@ class ScoreLightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
-                       'dataset_name', 'publication', 'platform', 'tissue', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
+                       'dataset_id', 'dataset_name', 'publication', 'platform', 'tissue', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
                        'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_dataset_id(self,obj):
+        ''' Get Dataset ID '''
+        return obj.dataset.id
 
     def get_dataset_name(self,obj):
         ''' Get Dataset name '''
@@ -588,16 +593,21 @@ class ScorePerformanceDataSerializer(ScoreSerializer):
 ######## Omics tables ########
 
 class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.SerializerMethodField()
     dataset_name = serializers.SerializerMethodField()
     publication = serializers.SerializerMethodField()
     platform_version = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','dataset_name','platform_version','publication','ancestry')
+        meta_fields = ('id','variants_number','dataset_id','dataset_name','platform_version','publication','ancestry')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_dataset_id(self,obj):
+        ''' Get Dataset ID '''
+        return obj.dataset.id
 
     def get_dataset_name(self,obj):
         ''' Get Dataset name '''
@@ -799,7 +809,7 @@ class PlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plot
-        meta_fields = ('plot_data','score_data')
+        meta_fields = ('dataset_id','dataset_name','plot_data','score_data')
         fields = meta_fields
         read_only_fields = meta_fields
 

@@ -103,6 +103,7 @@
         "model": "applications.PublicationApplications",
         "pk": 1,
         "fields": {
+            "id": "OPP000001",
             "pmid": 36991119,
             "doi": "10.1038/s41586-023-05844-9",
             "journal": "Nature",

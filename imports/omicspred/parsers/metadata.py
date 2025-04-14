@@ -2,10 +2,7 @@ import os
 # import pandas as pd
 import logging
 from imports.omicspred.spreadsheets.spreadsheet import CohortSpreadSheet, PublicationSpreadSheet, ScoreSpreadSheet, SamplePerformanceSpreadSheet
-# from imports.omicspred.models.score import ScoreData
-# from imports.omicspred.models.performance import PerformanceData
-# from imports.omicspred.models.omics import GeneData
-# from imports.omicspred.models.efo import EFOData
+from imports.omicspred.models.species import SpeciesData
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spreadsheet parsing')
@@ -19,15 +16,20 @@ class MetadataTemplate():
 
     default_license = 'Creative Commons Attribution 4.0 International (CC BY 4.0)'
 
+    default_species = 'Homo sapiens'
+
     def __init__(self, file_loc:str, license:str=None):
         self.file_loc = file_loc
         self.parsed_publication = None
         self.parsed_scores = {}
         self.parsed_cohorts = {}
+        self.parsed_sample_performance = {}
+        self.parsed_datasets = {}
+        self.species = None
         # self.parsed_samples_scores = []
         # self.parsed_samples_testing = []
-        self.parsed_samples = []
-        self.parsed_performances = []
+        # self.parsed_samples = []
+        # self.parsed_performances = []
         self.spreadsheet_names = {
             'Publication': 'Publication Information',
             'Score': 'Score Information',
@@ -49,6 +51,10 @@ class MetadataTemplate():
 
             omics_type = 'Transcriptomics'
 
+            # Species
+            species_data = SpeciesData(self.default_species)
+            self.species = species_data.create_model()
+
             # Cohort spreadsheet
             cohort_spreadsheet = CohortSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Cohort'],omics_type)
             cohort_spreadsheet.extract_data()
@@ -61,7 +67,7 @@ class MetadataTemplate():
             self.parsed_publication = list(publication_data.values())[0]
 
             # Score spreadsheet (including Platform and Tissue)
-            score_spreadsheet = ScoreSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Score'],omics_type,self.parsed_publication,self.license,dataset_prefix)
+            score_spreadsheet = ScoreSpreadSheet(loc_excel, self.loc_schema, self.spreadsheet_names['Score'], omics_type, self.parsed_publication, self.license, self.species, dataset_prefix)
             score_spreadsheet.extract_data()
             self.parsed_scores = score_spreadsheet.export_parser_data()
             self.parsed_datasets = score_spreadsheet.export_datasets()
