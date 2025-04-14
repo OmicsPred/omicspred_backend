@@ -3,6 +3,7 @@
         "model": "omicspred.Publication",
         "pk": 1,
         "fields": {
+            "id": "OPP000001",
             "pmid": 36991119,
             "doi": "10.1038/s41586-023-05844-9",
             "journal": "Nature",
@@ -19,6 +20,7 @@
         "model": "omicspred.Publication",
         "pk": 2,
         "fields": {
+            "id": "OPP000002",
             "pmid": 123456,
             "doi": "10.1000/s1233456",
             "journal": "Test",
@@ -183,6 +185,7 @@
         "model": "omicspred.Dataset",
         "pk": 1,
         "fields": {
+            "id": "OPD000001",
             "name": null,
             "omics_count": 2384,
             "omics_type": "protein",
@@ -206,6 +209,7 @@
         "model": "omicspred.Dataset",
         "pk": 2,
         "fields": {
+            "id": "OPD000002",
             "name": "INTERVAL",
             "omics_count": 308,
             "omics_type": "protein",
@@ -229,6 +233,7 @@
         "model": "omicspred.Dataset",
         "pk": 3,
         "fields": {
+            "id": "OPD000003",
             "name": "",
             "omics_count": 726,
             "omics_type": "metabolite",

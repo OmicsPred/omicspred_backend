@@ -27,6 +27,7 @@ class BrowseEndpointTest(APITestCase):
     filter_ids = 'filter_ids'
     cohorts_list = ['INTERVAL', 'UKB']
     publications_list = ['36991119', '123456']
+    publication_ids_list = ['OPP000001', 'OPP000002']
 
     platforms_list_proteomics = ['Somalogic', 'Olink']
     platforms_list_metabolomics = ['Metabolon']
@@ -40,11 +41,14 @@ class BrowseEndpointTest(APITestCase):
     phenotypes_list = ['555.2','250', '278.1']
     tissue_ids_list = ['UBERON_0001969', 'BTO_0000133']
     tissue_labels_list = ['blood plasma', 'blood serum']
+    dataset_ids_list = ['OPD000001', 'OPD000002']
 
     index_result_mutliplicity = 2
     index_example = 3
 
     search_pmid = f'pmid={publications_list[0]}'
+    search_opp_id = f'opp_id={publication_ids_list[0]}'
+    search_opd_id = f'opd_id={dataset_ids_list[0]}'
     search_platform = f'platform={platforms_list_proteomics[1]}'
     search_cohort = f'cohort={cohorts_list[1]}'
     search_author = f'author=Xu'
@@ -78,7 +82,8 @@ class BrowseEndpointTest(APITestCase):
         ('Performances Search','performance/search', 1, {'query': [search_opgs_id,search_pmid,search_platform]}),
         # Publication endpoints
         ('Publications', 'publication/all', 1),
-        ('Publications', 'publication/all', 1, {'query': [filter_ids+'='+','.join(publications_list)]}),
+        ('Publications', 'publication/all', 1, {'query': [filter_ids+'='+','.join(publication_ids_list)]}),
+        ('Publication/OPP_ID', 'publication', 0, {'path': publication_ids_list}),
         ('Publication/PMID', 'publication', 0, {'path': publications_list}),
         ('Publication Search', 'publication/search', 1, {'query': [search_opgs_id,search_pmid,search_author]}),
         # Sample endpoint
@@ -86,14 +91,14 @@ class BrowseEndpointTest(APITestCase):
         # Score endpoints
         ('Scores', 'score/all', 1),
         ('Score/ID', 'score', 0, {'path': scores_list}),
-        ('Scores Search', 'score/search', 1, {'query': ['opgs_ids='+','.join(scores_list),search_pmid,search_platform,search_cohort]}),
+        ('Scores Search', 'score/search', 1, {'query': ['opgs_ids='+','.join(scores_list),search_pmid,search_opp_id,search_opd_id,search_platform,search_cohort]}),
         ('Scores Search Type', 'score/search/protein', 1, {'path': [proteins_list[0]],'extra_query': 'include_performance_metrics=1'}),
         ('Scores Search Type', 'score/search/gene', 1, {'path': [genes_list[0]], 'extra_query': 'include_performance_data=1'}),
         ('Scores Search Type', 'score/search/metabolite', 1, {'path': [metabolites_list[0]]}),
         ('Scores Performance', 'score/performance', 0, {'path': scores_list}),
         # Dataset
         ('Datasets', 'dataset/all', 1),
-        ('Dataset/Name', 'dataset', 1, {'path': ['INTERVAL']}),
+        ('Dataset/Name', 'dataset', 0, {'path': dataset_ids_list}),
         ('Dataset Search', 'dataset/search', 1, {'query': [search_pmid]}),
         # Platform endpoints
         ('Platforms', 'platform/all', 1),
@@ -107,7 +112,7 @@ class BrowseEndpointTest(APITestCase):
         ('Phenotype', 'phenotype', 0, {'path': phenotypes_list}),
         ('Applications - Score', 'applications_score/all', 1),
         ('Applications - Score', 'applications_score', 1, {'path': scores_list}),
-        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_pmid,seach_mt,search_combined]}),
+        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_opp_id,search_pmid,seach_mt,search_combined]}),
         ('Applications - Sample', 'applications_sample/all', 1),
         # Other endpoints
         ('Info', 'info', 0)
@@ -192,7 +197,7 @@ class BrowseEndpointTest(APITestCase):
 
     endpoints_with_filter_ids = (
         ('Scores / filter_ids', 'score/all' , scores_list[1:]), # Exclude 1st element
-        ('Publications / filter_ids', 'publication/all' , publications_list[1:]), # Exclude 1st element
+        ('Publications / filter_ids', 'publication/all' , publication_ids_list[1:]), # Exclude 1st element
         ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
         ('Applications - Sample', 'applications_sample/all', phenotypes_list[1:]) # Exclude 1st element
     )
@@ -298,6 +303,7 @@ class BrowseEndpointTest(APITestCase):
         """ Test the status code of each endpoint """
         print("\n>> Test the status code of each endpoint ")
         for endpoint in self.endpoints:
+            # print(f"  > Endpoint: {endpoint[1]}")
             url_endpoint = self.server+endpoint[1]
             if len(endpoint) > self.index_example:
                 # Endpoint with parameter within the URL path
@@ -373,8 +379,8 @@ class BrowseEndpointTest(APITestCase):
 
 
     def test_endpoint_not_found(self):
-        """ Test an endpoint that doens't exist """
-        print("\n>> Test an endpoint that doens't exist")
+        """ Test an endpoint that doesn't exist """
+        print("\n>> Test an endpoint that doesn't exist")
         self.get_not_found_response(self.server+'chocolate')
 
 
