@@ -29,7 +29,7 @@ class PlatformMasterData(GenericData):
         try:
             platform = PlatformMaster.objects.get(name__iexact=self.data['name'],type__iexact=self.data['type'])
             self.model = platform
-        except Platform.DoesNotExist:
+        except PlatformMaster.DoesNotExist:
             self.model = None
 
 
@@ -60,13 +60,13 @@ class PlatformData(GenericData):
         GenericData.__init__(self)
         self.name = platform_master.name
         self.platform_master_data = platform_master
+        self.version = version
         self.data = {
             'name': platform_master.name
         }
         if version:
-            self.version = version
             self.data['version'] = version
-    
+
 
     def check_model_exist(self):
         '''

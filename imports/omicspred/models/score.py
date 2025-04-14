@@ -16,7 +16,7 @@ class ScoreData(GenericData):
                  self.data[item] = score_data[item]
 
 
-    def set_dataset_tag(self,dataset_tag:str):
+    def set_dataset_tag(self, dataset_tag:str):
         self.dataset_tag = dataset_tag
 
 
@@ -24,7 +24,7 @@ class ScoreData(GenericData):
         return self.dataset_tag
 
 
-    def add_dataset_model(self,dataset:Dataset):
+    def add_dataset_model(self, dataset:Dataset):
         self.data['dataset'] = dataset
         self.data['species'] = dataset.species
 

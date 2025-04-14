@@ -10,6 +10,7 @@ from imports.omicspred.models.publication import PublicationData
 from imports.omicspred.models.sample import SampleData
 from imports.omicspred.models.score import ScoreData
 from imports.omicspred.models.tissue import TissueData
+from omicspred.models import Species
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spreadsheet parsing')
@@ -47,32 +48,41 @@ class SpreadSheet():
         col_name = None
         model = None
         field = None
-        col_len = len(col)
-        # Third header
-        if col_len >= 3:
-            if col[2] in current_schema.index:
-                col_name = col[2]
-                col_label = f'{col[1]}__{col[2]}'
-            # Try with 2nd header (sometimes the 3rd header is labelled as "Unnamed...")
-            elif col[1] in current_schema.index:
-                col_name = col[1]
+        # Multi-row header
+        if type(col) == tuple:
+            col_len = len(col)
+            # Third header
+            if col_len >= 3:
+                col2use = col[2]
+                if col2use in current_schema.index:
+                    col_name = col2use
+                    col_label = f'{col[1]}__{col2use}'
+                # Try with 2nd header (sometimes the 3rd header is labelled as "Unnamed...")
+                elif col[1] in current_schema.index:
+                    col_name = col[1]
+                    col_label = col_name
+            # Second header
+            elif col_len >= 2:
+                col2use = col[1]
+                if col2use in current_schema.index:
+                    col_name = col2use
+                    col_label = col_name
+                    # if col_name in data_indexes.keys():
+                    #     data = current_schema.loc[col_name][:2]
+                    #     model, field = data.iloc[data_indexes[col_name]][:2]
+            # First header
+            elif col[0] in current_schema.index:
+                col_name = col[0]
                 col_label = col_name
-        # Second header
-        elif col_len >= 2:
-            if col[1] in current_schema.index:
-                col_name = col[1]
+                # model, field = current_schema.loc[col[0]][:2]
+                # data = current_schema.loc[col[0]][:2]
+                # print(f'COL0 {col[0]}: {current_schema.loc[col[0]][:2]} <<<')
+                # print(f"DATA: {len(data)}")
+        # Single-row header
+        elif type(col) == str:
+            if col in current_schema.index:
+                col_name = col
                 col_label = col_name
-                # if col_name in data_indexes.keys():
-                #     data = current_schema.loc[col_name][:2]
-                #     model, field = data.iloc[data_indexes[col_name]][:2]
-        # First header
-        elif col[0] in current_schema.index:
-            col_name = col[0]
-            col_label = col_name
-            # model, field = current_schema.loc[col[0]][:2]
-            # data = current_schema.loc[col[0]][:2]
-            # print(f'COL0 {col[0]}: {current_schema.loc[col[0]][:2]} <<<')
-            # print(f"DATA: {len(data)}")
 
         if col_name:
             # print(f"- COLNAME: {col_label}")
@@ -81,6 +91,9 @@ class SpreadSheet():
                 model, field = data.iloc[data_indexes[col_label]][:2]
             else:
                 model, field = current_schema.loc[col_name][:2]
+        else:
+            logger.error(f"Column '{col}' is not found in the metadata schema!")
+            exit(1)
         return model, field
 
 
@@ -104,7 +117,6 @@ class CohortSpreadSheet(SpreadSheet):
         # Loop throught the rows (i.e. score)
         for cohort_name, cohort_info in self.dataframe.iterrows():
             parsed_cohort = CohortData(cohort_name, {'name_short': cohort_name})
-            print(f"\t# Cohort: {cohort_name}")
             # Loop throught the columns
             for col, val in cohort_info.items():
                 m, f = self.get_model_field_from_schema(col, self.spreadsheet_schema)
@@ -142,12 +154,14 @@ class PublicationSpreadSheet(SpreadSheet):
 
 class ScoreSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str,publication:PublicationData,license:str,dataset_prefix:str=''):
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str,
+                 publication:PublicationData, license:str, species:Species, dataset_prefix:str=''):
         super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type,[0, 1])
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
         self.dataset_prefix = dataset_prefix
         self.publication = publication
         self.license = license
+        self.species = species
         self.datasets = {}
         self.tissues = {}
 
@@ -157,12 +171,13 @@ class ScoreSpreadSheet(SpreadSheet):
     def extract_data(self):
         ''' Extract score information and store it into one or several ScoreData objects. '''
         model = 'Score'
-        logger.info(f"Start to parse the {model} spreadsheet")
+        logger.info(f" Start to parse the {model} spreadsheet")
         # Loop throught the rows (i.e. score)
         for score_name, score_info in self.dataframe.iterrows():
             parsed_score = ScoreData({'name': score_name, 'license': self.license})
             print(f"  # SCORE: {score_name}")
             platform_master = None
+            platform = None
             tissue = ''
             molecular_trait = {}
             # Loop throught the columns
@@ -201,6 +216,8 @@ class ScoreSpreadSheet(SpreadSheet):
                         platform = PlatformData(platform_master,val)
                         # parsed_score.add_other_model('platform',platform)
                         # print(f"  - Platform: {val} | {platform_master}")
+            if not platform:
+                platform = PlatformData(platform_master,None)
     
             # Add molecular trait objects (gene, protein, metabolite)
             if molecular_trait:
@@ -224,7 +241,8 @@ class ScoreSpreadSheet(SpreadSheet):
 
 
             # Add/create dataset
-            dataset_tag = f'{platform.name}_{platform.version}_{self.publication.pmid}_{tissue.id}'
+            platform_version = platform.version if platform and platform.version else ''
+            dataset_tag = f'{platform.name}_{platform_version}_{self.publication.pmid}_{tissue.id}'
             if dataset_tag in self.datasets.keys():
                 dataset = self.datasets[dataset_tag]
                 dataset.add_score()
@@ -233,7 +251,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 if self.dataset_prefix != '':
                     dataset_name = self.dataset_prefix+' '
                 dataset_name += tissue.label
-                dataset = DatasetData(self.publication,platform,tissue,self.data_type,default_species,dataset_name)
+                dataset = DatasetData(self.publication,platform,tissue,self.data_type,self.species,dataset_name)
             self.datasets[dataset_tag] = dataset
             # print(f"  - Dataset id: {dataset_tag}")
 
@@ -253,7 +271,7 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
     def extract_data(self):
         ''' Extract sample and performance metrics information and store it into objects. '''
         model = 'Sample'
-        logger.info(f"Start to parse the {model} spreadsheet")
+        logger.info(f" Start to parse the {model} spreadsheet")
         metric_types = {
             'r score': 'R2',
             'Rho score': 'Rho',
@@ -277,8 +295,8 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
                     # print(f"====> {m}: {f} | {val}")
                     if m == 'Sample':
                         ## WARNING! TEMPORARY CODE TO SKIP sample_age ##
-                        if f == 'sample_age':
-                            continue
+                        # if f == 'sample_age':
+                        #     continue
                         ################################################
                         if f == 'cohorts':
                             cohorts_list = val.split(',')
