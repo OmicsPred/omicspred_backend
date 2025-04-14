@@ -1,9 +1,9 @@
 #### Django library ####
-Django==5.1.7
+Django==5.1.8
 #### Python PostgreSQL library ####
 psycopg2-binary==2.9.10
 #### Django REST API libraries ####
-djangorestframework==3.15.2
+djangorestframework==3.16.0
 django-cors-headers==4.7.0
 #### Elasticsearch libraries ####
 elasticsearch-dsl==7.4.1

@@ -15,10 +15,14 @@ class Species(models.Model):
 
 class Publication(models.Model):
     """ Class for publications with OmicsPred """
-    pmid = models.IntegerField('PubMed ID (PMID)', null=False)
+
+    num = models.IntegerField('Publication Number (OPP)', primary_key=True)
+    id = models.CharField('Publication ID (OPP)', max_length=20, db_index=True)
+
+    pmid = models.IntegerField('PubMed ID (PMID)', null=True)
 
     # Key information (also) in the spreadsheet
-    doi = models.CharField('digital object identifier (doi)', max_length=100)
+    doi = models.CharField('digital object identifier (doi)', max_length=100, null=True)
 
     journal = models.CharField('Journal Name', max_length=100)
     firstauthor = models.CharField('First Author', max_length=50)
@@ -50,7 +54,11 @@ class Publication(models.Model):
         return f'{self.firstauthor} | PMID:{self.pmid}'
 
     class Meta:
-        get_latest_by = 'id'
+        get_latest_by = 'num'
+
+    def set_publication_ids(self, n):
+        self.num = n
+        self.id = 'OPP' + str(n).zfill(6)
 
     # @property
     # def is_preprint(self):
@@ -290,6 +298,8 @@ class Sample(models.Model):
 
 class Dataset(models.Model):
     """ Class providing additional information to the Platform """
+    num = models.IntegerField('Dataset Number (OPD)', primary_key=True)
+    id = models.CharField('Dataset ID (OPD)', max_length=20, db_index=True)
     name = models.CharField('Dataset name', max_length=150, null=True)
     publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='datasets', verbose_name='Publication')
     platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_dataset', verbose_name='Platform')
@@ -303,6 +313,13 @@ class Dataset(models.Model):
     species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_dataset', verbose_name='Species', null=False) # Associated species
     # Dir ID
     files_ids = models.JSONField('Files IDs on Box', default=dict)
+
+    class Meta:
+        get_latest_by = 'num'
+
+    def set_dataset_ids(self, n):
+        self.num = n
+        self.id = 'OPD' + str(n).zfill(6)
 
     @property
     def scoring_files_urls(self):
