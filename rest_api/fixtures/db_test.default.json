@@ -257,6 +257,7 @@
         "model": "omicspred.Dataset",
         "pk": 5,
         "fields": {
+            "id": "OPD000005",
             "name": "",
             "omics_count": 13668,
             "omics_type": "transcript",
