@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spreadsheet parsing')
 # logger = logging.getLogger(__name__)
 
-default_species = 'Homo sapiens'
 
 class SpreadSheet():
 
@@ -294,11 +293,19 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
                     m, f = self.get_model_field_from_schema(col, self.spreadsheet_schema)
                     # print(f"====> {m}: {f} | {val}")
                     if m == 'Sample':
-                        ## WARNING! TEMPORARY CODE TO SKIP sample_age ##
-                        # if f == 'sample_age':
-                        #     continue
-                        ################################################
-                        if f == 'cohorts':
+                        # Sample age and sample age standard deviation
+                        if f == 'sample_age':
+                            val_str = str(val)
+                            if '(' in val_str:
+                                (age,age_sd) = val_str.split(' (')
+                                age_sd = age_sd.replace(')','')
+                                age = float(age) if '.' in age else int(age)
+                                sample_data['sample_age'] = float(age)
+                                sample_data['sample_age_sd'] = float(age_sd)
+                            else:
+                                sample_data['sample_age'] = val
+                        # Cohorts
+                        elif f == 'cohorts':
                             cohorts_list = val.split(',')
                             for cohort in cohorts_list:
                                 if cohort in self.cohorts_data.keys():
@@ -306,6 +313,7 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
                                 else:
                                     print(f"Cohort '{cohort}' is missing in the Cohort Information spreadsheet")
                             sample_data['cohorts'] = cohorts
+                        # Other
                         else:
                             sample_data[f] = val
                             # print(f">> Sample {f}: {val}")
