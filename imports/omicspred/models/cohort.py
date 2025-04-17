@@ -11,7 +11,6 @@ class CohortData(GenericData):
         for item in cohort_data.keys():
             if cohort_data[item]:
                  self.data[item] = cohort_data[item]
-        # self.cohort_tuple = (self.name,self.name_full,self.url)
 
     def get_data(self,attribute:str):
         if attribute in self.data.keys():
@@ -61,7 +60,7 @@ class CohortData(GenericData):
             with transaction.atomic():
                 self.check_model_exist()
                 if not self.model:
-                    print(f"Cohort {self.name_short}: new model")
+                    # print(f"Cohort {self.name_short}: new model")
                     self.model = Cohort()
                     if 'name_short' in self.data.keys():
                         self.model.name_short=self.data['name_short']
@@ -70,8 +69,8 @@ class CohortData(GenericData):
                     if 'url' in self.data.keys():
                         self.model.url=self.data['url']
                     self.model.save()
-                else:
-                    print(f"Cohort {self.name_short}: existing model")
+                # else:
+                #     print(f"Cohort {self.name_short}: existing model")
         except IntegrityError as e:
             self.model = None
             print(f'Error with the creation of the Cohort: {e}')
