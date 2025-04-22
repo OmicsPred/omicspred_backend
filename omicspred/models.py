@@ -458,10 +458,7 @@ class Score(models.Model):
 
     # Links to related models
     dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_score', verbose_name='Dataset')
-    # publication = models.ForeignKey(Publication, on_delete=models.PROTECT, related_name='publication_score', verbose_name='Publication')
-    # platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_score', verbose_name='Platform')
     species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_score', verbose_name='Species', null=False) # Associated species
-    # efos = models.ManyToManyField(EFO, verbose_name='EFO', related_name='associated_scores')
 
     # Omics entities
     genes = models.ManyToManyField(Gene, related_name='gene_score', verbose_name='Gene(s)')
@@ -471,6 +468,9 @@ class Score(models.Model):
 
     # Ancestry distribution
     ancestry = models.JSONField('Ancestry distribution', null=True)
+
+    # Comment
+    comment = models.TextField('Additional comment', null=True)
 
     # LICENSE information/text
     license = models.TextField('License/Terms of Use', default='Creative Commons Attribution 4.0 International (CC BY 4.0)')

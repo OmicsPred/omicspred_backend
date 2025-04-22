@@ -425,7 +425,7 @@ class ScoreLightSerializer(serializers.ModelSerializer):
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
                        'dataset_id', 'dataset_name', 'publication', 'platform', 'tissue', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'license')#, 'date_release')
+                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'comment', 'license')#, 'date_release')
         fields = meta_fields
         read_only_fields = meta_fields
 
