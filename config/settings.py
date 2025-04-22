@@ -91,8 +91,8 @@ INSTALLED_APPS = [
     'corsheaders' # <= Added for test
 ]
 
-# Test skipped app installation
-if PUBLIC_SITE == False:
+# Skip Search App (ElasticSearch) for tests and public facing REST API.
+if PUBLIC_SITE == False or IS_TEST == False:
     elastic_search = [
         'search_es.apps.SearchESConfig',
         'django_elasticsearch_dsl'
