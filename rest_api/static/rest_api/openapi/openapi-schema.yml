@@ -70,23 +70,25 @@ info:
     <div id="content_changelog">
 
       * <span class="badge badge-pill">1.1</span> - April 2025:
-        * Dataset
+        * Dataset:
           * Replace the endpoint parameter `/api/dataset/<name>` to `/api/dataset/<opd_id>`.
           * New field **id** in the Dataset schemas (`/api/dataset/` endpoints), containing the OmicsPred Dataset ID (OPD ID).
           * New field **dataset_id** in the Score schemas (`/api/score/` endpoints), containing the OmicsPred Dataset ID (OPD ID).
           * New search parameter *opd_id* in `/api/score/search`.
-        * Molecular trait
+        * Molecular trait (gene, protein, metabolite):
           * Replace the field **molecular_traits** by the fields **genes**, **proteins** and **metabolites** in the Phenotype endpoints (`/api/applications_score/`).
           * Rename the search parameter *molecular_trait_id* by *molecular_trait* in the Phenotype endpoint `/api/applications_score/search/`.
-        * Publication
+        * Publication:
           * The endpoint `/api/publication/` now can use the parameter `pmid` or `opp_id` (`/api/publication/<pmid>` or `/api/publication/<opp_id>`).
           * New field **id** in the Publication schemas (`/api/publication/` endpoints), containing the OmicsPred Publication ID (OPP ID).
           * New search parameter *opp_id* in `/api/metabolomics/`, `/api/proteomics/`, `/api/transcriptomics/`, `/api/performance`, `/api/score/search`, `/api/dataset/search` and `/api/applications_score/search`.`
-        * Tissue
+        * Tissue:
           * New endpoint `/api/tissue/` (`/api/tissue/all` and `/api/tissue/<tissue_id_or_name>`).
           * New search parameter *tissue_id* in `/api/score/search` and `/api/dataset/search`.
           * New field **tissue** in the Score schemas (`/api/score/` endpoints), containing the mapped tissue ontology (identifier, label, description)
           * Rename the field **efo** to **tissue** in the Performance endpoints (`/api/performance/`).
+        * Other:
+          * New field **comment** in the Score schemas (`/api/score/` endpoints), containing extra comment/information about the genetic score.
 
       * <span class="badge badge-pill">1.0</span> - January 2025:
         * First version of the OmicsPred REST API
@@ -967,6 +969,10 @@ components:
           type: string
           description: "The version of the genome assembly that the variants present in the genetic score are associated with. Listed as NR (Not Reported) if unknown."
           example: "GRCh38"
+        comment:
+          type: string
+          description: "Additional comment/information about the Genetic Score"
+          example: "Model extracted as-is from the paper"
         license:
           type: string
           description: "License applied to the score"
