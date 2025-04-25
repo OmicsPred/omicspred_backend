@@ -1,7 +1,8 @@
 import re
 from omicspred.models import Gene, Protein
 
-input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.112.uniprot.tsv'
+# https://ftp.ensembl.org/pub/current_tsv/homo_sapiens/
+input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.113.uniprot.tsv'
 
 genes = {}
 proteins = {}

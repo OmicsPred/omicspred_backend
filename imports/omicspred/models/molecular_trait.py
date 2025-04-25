@@ -1,4 +1,5 @@
 import numpy as np
+import json
 from django.db import IntegrityError, transaction
 from imports.generic_model import GenericData
 from omicspred.models import Gene, Protein, Metabolite, Pathway
@@ -7,8 +8,14 @@ from omicspred.models import Gene, Protein, Metabolite, Pathway
 class GeneData(GenericData):
 
     def __init__(self,external_id=None,name=None):
+        GenericData.__init__(self)
         self.external_id = external_id
         self.name = name
+        self.data_id = ''
+        if external_id:
+            self.data_id += external_id
+        if name:
+            self.data_id += name
 
 
     def check_model_exist(self):
@@ -17,12 +24,16 @@ class GeneData(GenericData):
         '''
         try:
             gene = None
-            if self.name and self.name not in [None,np.nan,'nan',''] and self.external_id:
-                gene = Gene.objects.get(name__iexact=self.name, external_id__iexact=self.external_id)
+            if self.external_id:
+                gene = Gene.objects.get(external_id__iexact=self.external_id)
             elif self.name and self.name not in [None,np.nan,'nan','']:
                 gene = Gene.objects.get(name__iexact=self.name)
-            elif self.external_id:
-                gene = Gene.objects.get(external_id__iexact=self.external_id)
+            # if self.name and self.name not in [None,np.nan,'nan',''] and self.external_id:
+            #     gene = Gene.objects.get(name__iexact=self.name, external_id__iexact=self.external_id)
+            # elif self.name and self.name not in [None,np.nan,'nan','']:
+            #     gene = Gene.objects.get(name__iexact=self.name)
+            # elif self.external_id:
+            #     gene = Gene.objects.get(external_id__iexact=self.external_id)
             self.model = gene
         except Gene.DoesNotExist:
             self.model = None
@@ -36,13 +47,41 @@ class GeneData(GenericData):
                 self.model = None
 
 
-    def update_gene(self):
+    def update_gene_external_id(self):
         '''
         Update existing Gene model by adding its Ensembl ID
         '''
         self.model.external_id = self.external_id
         self.model.external_id_source = 'Ensembl'
         self.model.save()
+
+
+    def update_gene_name(self):
+        '''
+        Update existing Gene model by adding its name
+        '''
+        self.model.name = self.name
+        self.model.save()
+
+    def update_gene_synonym(self):
+        '''
+        Update existing Gene model by adding its name
+        '''
+        syn_found = False
+
+        if self.model.synonyms:
+            model_synonyms = self.model.synonyms
+            for syn in model_synonyms:
+                if syn['name'] == self.name:
+                    syn_found = True
+                    break
+            if syn_found == False:
+                model_synonyms.append({'name': self.name})
+                self.model.synonyms = model_synonyms
+                self.model.save()
+        else:
+            self.model.synonyms = [{'name': self.name}]
+            self.model.save()
 
 
     @transaction.atomic
@@ -54,6 +93,7 @@ class GeneData(GenericData):
         try:
             with transaction.atomic():
                 self.check_model_exist()
+                # Create Gene model
                 if not self.model:
                     self.model = Gene()
                     if self.name and self.name not in [None,np.nan,'nan','']:
@@ -63,8 +103,15 @@ class GeneData(GenericData):
                         if self.external_id.startswith('ENSG'):
                             self.model.external_id_source = 'Ensembl'
                     self.model.save()
-                elif not self.model.external_id and self.external_id:
-                    self.update_gene()
+                # Update Gene model
+                else:
+                    if not self.model.external_id and self.external_id:
+                        self.update_gene_external_id()
+                    elif self.name:
+                        if not self.model.name:
+                            self.update_gene_name()
+                        elif self.name != self.model.name:
+                            self.update_gene_synonym()
         except IntegrityError as e:
             self.model = None
             print(f'Error with the creation of the Gene: {e}')
@@ -76,9 +123,15 @@ class GeneData(GenericData):
 class ProteinData(GenericData):
 
     def __init__(self,external_id=None,name=None,gene=None):
+        GenericData.__init__(self)
         self.external_id = external_id
         self.name = name
         self.gene = gene
+        self.data_id = ''
+        if external_id:
+            self.data_id += external_id
+        if name:
+            self.data_id += name
 
 
     def check_model_exist(self):
@@ -131,9 +184,14 @@ class ProteinData(GenericData):
 class MetaboliteData(GenericData):
 
     def __init__(self,external_id=None,name=None,pathway_group=None,pathway_subgroup=None):
+        GenericData.__init__(self)
         self.external_id = external_id
         self.name = name
-        self.data = {}
+        self.data_id = ''
+        if external_id:
+            self.data_id += external_id
+        if name:
+            self.data_id += name
         if self.name not in [None,np.nan,'nan','']:
             self.data['name'] = self.name
         if self.external_id not in [None,np.nan,'nan','']:

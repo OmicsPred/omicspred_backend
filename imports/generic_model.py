@@ -43,6 +43,14 @@ class GenericData():
         self.additional_data[data_model_type] = data_content
 
 
+    def generate_generic_model(self, model):
+        unsaved_model = model()
+        # unsaved_model.set_score_ids(self.next_id_number(Score, 'num'))
+        for field, val in self.data.items():
+            setattr(unsaved_model, field, val)
+        return unsaved_model
+
+
     def next_id_number(self, model, field):
         ''' Fetch the new primary key value. '''
         assigned = 1
