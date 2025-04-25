@@ -191,8 +191,25 @@ def get_mappings(molecular_traits:list,reactome_data:dict,source:str) -> dict:
     return mappings
 
 
+def add_protein_mappings():
+    print('\n# Import Protein mappings')
+    genes = Gene.objects.prefetch_related('pathways').filter(pathways__isnull=False).prefetch_related('gene_protein').distinct()
+    count_proteins = 0
+    for gene in genes:
+        proteins = gene.gene_protein.all()
+        if len(proteins):
+            pathways = gene.pathways.all()
+            for protein in proteins:
+                count_proteins += 1
+                print_progress(count_proteins,'protein')
+                # Reset all the protein/pathway relations
+                protein.pathways.clear()
+                protein.pathways.add(*pathways)
+    print(f">> Proteins with pathway: {count_proteins}")
+
+
 def detect_non_associated_pathways():
-    pathways = Pathway.objects.all().prefetch_related('pathway_metabolites','pathway_genes')
+    pathways = Pathway.objects.all().prefetch_related('pathway_metabolites', 'pathway_proteins', 'pathway_genes')
     count = 0
     for pathway in pathways:
         has_asso = False
@@ -216,7 +233,7 @@ def get_reactome_models() -> dict:
 
 
 def print_progress(count:int,mt_type:str):
-    if str(count).endswith('00'):
+    if str(count).endswith('000'):
         print(f"- {count} {mt_type}s done")
 
 # def compare_ens_uniprot_mappings(gene_mappings:dict,protein_mappings:dict) -> None:
@@ -350,7 +367,7 @@ def run(*args):
     
     # Metabolites mappings
     if (mapped_metabolites):
-        print(f"# Import Metabolite mappings ({len(mapped_metabolites.keys())})")
+        print(f"\n# Import Metabolite mappings ({len(mapped_metabolites.keys())})")
         count_metabolite_done = 0
         metabolites = Metabolite.objects.prefetch_related('pathways').filter(external_id__in=mapped_metabolites.keys())
         for metabolite in metabolites:
@@ -373,6 +390,9 @@ def run(*args):
             metabolite.pathways.add(*new_metabolite_reactome)
             # metabolite.save()
             count_metabolite_done += 1
+
+    # Add Protein mappings
+    add_protein_mappings()
 
     # Add cleanup code to remove the Reactome entries not linked to Metabolites nor Genes ?
     detect_non_associated_pathways()

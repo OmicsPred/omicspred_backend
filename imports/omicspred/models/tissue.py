@@ -22,7 +22,7 @@ class TissueData(GenericData):
             ontology_components = re.split(r'(_|:)', tissue_id)
             ontology = ontology_components[0]
             ontology = ontology.lower()
-            print(f"  > {tissue_id}: {ontology}")
+            print(f"    > {tissue_id} ({ontology})")
         response = requests.get(f"https://www.ebi.ac.uk/ols4/api/ontologies/{ontology}/terms?obo_id={tissue_id}")#, headers={"Content-Type":"json"})
         response = response.json()['_embedded']['terms']
         if len(response) == 1:

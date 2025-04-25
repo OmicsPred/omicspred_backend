@@ -8,7 +8,7 @@ class PublicationData(GenericData):
 
     def __init__(self,pmid):
         GenericData.__init__(self)
-        self.pmid = pmid
+        self.pmid = int(pmid)
         self.check_model_exist()
         if not self.model:
             self.fetch_publication_information()
@@ -47,16 +47,16 @@ class PublicationData(GenericData):
             title = result['title'].strip()
             date_publication = result['firstPublicationDate']
             doi = result['doi']
-            print(f"\n# firstauthor:\n{firstauthor}")
-            print(f"\n# authors:\n{authors}")
-            print(f"\n# title:\n{title}")
-            print(f"\n# date_publication:\n{date_publication}")
-            print(f"\n# DOI:\n{doi}")
+            print(f"# firstauthor: {firstauthor}")
+            print(f"# authors: {authors}")
+            print(f"# title: {title}")
+            print(f"# date_publication: {date_publication}")
+            print(f"# DOI: {doi}")
             if result['pubType'] == 'preprint':
                 journal = result['bookOrReportDetails']['publisher']
             else:
                 journal = result['journalTitle']
-            print(f"\n# journal:\n{journal}")
+            print(f"# journal: {journal}")
             self.data = {
                 'pmid': self.pmid,
                 'firstauthor': firstauthor,

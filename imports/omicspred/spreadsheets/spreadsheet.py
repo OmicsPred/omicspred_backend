@@ -163,18 +163,40 @@ class ScoreSpreadSheet(SpreadSheet):
         self.species = species
         self.datasets = {}
         self.tissues = {}
+        self.genes = {}
+        self.proteins = {}
+        self.metabolites = {}
 
     def export_datasets(self):
         return self.datasets
+
+    def export_genes(self):
+        return self.genes
+
+    def export_proteins(self):
+        return self.proteins
+
+    def export_metabolites(self):
+        return self.metabolites
 
     def extract_data(self):
         ''' Extract score information and store it into one or several ScoreData objects. '''
         model = 'Score'
         logger.info(f" Start to parse the {model} spreadsheet")
+        scores_count = len(self.dataframe.index)
+        s_count = 0
+        distinct_rows = {}
         # Loop throught the rows (i.e. score)
         for score_name, score_info in self.dataframe.iterrows():
             parsed_score = ScoreData({'name': score_name, 'license': self.license})
-            print(f"  # SCORE: {score_name}")
+            s_count += 1
+            if score_name not in distinct_rows.keys():
+                distinct_rows[score_name] = 0
+            distinct_rows[score_name] += 1
+            if scores_count < 100:
+                print(f"  # {score_name=}")
+            elif str(s_count).endswith('0000'):
+                print(f"  - {s_count} scores parsed")
             platform_master = None
             platform = None
             tissue = ''
@@ -220,22 +242,27 @@ class ScoreSpreadSheet(SpreadSheet):
     
             # Add molecular trait objects (gene, protein, metabolite)
             if molecular_trait:
+
                 mt_id = None
                 if 'id' in molecular_trait.keys():
                     mt_id = molecular_trait['id'].split('.')[0]
+
                 mt_name = None
                 if 'name' in molecular_trait.keys():
                     mt_name = molecular_trait['name']
 
                 if self.data_type == 'Transcriptomics':
                     gene_data = GeneData(mt_id, mt_name)
+                    self.genes[gene_data.data_id] = gene_data
                     parsed_score.add_other_model('genes',[gene_data])
                     # print(f"  - Gene: {mt_id} | {mt_name}")
                 elif self.data_type == 'Proteomics':
                     protein_data = ProteinData(mt_id, mt_name)
+                    self.proteins[protein_data.data_id] = protein_data
                     parsed_score.add_other_model('proteins',[protein_data])
                 elif self.data_type == 'Metabolomics':
                     metabolite_data = MetaboliteData(mt_id, mt_name)
+                    self.metabolites[metabolite_data.data_id] = metabolite_data
                     parsed_score.add_other_model('metabolites',[metabolite_data])
 
 
@@ -257,7 +284,10 @@ class ScoreSpreadSheet(SpreadSheet):
             parsed_score.set_dataset_tag(dataset_tag)
 
             self.parsed_data[score_name] = parsed_score
-
+        print(f"  - {s_count} scores parsed")
+        for score, count in distinct_rows.items():
+            if count > 1:
+                print(f">>> Score {score}: {count} occurences")
 
 
 class SamplePerformanceSpreadSheet(SpreadSheet):

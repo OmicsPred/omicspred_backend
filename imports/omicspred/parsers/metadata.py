@@ -3,6 +3,9 @@ import os
 import logging
 from imports.omicspred.spreadsheets.spreadsheet import CohortSpreadSheet, PublicationSpreadSheet, ScoreSpreadSheet, SamplePerformanceSpreadSheet
 from imports.omicspred.models.species import SpeciesData
+from imports.omicspred.models.score import ScoreData
+from omicspred.models import *
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spreadsheet parsing')
@@ -18,6 +21,8 @@ class MetadataTemplate():
 
     default_species = 'Homo sapiens'
 
+    max_bulk_count = 200
+
     def __init__(self, file_loc:str, license:str=None):
         self.file_loc = file_loc
         self.parsed_publication = None
@@ -25,6 +30,10 @@ class MetadataTemplate():
         self.parsed_cohorts = {}
         self.parsed_sample_performance = {}
         self.parsed_datasets = {}
+        self.parsed_genes = {}
+        self.parsed_proteins = {}
+        self.parsed_metabolites = {}
+        self.imported_molecular_traits = { 'genes': {}, 'proteins': {}, 'metabolites': {} }
         self.species = None
         # self.parsed_samples_scores = []
         # self.parsed_samples_testing = []
@@ -40,6 +49,16 @@ class MetadataTemplate():
             self.license = license if license else self.default_license
 
         self.report = { 'error': {}, 'warning': {}, 'import': {} }
+
+
+    def save_scores(self, scores):
+        score_models = Score.objects.bulk_create(scores)
+        return score_models
+
+
+    def save_models(self, model, unsaved_models):
+        saved_models = model.objects.bulk_create(unsaved_models)
+        return saved_models
 
 
     def read_curation(self,dataset_prefix:str=''):
@@ -71,6 +90,9 @@ class MetadataTemplate():
             score_spreadsheet.extract_data()
             self.parsed_scores = score_spreadsheet.export_parser_data()
             self.parsed_datasets = score_spreadsheet.export_datasets()
+            self.parsed_genes = score_spreadsheet.export_genes()
+            self.parsed_proteins = score_spreadsheet.export_proteins()
+            self.parsed_metabolites = score_spreadsheet.export_metabolites()
 
             # Sample and Performance Metrics spreadsheet
             sample_performance_spreadsheet = SamplePerformanceSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Sample'],omics_type,self.parsed_cohorts)
@@ -97,23 +119,124 @@ class MetadataTemplate():
                 'sample_validation': set()
             }
 
-        print("- Import scores")
+        if self.parsed_genes:
+            print(f"- Import genes ({len(self.parsed_genes.keys())})")
+            for gene_data_id in self.parsed_genes.keys():
+                gene_data = self.parsed_genes[gene_data_id]
+                gene_model = gene_data.create_model()
+                self.imported_molecular_traits['genes'][gene_data_id] = gene_model
+
+        if self.parsed_proteins:
+            print(f"- Import proteins ({len(self.parsed_proteins.keys())})")
+            for protein_data_id in self.parsed_proteins.keys():
+                protein_data = self.parsed_proteins[protein_data_id]
+                protein_model = protein_data.create_model()
+                self.imported_molecular_traits['proteins'][protein_data_id] = protein_model
+
+        if self.parsed_metabolites:
+            print(f"- Import metabolites ({len(self.parsed_metabolites.keys())})")
+            for metabolite_data_id in self.parsed_metabolites.keys():
+                metabolite_data = self.parsed_metabolites[metabolite_data_id]
+                metabolite_model = metabolite_data.create_model()
+                self.imported_molecular_traits['metabolites'][metabolite_data_id] = metabolite_model
+
+        # Scores
         score_models = {}
-        for score_name in self.parsed_scores.keys():
+        score_names_list = self.parsed_scores.keys()
+        scores_count = len(score_names_list)
+        interval_count = '000' if scores_count < 1000 else '0000'
+        print(f"- Import scores ({scores_count})")
+        s_count = 0
+        bulk_count = 0
+        # score_num = ScoreData.next_id_number(Score, 'num')
+        score_num = 1
+        if len(Score.objects.all()) != 0:
+            score_num = Score.objects.latest('num').pk + 1
+
+        score_models_list = []
+        score_data_dict = {}
+        # score_models_count = 0
+        for score_name in score_names_list:
+            s_count += 1
+            if str(s_count).endswith(interval_count):
+                print(f'  - {s_count} scores imported')
             score_data = self.parsed_scores[score_name]
+            score_data.data['num'] = score_num
+            score_data.data['id'] = 'OPGS' + str(score_num).zfill(6)
+            score_num += 1
             # Add Dataset model to ScoreData
             dataset_tag = score_data.get_dataset_tag()
             if dataset_tag in dataset_models.keys():
                 score_data.add_dataset_model(dataset_models[dataset_tag])
-            score_model = score_data.create_model()
-            score_models[score_name] = score_model
+            # # Add Gene/Protein/Metabolite model(s) to ScoreData
+            # for mt_type in ['genes', 'proteins', 'metabolites']:
+            #     if mt_type in score_data.additional_data.keys():
+            #         for mt_data in score_data.additional_data[mt_type]:
+            #             mt_object = self.imported_molecular_traits[mt_type][mt_data.data_id]
+            #             score_data.molecular_trait_models[mt_type].append(mt_object)
+            #
+            # # Create Score model
+            # score_model = score_data.create_model()
+            # score_models[score_name] = score_model
 
+            # TODO: idea to use "generate_model" instead and use "bulk_create()" with a loop of 200:
+            if bulk_count == self.max_bulk_count:
+                saved_score_models = self.save_scores(score_models_list)
+                for score_model in saved_score_models:
+                    # score_model.set_score_ids(score_model_name.num)
+                    score_model_name = score_model.name
+                    score_model_data = score_data_dict[score_model_name]
+                    # Add Gene/Protein/Metabolite model(s) to ScoreData
+                    for mt_type in ['genes', 'proteins', 'metabolites']:
+                        if mt_type in score_model_data.additional_data.keys():
+                            for mt_data in score_model_data.additional_data[mt_type]:
+                                mt_object = self.imported_molecular_traits[mt_type][mt_data.data_id]
+                                score_model_data.molecular_trait_models[mt_type].append(mt_object)
+                    if score_model_data.molecular_trait_models['genes']:
+                        score_model.genes.add(*score_model_data.molecular_trait_models['genes'])
+                    if score_model_data.molecular_trait_models['proteins']:
+                        score_model.proteins.add(*score_model_data.molecular_trait_models['proteins'])
+                    if score_model_data.molecular_trait_models['metabolites']:
+                        score_model.metabolites.add(*score_model_data.molecular_trait_models['metabolites'])
+                    score_models[score_model_name] = score_model
+                score_models_list = []
+                score_data_dict = {}
+                bulk_count = 0
+
+            score_data_dict[score_name] = score_data
+            score_model = score_data.generate_model()
+            score_models_list.append(score_model)
+            bulk_count += 1
+
+        if bulk_count != 0:
+            saved_score_models = self.save_scores(score_models_list)
+            for score_model in saved_score_models:
+                score_model_name = score_model.name
+                score_model_data = score_data_dict[score_model_name]
+                # Add Gene/Protein/Metabolite model(s) to ScoreData
+                for mt_type in ['genes', 'proteins', 'metabolites']:
+                    if mt_type in score_model_data.additional_data.keys():
+                        for mt_data in score_model_data.additional_data[mt_type]:
+                            mt_object = self.imported_molecular_traits[mt_type][mt_data.data_id]
+                            score_model_data.molecular_trait_models[mt_type].append(mt_object)
+                if score_model_data.molecular_trait_models['genes']:
+                    score_model.genes.add(*score_model_data.molecular_trait_models['genes'])
+                if score_model_data.molecular_trait_models['proteins']:
+                    score_model.proteins.add(*score_model_data.molecular_trait_models['proteins'])
+                if score_model_data.molecular_trait_models['metabolites']:
+                    score_model.metabolites.add(*score_model_data.molecular_trait_models['metabolites'])
+                score_models[score_model_name] = score_model
+        print(f'  - {s_count} scores imported')
 
         print("- Import Samples and Performance Metrics")
+        sp_count = 0
         for score_name in self.parsed_sample_performance.keys():
             if not score_name in score_models.keys():
                 print(f"ERROR: can't find Sample/Performance for the score '{score_name}'")
                 continue
+            sp_count += 1
+            if str(sp_count).endswith(interval_count):
+                print(f'  - {sp_count} sample/performance imported')
             score_model = score_models[score_name]
             dataset_model =  score_model.dataset
             for sp_parsed_data in self.parsed_sample_performance[score_name]:
@@ -134,6 +257,7 @@ class MetadataTemplate():
                             dataset_samples[dataset_model.id]['sample_training'].add(sample_model)
                         else:
                             dataset_samples[dataset_model.id]['sample_validation'].add(sample_model)
+        print(f'  - {sp_count} sample/performance imported')
 
         # Link samples to Datasets 
         print("- Link Samples to Datasets")

@@ -1,7 +1,9 @@
 import requests
 from omicspred.models import Gene, Transcript
 
-input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.112.gtf'
+
+# https://ftp.ensembl.org/pub/current_gtf/homo_sapiens/
+input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.113.gtf'
 # input_file = '/Users/lg10/Workspace/datafiles/OmicsPred/Homo_sapiens.GRCh38.110_sample.gtf'
 
 ens2hgnc = {}

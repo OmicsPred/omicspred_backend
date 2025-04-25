@@ -3,11 +3,13 @@ from omicspred.models import *
 
 
 anc_mapping = {
+    'Ad Mixed American': 'AMR', # <- to be confirmed (could be African American)
     'Additional Asian Ancestries': 'ASN',
     'Additional Diverse Ancestries': 'OTH',
     'African': 'AFR',
     'African American': 'AFR',
-    'Ad Mixed American': 'AMR', # <- to be confirmed (could be African American)
+    'African American or Afro-Caribbean': 'AFR',
+    'Asian unspecified': 'ASN',
     'East Asian' : 'EAS',
     'European': 'EUR',
     'Greater Middle Eastern': 'GME',
@@ -39,11 +41,14 @@ def format_percentage(percent):
 
 def run():
     count = 1
-    scores = Score.objects.filter(dataset__id__gte=8).prefetch_related('score_performance','score_performance__sample')
+    scores = Score.objects.filter(dataset__id__gte=8).prefetch_related('score_performance','score_performance__sample').distinct()
     # scores = Score.objects.all().prefetch_related('score_performance','score_performance__sample')
     multi_anc = 'MAO'
 
     # debug_count = 0
+    scores_count = len(scores)
+    print_interval = '000' if scores_count < 10000 else '0000'
+    print(f"Scores to update: {scores_count}")
     for score in scores:
 
         # Init variables
@@ -148,7 +153,7 @@ def run():
             sample_validation_dist['anc'][anc]['dist'] = percent
 
         count += 1
-        if str(count).endswith('000'):
+        if str(count).endswith(print_interval):
             print(f'# {count} scores processed')
 
         json_content = {}
@@ -173,6 +178,7 @@ def run():
             print(f"--> Error with {score.id}: {e}")
             exit(1)
 
+    print(f'# {count} scores processed')
         # debug_count += 1
         # if debug_count >= debug_count_max:
         #     exit(0)

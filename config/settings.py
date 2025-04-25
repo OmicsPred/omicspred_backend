@@ -318,6 +318,9 @@ ELASTICSEARCH_DSL = {
     }
 }
 
+ELASTICSEARCH_DSL_AUTO_REFRESH = False
+ELASTICSEARCH_DSL_AUTOSYNC = False
+
 ELASTICSEARCH_INDEX_SETTINGS = {
     'number_of_shards': 1,
     'number_of_replicas': 0
