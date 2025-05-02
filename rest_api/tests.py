@@ -71,7 +71,7 @@ class BrowseEndpointTest(APITestCase):
         ('Pathways/Name', 'pathway', 0, {'path': pathways_list}),
         # Molecular trait endpoints
         ('Gene/ID', 'gene', 0, {'path': gene_ids_list}),
-        ('Gene/Search', 'gene/search', 0, {'query': [search_gene]}),
+        ('Gene/Search', 'gene/search', 1, {'query': [search_gene]}),
         ('Protein/Name', 'protein', 0, {'path': proteins_list}),
         ('Protein/Search', 'protein/search', 1, {'query': [search_gene]}),
         ('Metabolite/Name', 'metabolite', 0, {'path': metabolites_list}),
