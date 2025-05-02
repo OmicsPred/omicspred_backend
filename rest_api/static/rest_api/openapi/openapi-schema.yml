@@ -69,7 +69,7 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
-      * <span class="badge badge-pill">1.1</span> - April 2025:
+      * <span class="badge badge-pill">1.1</span> - May 2025:
         * Dataset:
           * Replace the endpoint parameter `/api/dataset/<name>` to `/api/dataset/<opd_id>`.
           * New field **id** in the Dataset schemas (`/api/dataset/` endpoints), containing the OmicsPred Dataset ID (OPD ID).
@@ -78,6 +78,8 @@ info:
         * Molecular trait (gene, protein, metabolite):
           * Replace the field **molecular_traits** by the fields **genes**, **proteins** and **metabolites** in the Phenotype endpoints (`/api/applications_score/`).
           * Rename the search parameter *molecular_trait_id* by *molecular_trait* in the Phenotype endpoint `/api/applications_score/search/`.
+          * New endpoint `/api/gene/search` to search genes by name (several genes can have the same name but different external IDs).
+          * New field **retired_gene_model** in the Gene schemas to indicate if the gene model has been remove from Ensembl.
         * Publication:
           * The endpoint `/api/publication/` now can use the parameter `pmid` or `opp_id` (`/api/publication/<pmid>` or `/api/publication/<opp_id>`).
           * New field **id** in the Publication schemas (`/api/publication/` endpoints), containing the OmicsPred Publication ID (OPP ID).
@@ -357,6 +359,10 @@ components:
               type: string
               description: "Biotype of the gene"
               example: "protein_coding"
+            retired_gene_model:
+              type: boolean
+              description: "Flag to indicate if the gene model has been removed from Ensembl"
+              example: false
 
     Gene_extended:
       description: "Based on the **Gene** schema, with the addition of the '**pathways**'."
@@ -1492,7 +1498,7 @@ paths:
       description: |
         Retrieve the Metabolite, including:
           * Metabolite name
-          * Metabolite ID
+          * Metabolite external ID
           * Metabolite source (e.g. ChEBI)
           * Metabolite synonyms
           * Metabolite external references
@@ -1539,7 +1545,7 @@ paths:
       description: |
         Retrieve the Protein, including:
           * Protein name
-          * Protein ID
+          * Protein external ID
           * Protein source (e.g. UniProt)
           * Protein synonyms
           * Protein description(s)
@@ -1585,7 +1591,7 @@ paths:
       description: | 
         Search proteins by gene name/symbol or ID, including for each of the results:
           * Protein name
-          * Protein ID
+          * Protein external ID
           * Protein source (e.g. UniProt)
           * Protein synonyms
           * Protein description(s)
@@ -1641,23 +1647,68 @@ paths:
         - "Molecular trait endpoints"
       operationId: getGene
       description: |
-        Retrieve the Gene, including:
+        Retrieve a Gene by its external ID (e.g. Ensembl Gene ID), including:
           * Gene name
-          * Gene ID
+          * Gene external ID
           * Gene source (e.g. Ensembl)
           * Gene synonyms
           * Gene description(s)
+          * Flag about the gene status in Ensembl (retired or not)
           * Linked pathways
 
         Example of request:
         ```
-        https://rest.omicspred.org/api/gene/COL1A1
+        https://rest.omicspred.org/api/gene/ENSG00000108821
         ```
       parameters:
       - name: gene_id
         in: path
         required: true
-        description: 'Gene name/symbol or Ensembl Gene ID'
+        description: 'Gene external ID (e.g. Ensembl Gene ID)'
+        examples:
+          ENSG00000165953:
+            value: "ENSG00000165953"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gene_extended'
+          description: 'Gene information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+  /api/gene/search:
+    get:
+      tags:
+        - "Molecular trait endpoints"
+      operationId: searchFenes
+      description: | 
+        Search search genes by name (several genes can have the same name but different external IDs), including for each of the results:
+          * Gene name
+          * Gene external ID
+          * Gene source (e.g. Ensembl)
+          * Gene synonyms
+          * Gene description(s)
+          * Flag about the gene status in Ensembl (retired or not)
+          * Linked pathways
+
+        Example of request:
+        ```
+        - https://rest.omicspred.org/api/gene/search?gene=COL1A1
+        - https://rest.omicspred.org/api/gene/search?gene=ENSG00000165953
+        ```
+      parameters:
+      - name: gene
+        required: true
+        in: query
+        description: Gene name/symbol or ID.
         examples:
           COL1A1:
             value: "COL1A1"
@@ -1670,8 +1721,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Gene_extended'
-          description: 'Gene information'
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of genes'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Gene_extended'
+          description: |
+            List of genes matching the name/symbol or ID provided
+        
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           content:
               application/json:
@@ -3080,7 +3144,7 @@ paths:
 
         Examples of request:
         ```
-        - https://rest.omicspred.org/api/dataset/OPD000001
+        https://rest.omicspred.org/api/dataset/OPD000001
         ```
       parameters:
       - name: opd_id
@@ -3586,9 +3650,11 @@ paths:
             op_sel:
               summary: Select an example or type an ID - click on 'Try it out' first
             pc_1:
-              value: "557.1"
+              summary: "557.1"
+              value: 557.1
             pc_2:
-              value: "250.2"
+              summary: "250.2"
+              value: 250.2
         - name: pmid
           required: false
           in: query

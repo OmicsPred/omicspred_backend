@@ -324,18 +324,48 @@ class RestProtein(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
+# class RestGene(generics.RetrieveAPIView):
+#     """
+#     Retrieve one Gene
+#     """
+
+#     def get(self, request, gene_id):
+#         try:
+#             queryset = Gene.objects.prefetch_related('pathways').get(Q(name__iexact=gene_id) | Q(external_id__iexact=gene_id))
+#         except Gene.DoesNotExist:
+#             queryset = None
+#         serializer = GeneSerializerExtended(queryset,many=False)
+#         return Response(serializer.data)
+
+
 class RestGene(generics.RetrieveAPIView):
     """
-    Retrieve one Gene
+    Retrieve one Gene, using its external ID
     """
 
     def get(self, request, gene_id):
         try:
-            queryset = Gene.objects.prefetch_related('pathways').get(Q(name__iexact=gene_id) | Q(external_id__iexact=gene_id))
+            queryset = Gene.objects.prefetch_related('pathways').get(external_id__iexact=gene_id)
         except Gene.DoesNotExist:
             queryset = None
         serializer = GeneSerializerExtended(queryset,many=False)
         return Response(serializer.data)
+
+
+class RestSearchGene(generics.ListAPIView):
+    """
+    Search Genes by name (or external ID)
+    """
+    serializer_class = GeneSerializerExtended
+
+    def get_queryset(self):
+        queryset = []
+
+        # Search by Gene name or external ID
+        gene = self.request.query_params.get('gene')
+        if gene and gene is not None:
+            queryset = Gene.objects.prefetch_related('pathways').filter(Q(name__iexact=gene) | Q(external_id__iexact=gene))
+        return queryset
 
 
 class RestSearchProtein(generics.ListAPIView):
