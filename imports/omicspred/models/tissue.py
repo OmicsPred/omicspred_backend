@@ -13,6 +13,7 @@ class TissueData(GenericData):
     def __init__(self,id:str):
         GenericData.__init__(self)
         self.id = id
+        self.data['type'] = 'tissue'
 
     def fetch_tissue_information(self):
         # tissue_id = self.id.replace('_',':')
@@ -45,6 +46,8 @@ class TissueData(GenericData):
                 self.data['description'] = str_desc
             except:
                 self.data['description'] = response['description']
+            if self.data['description'] == '[]':
+                self.data['description'] = None
 
 
     def check_model_exist(self):
