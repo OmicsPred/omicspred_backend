@@ -46,6 +46,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
     re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
+    re_path(r'^'+rest_urls['gene']+'search'+slash, RestSearchGene.as_view(), name="searchGenes"),
     re_path(r'^'+rest_urls['gene']+'(?P<gene_id>[^/]+)'+slash, RestGene.as_view(), name="getGene"),
     # Omics by platform
     re_path(r'^'+rest_urls['metabolomics']+'(?P<platform>[^/]+)'+slash, cache_page(cache_time)(RestMetabolomics.as_view()), name="getMetabolomicsScores"),

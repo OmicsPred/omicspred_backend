@@ -34,7 +34,8 @@ class BrowseEndpointTest(APITestCase):
     platforms_list_transcriptomics = ['Illumina RNAseq']
     platforms_list = [*platforms_list_proteomics,*platforms_list_metabolomics,*platforms_list_transcriptomics]
     scores_list = ['OPGS000005', 'OPGS002385', 'OPGS003006']
-    genes_list = ['FCGR2B']
+    gene_ids_list = ['ENSG00000072694']
+    gene_names_list = ['FCGR2B']
     proteins_list = ['P31994']
     metabolites_list = ['CHEBI_16113']
     pathways_list = ['R-HSA-191273', 'R-HSA-198933']
@@ -54,7 +55,7 @@ class BrowseEndpointTest(APITestCase):
     search_author = f'author=Xu'
     search_opgs_id = f'opgs_id={scores_list[0]}'
     search_phenotype = f'phenotype_id={phenotypes_list[0]}'
-    search_gene = f'gene={genes_list[0]}'
+    search_gene = f'gene={gene_names_list[0]}'
     seach_mt = f'molecular_trait={proteins_list[0]}'
     search_combined = f'{search_opgs_id}&{search_pmid}'
 
@@ -69,7 +70,8 @@ class BrowseEndpointTest(APITestCase):
         ('Pathways', 'pathway/all', 1),
         ('Pathways/Name', 'pathway', 0, {'path': pathways_list}),
         # Molecular trait endpoints
-        ('Gene/Name', 'gene', 0, {'path': genes_list}),
+        ('Gene/ID', 'gene', 0, {'path': gene_ids_list}),
+        ('Gene/Search', 'gene/search', 1, {'query': [search_gene]}),
         ('Protein/Name', 'protein', 0, {'path': proteins_list}),
         ('Protein/Search', 'protein/search', 1, {'query': [search_gene]}),
         ('Metabolite/Name', 'metabolite', 0, {'path': metabolites_list}),
@@ -93,7 +95,7 @@ class BrowseEndpointTest(APITestCase):
         ('Score/ID', 'score', 0, {'path': scores_list}),
         ('Scores Search', 'score/search', 1, {'query': ['opgs_ids='+','.join(scores_list),search_pmid,search_opp_id,search_opd_id,search_platform,search_cohort]}),
         ('Scores Search Type', 'score/search/protein', 1, {'path': [proteins_list[0]],'extra_query': 'include_performance_metrics=1'}),
-        ('Scores Search Type', 'score/search/gene', 1, {'path': [genes_list[0]], 'extra_query': 'include_performance_data=1'}),
+        ('Scores Search Type', 'score/search/gene', 1, {'path': [gene_names_list[0]], 'extra_query': 'include_performance_data=1'}),
         ('Scores Search Type', 'score/search/metabolite', 1, {'path': [metabolites_list[0]]}),
         ('Scores Performance', 'score/performance', 0, {'path': scores_list}),
         # Dataset
@@ -137,7 +139,7 @@ class BrowseEndpointTest(APITestCase):
             }
         ),
         (
-            'Scores Search Type / performances', f'score/search/gene/{genes_list[0]}', 1,
+            'Scores Search Type / performances', f'score/search/gene/{gene_names_list[0]}', 1,
             {
                 'response_path': [],
                 'query': ['include_performance_metrics','include_performance_data'],

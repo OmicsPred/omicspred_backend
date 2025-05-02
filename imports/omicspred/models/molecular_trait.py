@@ -37,14 +37,12 @@ class GeneData(GenericData):
             self.model = gene
         except Gene.DoesNotExist:
             self.model = None
-            try:
-                if self.name and self.name not in [None,np.nan,'nan','']:
-                    gene = Gene.objects.get(name__iexact=self.name)
-                else:
-                    gene = Gene.objects.get(external_id__iexact=self.external_id)
-                self.model = gene
-            except Gene.DoesNotExist:
-                self.model = None
+            # try:
+            #     if self.external_id and self.name and self.name not in [None,np.nan,'nan','']:
+            #         gene = Gene.objects.get(name__iexact=self.name)
+            #     self.model = gene
+            # except Gene.DoesNotExist:
+            #     self.model = None
 
 
     def update_gene_external_id(self):

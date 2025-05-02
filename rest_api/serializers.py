@@ -191,7 +191,7 @@ class GeneSerializer(GeneSerializerMinimal):
     synonyms = serializers.SerializerMethodField()
     # descriptions = serializers.SerializerMethodField()
     class Meta(GeneSerializerMinimal.Meta):
-        meta_fields = ('external_id_source','synonyms', 'biotype')
+        meta_fields = ('external_id_source','synonyms', 'biotype', 'retired_gene_model')
         fields = GeneSerializerMinimal.Meta.fields + meta_fields
         read_only_fields = GeneSerializerMinimal.Meta.read_only_fields + meta_fields
 

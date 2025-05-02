@@ -3,6 +3,10 @@
 ## Data import
 Run `import_metadata.py`
 
+```
+python manage.py runscript import_metadata
+```
+
 ## Post-processing
 1. get_score_ancestry_dist.py
 2. update_ensembl_genes.py

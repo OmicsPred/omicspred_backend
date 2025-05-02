@@ -333,7 +333,8 @@ ELASTICSEARCH_INDEX_NAMES = {
     'search_es.documents.pathway': 'pathway',
     'search_es.documents.phenotype': 'phenotype',
     'search_es.documents.protein': 'protein',
-    'search_es.documents.score': 'score'
+    'search_es.documents.score': 'score',
+    'search_es.documents.tissue': 'tissue'
 }
 
 

@@ -1,7 +1,8 @@
-import os, io
+import os, io, sys
 import sqlite3
 import pathlib
 import zipfile
+import datetime
 from omicspred.models import *
 
 # OPGS018874_model.txt
@@ -35,7 +36,55 @@ scores_root_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/genetic_sco
 
 
 datasets_list = {
-    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':'en_Adipose_Subcutaneous.db'}
+    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':'en_Adipose_Subcutaneous.db'},
+    'Adipose_Visceral_Omentum': {'tissue_id': 'UBERON_0010414', 'db':'en_Adipose_Visceral_Omentum.db'},
+    'Adrenal_Gland': {'tissue_id': 'UBERON_0002369', 'db':'en_Adrenal_Gland.db'},
+    'Artery_Aorta': {'tissue_id': 'UBERON_0001496', 'db':'en_Artery_Aorta.db'},
+    'Artery_Coronary': {'tissue_id': 'UBERON_0001621', 'db':'en_Artery_Coronary.db'},
+    'Artery_Tibial': {'tissue_id': 'UBERON_0007610', 'db':'en_Artery_Tibial.db'},
+    'Brain_Amygdala': {'tissue_id': 'UBERON_0001876', 'db':'en_Brain_Amygdala.db'},
+    'Brain_Anterior_cingulate_cortex_BA24': {'tissue_id': 'UBERON_0009835', 'db':'en_Brain_Anterior_cingulate_cortex_BA24.db'},
+    'Brain_Caudate_basal_ganglia': {'tissue_id': 'UBERON_0001873', 'db':'en_Brain_Caudate_basal_ganglia.db'},
+    'Brain_Cerebellar_Hemisphere': {'tissue_id': 'UBERON_0002245', 'db':'en_Brain_Cerebellar_Hemisphere.db'},
+    'Brain_Cerebellum': {'tissue_id': 'UBERON_0002037', 'db':'en_Brain_Cerebellum.db'},
+    'Brain_Cortex': {'tissue_id': 'UBERON_0001870', 'db':'en_Brain_Cortex.db'},
+    'Brain_Frontal_Cortex_BA9': {'tissue_id': 'UBERON_0009834', 'db':'en_Brain_Frontal_Cortex_BA9.db'},
+    'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':'en_Brain_Hippocampus.db'},
+    'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':'en_Brain_Hypothalamus.db'},
+    'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':'en_Brain_Nucleus_accumbens_basal_ganglia.db'},
+    # 'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':'en_Brain_Putamen_basal_ganglia.db'},
+    'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':'en_Brain_Spinal_cord_cervical_c-1.db'},
+    'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':'en_Brain_Substantia_nigra.db'},
+    'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':'en_Breast_Mammary_Tissue.db'},
+    'Cells_Cultured_fibroblasts': {'tissue_id': 'EFO_0002009', 'db':'en_Cells_Cultured_fibroblasts.db'},
+    'Cells_EBV-transformed_lymphocytes': {'tissue_id': 'EFO_0000572', 'db':'en_Cells_EBV-transformed_lymphocytes.db'},
+    'Colon_Sigmoid': {'tissue_id': 'UBERON_0001159', 'db':'en_Colon_Sigmoid.db'},
+    'Colon_Transverse': {'tissue_id': 'UBERON_0001157', 'db':'en_Colon_Transverse.db'},
+    'Esophagus_Gastroesophageal_Junction': {'tissue_id': 'UBERON_0004550', 'db':'en_Esophagus_Gastroesophageal_Junction.db'},
+    'Esophagus_Mucosa': {'tissue_id': 'UBERON_0006920', 'db':'en_Esophagus_Mucosa.db'},
+    'Esophagus_Muscularis': {'tissue_id': 'UBERON_0004648', 'db':'en_Esophagus_Muscularis.db'},
+    'Heart_Atrial_Appendage': {'tissue_id': 'UBERON_0006631', 'db':'en_Heart_Atrial_Appendage.db'},
+    'Heart_Left_Ventricle': {'tissue_id': 'UBERON_0006566', 'db':'en_Heart_Left_Ventricle.db'},
+    'Kidney_Cortex': {'tissue_id': 'UBERON_0001225', 'db':'en_Kidney_Cortex.db'},
+    'Liver': {'tissue_id': 'UBERON_0001114', 'db':'en_Liver.db'},
+    'Lung': {'tissue_id': 'UBERON_0008952', 'db':'en_Lung.db'},
+    'Minor_Salivary_Gland': {'tissue_id': 'UBERON_0006330', 'db':'en_Minor_Salivary_Gland.db'},
+    'Muscle_Skeletal': {'tissue_id': 'UBERON_0011907', 'db':'en_Muscle_Skeletal.db'},
+    'Nerve_Tibial': {'tissue_id': 'UBERON_0001323', 'db':'en_Nerve_Tibial.db'},
+    'Ovary': {'tissue_id': 'UBERON_0000992', 'db':'en_Ovary.db'},
+    'Pancreas': {'tissue_id': 'UBERON_0001150', 'db':'en_Pancreas.db'},
+    'Pituitary': {'tissue_id': 'UBERON_0000007', 'db':'en_Pituitary.db'},
+    'Prostate': {'tissue_id': 'UBERON_0002367', 'db':'en_Prostate.db'},
+    'Skin_Not_Sun_Exposed_Suprapubic': {'tissue_id': 'UBERON_0036149', 'db':'en_Skin_Not_Sun_Exposed_Suprapubic.db'},
+    'Skin_Sun_Exposed_Lower_leg': {'tissue_id': 'UBERON_0004264', 'db':'en_Skin_Sun_Exposed_Lower_leg.db'},
+    'Small_Intestine_Terminal_Ileum': {'tissue_id': 'UBERON_0001211', 'db':'en_Small_Intestine_Terminal_Ileum.db'},
+    'Spleen': {'tissue_id': 'UBERON_0002106', 'db':'en_Spleen.db'},
+    'Stomach': {'tissue_id': 'UBERON_0000945', 'db':'en_Stomach.db'},
+    'Testis': {'tissue_id': 'UBERON_0000473', 'db':'en_Testis.db'},
+    'Thyroid': {'tissue_id': 'UBERON_0002046', 'db':'en_Thyroid.db'},
+    'Uterus': {'tissue_id': 'UBERON_0000995', 'db':'en_Uterus.db'},
+    'Vagina': {'tissue_id': 'UBERON_0000996', 'db':'en_Vagina.db'},
+    'Whole_Blood': {'tissue_id': 'UBERON_0013756', 'db':'en_Whole_Blood.db'}
 }
 
 
@@ -55,9 +104,8 @@ def get_genetic_score_data(sqlite_cursor:sqlite3.Cursor,reported_trait_id:str) -
     return qcursor
 
 
-def build_zip_file(scores_root_dir:str, dataset_dir:str, dataset_label:str):
+def build_zip_file(scores_root_dir:str, dataset_directory:pathlib.Path, dataset_label:str):
     ''' Generate the zip file of the directory '''
-    dataset_directory = pathlib.Path(dataset_dir)
     zipfile_name = f'{scores_root_dir}/{dataset_label}.zip'
     with zipfile.ZipFile(zipfile_name, 'w') as archive:
         for scoring_file_path in dataset_directory.iterdir():
@@ -127,20 +175,28 @@ def write_row(filehandle:io.TextIOWrapper,row_content:str,order:int=2):
 
 def run():
 
+    start_time = datetime.now()
+    print(f"Start time: {start_time}")
+
+    datasets_count = len(datasets_list.keys())
+    dataset_number = 1
+
     for dataset_label in datasets_list.keys():
+        print(f"# Dataset {dataset_label} ({dataset_number}/{datasets_count})")
+        dataset_number += 1
         # 1 - Create directory
         # Root directory
         if not os.path.isdir(scores_root_dir):
-            print("# Create root directory")
+            print("  - Create root directory")
             os.mkdir(scores_root_dir)
         # Dataset directory
         dataset_dir = f'{scores_root_dir}/{dataset_label}'
         if not os.path.isdir(dataset_dir):
-            print(f"# Create dataset directory '{dataset_label}'")
+            print(f"  - Create dataset directory")
             os.mkdir(dataset_dir)
 
         # 2 - Fetch scores and dataset
-        print("# Get dataset")
+        print("  - Get dataset")
         dataset = get_dataset(pmid,datasets_list[dataset_label]['tissue_id'])
         
         sqlite_file = dbs_location+datasets_list[dataset_label]['db']
@@ -149,9 +205,10 @@ def run():
 
         genetic_scores = {}
         scores = Score.objects.filter(dataset=dataset)
+        scores_count = Score.objects.filter(dataset=dataset).count()
 
         # 3 - Extract variant data and build genetic scores files
-        print("# Get variant data from SQLite database for each genetic score of the current dataset & build scoring files")
+        print("  - Get variant data from SQLite database for each genetic score of the current dataset & build scoring files")
         for score in scores:
             score_id = score.id
             genetic_scores[score_id] = []
@@ -165,6 +222,7 @@ def run():
             # 3b - Generate variants content
             write_row(file,'rsid\teffect_allele\tother_allele\teffect_weight')
             first_row = True
+            count_rows = 0
             for row in qcursor:
                 rsid, ref_allele, eff_allele, weight = row
                 row_string = f'{rsid}\t{eff_allele}\t{ref_allele}\t{weight}'
@@ -173,6 +231,7 @@ def run():
                     first_row = False
                 else:
                     write_row(file,row_string,1)
+                count_rows += 1
                 # genetic_scores[score_id].append({
                 #     'rsid': rsid,
                 #     'effect_allele': eff_allele,
@@ -180,10 +239,22 @@ def run():
                 #     'effect_weight': weight
                 # })
             file.close()
+            if count_rows != score.variants_number:
+                print(f"    >> Score {score_id}: discrepancies between the number of variants in metadata ({score.variants_number}) and sqlite ({count_rows}).")
         sqlite_cursor.close()
         sqlite_connection.close()
 
         # 4 - Build zip file for the dataset
-        print("# Build Zip file")
-        build_zip_file(scores_root_dir, dataset_dir, dataset_label)
+        print("  - Build Zip file")
+        dataset_directory = pathlib.Path(dataset_dir)
+        count_files = len(list(dataset_directory.glob('*')))
+        if scores_count == count_files:
+            build_zip_file(scores_root_dir, dataset_directory, dataset_label)
+        else:
+            print(f"    >> Zip file error: the number of Genetic Scores ({scores_count}) differs from the number of scoring files generated ({count_files}) ")
+            sys.exit()
+
+    end_time = datetime.now()
+    print(f"Started time: {start_time}")
+    print(f"Ended time: {end_time}")
 
