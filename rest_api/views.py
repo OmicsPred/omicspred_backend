@@ -16,8 +16,8 @@ from .serializers import *
 
 generic_defer = ['curation_notes']
 only_dict = {
-    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
-    'scores_pp_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__name','dataset__platform__id','dataset__platform__version','dataset__publication','ancestry'],
+    'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__id','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
+    'scores_pp_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__id','dataset__name','dataset__platform__id','dataset__platform__version','dataset__publication','ancestry'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -31,24 +31,19 @@ performance_metric = [Prefetch('performance_metric', queryset=Metric.objects.onl
 related_dict = {
     'metabolites': [Prefetch('metabolites', queryset=Metabolite.objects.only(*only_dict['metabolite']).select_related('pathway_group','pathway_subgroup').all().order_by('id'))],
     'proteins': [Prefetch('proteins', queryset=Protein.objects.only('id','name','external_id','external_id_source','description','synonyms').all().order_by('id'))],
-    'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description').all().order_by('id'))],
+    'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description','retired_gene_model').all().order_by('id'))],
     'molecular_traits': ['genes','transcripts','proteins','metabolites'],
+    'pathways': ['pathways', Prefetch('pathways__superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all())],
     'pathway_prefetch_with_counts': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_proteins','pathway_proteins__protein_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
-    # 'pathway_prefetch_no_counts': [
-    #     Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
-    #     Prefetch('pathway_genes', queryset=Gene.objects.only('id','name','external_id','description').all().order_by('name')),
-    #     Prefetch('pathway_proteins', queryset=Protein.objects.only('id','name','external_id').all().order_by('name')),
-    #     Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id','name','external_id').all().order_by('name')),
-    # ], # Slight speed up
-    'pathway_prefetch_no_counts_test': [
+    'pathway_prefetch_no_counts': [
         Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
         Prefetch('pathway_genes', queryset=Gene.objects.only('id').all()),
         Prefetch('pathway_proteins', queryset=Protein.objects.only('id').all()),
         Prefetch('pathway_metabolites', queryset=Metabolite.objects.only('id').all()),
-    ], # Big speed up
+    ], # Speed up
     'performances': [Prefetch('score_performance', queryset=Performance.objects.defer('publication').select_related('sample').all().prefetch_related('sample__cohorts','performance_metric').order_by('id'))],
     'performance_cohorts': [Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','cohort_label','eval_type').all().prefetch_related(*performance_metric).order_by('id'))],
-    'perf_select': ['score', 'sample', 'dataset', 'dataset__publication','dataset__platform','dataset__platform__platform_master'],
+    'perf_select': ['score', 'sample', 'dataset', 'dataset__publication','dataset__platform','dataset__platform__platform_master','dataset__tissue'],
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
@@ -250,7 +245,7 @@ class RestListPathways(generics.ListAPIView):
         # Only counts - FOR PRIVATE USE CASE
         only_counts = self.request.query_params.get('only_counts')
         if only_counts and str(only_counts)=='1':
-            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts_test']
+            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
             self.serializer_class = PathwaySerializerExtendedCount
 
         queryset = Pathway.objects.all().prefetch_related(*pathway_prefetch_list).order_by(Lower('name'))
@@ -294,7 +289,7 @@ class RestMetabolite(generics.RetrieveAPIView):
 
     def get(self, request, metabolite_id):
         try:
-            queryset = Metabolite.objects.prefetch_related('pathway_group','pathways').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
+            queryset = Metabolite.objects.prefetch_related(*related_dict['pathways'],'pathway_group').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
         except Metabolite.DoesNotExist:
             queryset = None
         serializer = MetaboliteSerializerExtended(queryset,many=False)
@@ -308,16 +303,16 @@ class RestProtein(generics.RetrieveAPIView):
 
     def get(self, request, protein_id):
         try:
-            queryset = Protein.objects.get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
+            queryset = Protein.objects.prefetch_related(*related_dict['pathways']).get(Q(name__iexact=protein_id) | Q(external_id__iexact=protein_id))
         except Protein.DoesNotExist:
             queryset = None
         except MultipleObjectsReturned:
             # Issue when more than 1 entry match the "protein_id" (usually the name).
             # Returns the entry without an external ID or the first entry if there are more than 1 match.
             try:
-                queryset = Protein.objects.get(Q(name__iexact=protein_id) & Q(external_id__isnull=True))
+                queryset = Protein.objects.prefetch_related(*related_dict['pathways']).get(Q(name__iexact=protein_id) & Q(external_id__isnull=True))
             except MultipleObjectsReturned:
-                queryset = Protein.objects.filter(Q(name__iexact=protein_id) & Q(external_id__isnull=True)).first()
+                queryset = Protein.objects.filter(Q(name__iexact=protein_id) & Q(external_id__isnull=True)).prefetch_related(*related_dict['pathways']).first()
             except Protein.DoesNotExist:
                 queryset = None
         serializer = ProteinSerializerExtended(queryset,many=False)
@@ -345,7 +340,7 @@ class RestGene(generics.RetrieveAPIView):
 
     def get(self, request, gene_id):
         try:
-            queryset = Gene.objects.prefetch_related('pathways').get(external_id__iexact=gene_id)
+            queryset = Gene.objects.prefetch_related(*related_dict['pathways']).get(external_id__iexact=gene_id)
         except Gene.DoesNotExist:
             queryset = None
         serializer = GeneSerializerExtended(queryset,many=False)
@@ -364,7 +359,7 @@ class RestSearchGene(generics.ListAPIView):
         # Search by Gene name or external ID
         gene = self.request.query_params.get('gene')
         if gene and gene is not None:
-            queryset = Gene.objects.prefetch_related('pathways').filter(Q(name__iexact=gene) | Q(external_id__iexact=gene))
+            queryset = Gene.objects.prefetch_related(*related_dict['pathways']).filter(Q(name__iexact=gene) | Q(external_id__iexact=gene))
         return queryset
 
 
@@ -380,7 +375,7 @@ class RestSearchProtein(generics.ListAPIView):
         # Search by Gene
         gene = self.request.query_params.get('gene')
         if gene and gene is not None:
-            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene) | Q(gene__external_id__iexact=gene)).order_by('id')
+            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene) | Q(gene__external_id__iexact=gene)).prefetch_related(*related_dict['pathways']).order_by('id')
 
         return queryset
 

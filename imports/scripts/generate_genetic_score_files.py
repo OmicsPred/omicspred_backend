@@ -5,7 +5,7 @@ import zipfile
 import datetime
 from omicspred.models import *
 
-# OPGS018874_model.txt
+# OPGS018874.txt
 
 #omicspred_id=OPGS018874
 #pgs_name=OID21306
@@ -131,6 +131,7 @@ def write_header(filehandle:io.TextIOWrapper, score:Score, dataset:Dataset):
             #trait_reported=Calbindin
             #genome_build=GRCh37
             #variants_number=51
+            #note=Model extracted as-is from PredictDB.org
             #citation=Xu, Y et al. Nature (2023). doi:10.1038/s41586-023-05844-9
             #license=CC BY
     '''
@@ -155,6 +156,9 @@ def write_header(filehandle:io.TextIOWrapper, score:Score, dataset:Dataset):
     write_row(filehandle, f'#genome_build={score.variants_genomebuild}')
     # Variants number
     write_row(filehandle, f'#variants_number={score.variants_number}')
+    # Note/Comment
+    if score.comment:
+        write_row(filehandle, f'#note={score.comment}')
     # Citation
     publication = dataset.publication
     year_publication = publication.pub_year
@@ -213,7 +217,7 @@ def run():
             score_id = score.id
             genetic_scores[score_id] = []
             score_trait = score.trait_reported_id
-            scoring_file_name = f'{dataset_dir}/{score_id}_model.txt'
+            scoring_file_name = f'{dataset_dir}/{score_id}.txt'
             # Scoring file
             file = open(scoring_file_name,'w')
             # 3a - Generate header content
