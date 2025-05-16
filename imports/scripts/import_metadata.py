@@ -13,13 +13,13 @@ def run():
 
     metadata_template = MetadataTemplate(file_loc,license)
 
-    start_time = datetime.now()
+    start_time = datetime.datetime.now()
 
     print(f"Start time: {start_time}")
     metadata_template.read_curation(dataset_prefix)
     metadata_template.import_curation()
 
-    end_time = datetime.now()
+    end_time = datetime.datetime.now()
 
     print(f"Started time: {start_time}")
     print(f"Ended time: {end_time}")

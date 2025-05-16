@@ -17,7 +17,7 @@ from omicspred.models import *
 #variants_number=51
 #citation=Xu, Y et al. Nature (2023). doi:10.1038/s41586-023-05844-9
 #license=CC BY
-# rsid	chr_name	chr_position	effect_allele	other_allele	effect_weight
+# rsID	chr_name	chr_position	effect_allele	other_allele	effect_weight
 # rs4703712	5	75839350	C	A	-0.0367272447198089
 # rs3797378	5	75887658	C	T	-0.0227123242438836
 # rs4704344	5	75898225	C	T	-0.0080439617180173
@@ -52,7 +52,7 @@ datasets_list = {
     'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':'en_Brain_Hippocampus.db'},
     'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':'en_Brain_Hypothalamus.db'},
     'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':'en_Brain_Nucleus_accumbens_basal_ganglia.db'},
-    # 'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':'en_Brain_Putamen_basal_ganglia.db'},
+    'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':'en_Brain_Putamen_basal_ganglia.db'},
     'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':'en_Brain_Spinal_cord_cervical_c-1.db'},
     'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':'en_Brain_Substantia_nigra.db'},
     'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':'en_Breast_Mammary_Tissue.db'},
@@ -143,15 +143,15 @@ def write_header(filehandle:io.TextIOWrapper, score:Score, dataset:Dataset):
     # Omics type
     write_row(filehandle, f'#trait_type={dataset.platform.platform_master.type.lower()}')
     # Tissue
-    write_row(filehandle, f'#measurement_tissue={dataset.tissue.label}')
+    write_row(filehandle, f'#measurement_tissue={dataset.tissue.label} ({dataset.tissue.id})')
     # Platform
     platform = dataset.platform.name
     if dataset.platform.version:
-        platform += f' {dataset.platform.version}'
+        platform += f' - {dataset.platform.version}'
     write_row(filehandle, f'#measurement_platform={platform}')
     # Reported molecular trait
     if score.trait_reported:
-        write_row(filehandle, f'#trait_reported={score.trait_reported}')
+        write_row(filehandle, f'#trait_reported={score.trait_reported} ({score.trait_reported_id})')
     # Genome build
     write_row(filehandle, f'#genome_build={score.variants_genomebuild}')
     # Variants number
@@ -224,7 +224,7 @@ def run():
             write_header(file,score,dataset)
             qcursor = get_genetic_score_data(sqlite_cursor,score_trait)
             # 3b - Generate variants content
-            write_row(file,'rsid\teffect_allele\tother_allele\teffect_weight')
+            write_row(file,'rsID\teffect_allele\tother_allele\teffect_weight')
             first_row = True
             count_rows = 0
             for row in qcursor:
@@ -237,7 +237,7 @@ def run():
                     write_row(file,row_string,1)
                 count_rows += 1
                 # genetic_scores[score_id].append({
-                #     'rsid': rsid,
+                #     'rsID': rsID,
                 #     'effect_allele': eff_allele,
                 #     'other_allele': ref_allele,
                 #     'effect_weight': weight
