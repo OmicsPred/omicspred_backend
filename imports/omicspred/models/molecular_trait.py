@@ -15,6 +15,8 @@ class GeneData(GenericData):
         if external_id:
             self.data_id += external_id
         if name:
+            if (type(name) == int):
+                print(f'>>> GENE name "{name}" looks like an integer')
             self.data_id += name
 
 
