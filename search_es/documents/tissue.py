@@ -14,14 +14,14 @@ word_delimiter = word_delimiter_analyzer()
 @registry.register_document
 class TissueDocument(Document):
     """ Tissue elasticsearch document """
-    name = fields.TextField(
-        attr="label",
+    # 'label' preferred over 'name' to be more visible in the results
+    label = fields.TextField(
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
-    id = fields.TextField(attr="id", analyzer=id_analyzer)
+    id = fields.TextField(analyzer=id_analyzer)
     description = fields.TextField(
         analyzer=word_delimiter,
         fields={
