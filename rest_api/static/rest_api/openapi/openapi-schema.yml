@@ -69,7 +69,7 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
-      * <span class="badge badge-pill">1.1</span> - May 2025:
+      * <span class="badge badge-pill">1.1</span> - June 2025:
         * Dataset:
           * Replace the endpoint parameter `/api/dataset/<name>` to `/api/dataset/<opd_id>`.
           * New field **id** in the Dataset schemas (`/api/dataset/` endpoints), containing the OmicsPred Dataset ID (OPD ID).

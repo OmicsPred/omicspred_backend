@@ -901,13 +901,19 @@ class RestListScores(generics.ListAPIView):
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(name__iexact=filter_term) |
+            # queryset = queryset.filter(Q(id__iexact=filter_term) | Q(name__iexact=filter_term) |
+            #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term) |
+            #                            Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
+            #                            Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
+            #                            Q(dataset__id__iexact=filter_term) | Q(dataset__name__iexact=filter_term) |
+            #                            Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) |
+            #                            Q(dataset__publication__firstauthor__iexact=filter_term))
+            queryset = queryset.filter(Q(id__iexact=filter_term) |
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term) |
                                        Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
-                                       Q(dataset__id__iexact=filter_term) | Q(dataset__name__iexact=filter_term) |
                                        Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) | 
-                                       Q(dataset__publication__firstauthor__iexact=filter_term))
+                                       Q(dataset__publication__id__iexact=filter_term) | Q(dataset__publication__firstauthor__iexact=filter_term))
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
         return queryset
