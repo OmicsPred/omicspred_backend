@@ -22,6 +22,7 @@ class TissueDocument(Document):
         }
     )
     id = fields.TextField(analyzer=id_analyzer)
+    id_colon = fields.TextField(analyzer=id_analyzer)
     description = fields.TextField(
         analyzer=word_delimiter,
         fields={
@@ -29,6 +30,9 @@ class TissueDocument(Document):
         }
     )
     scores_count = fields.IntegerField()
+
+    def prepare_id_colon(self, instance):
+        return instance.id.replace('_',':')
 
 
     class Index:
