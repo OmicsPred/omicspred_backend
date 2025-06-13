@@ -87,7 +87,7 @@ class ImportMetadataTest(TestCase):
 
     def __init__(self, methodName = "runTest"):
         super().__init__(methodName)
-        self.metadata_template = MetadataTemplate(file_loc,license)
+        self.metadata_template = MetadataTemplate(file_loc,license,species)
 
 
     def parser_data_count(self, parsed_data:dict, type:str):

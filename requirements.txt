@@ -2,8 +2,8 @@
 Django==5.1.10
 #### Python PostgreSQL library ####
 psycopg2-binary==2.9.10
-# psycopg-binary==3.2.8
-# psycopg==3.2.8
+# psycopg-binary==3.2.9
+# psycopg==3.2.9
 #### Django REST API libraries ####
 djangorestframework==3.16.0
 django-cors-headers==4.7.0
