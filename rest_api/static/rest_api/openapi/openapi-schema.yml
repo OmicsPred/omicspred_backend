@@ -3330,6 +3330,7 @@ paths:
         Examples of request:
         ```
         - https://rest.omicspred.org/api/tissue/UBERON_0001969
+        - https://rest.omicspred.org/api/tissue/blood plasma
         ```
       parameters:
         - name: tissue_id

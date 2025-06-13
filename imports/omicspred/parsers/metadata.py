@@ -23,7 +23,7 @@ class MetadataTemplate():
 
     max_bulk_count = 200
 
-    def __init__(self, file_loc:str, license:str=None):
+    def __init__(self, file_loc:str, license:str=default_license, species:str=default_species):
         self.file_loc = file_loc
         self.parsed_publication = None
         self.parsed_scores = {}
@@ -34,7 +34,8 @@ class MetadataTemplate():
         self.parsed_proteins = {}
         self.parsed_metabolites = {}
         self.imported_molecular_traits = { 'genes': {}, 'proteins': {}, 'metabolites': {} }
-        self.species = None
+        self.species = species
+        self.license = license
         # self.parsed_samples_scores = []
         # self.parsed_samples_testing = []
         # self.parsed_samples = []
@@ -45,8 +46,6 @@ class MetadataTemplate():
             'Sample': 'Sample Information & Performanc', # <= Might need to fix the missing "e"
             'Cohort': 'Cohort Information'
         }
-        if license:
-            self.license = license if license else self.default_license
 
         self.report = { 'error': {}, 'warning': {}, 'import': {} }
 
@@ -71,7 +70,7 @@ class MetadataTemplate():
             omics_type = 'Transcriptomics'
 
             # Species
-            species_data = SpeciesData(self.default_species)
+            species_data = SpeciesData(self.species)
             self.species = species_data.create_model()
 
             # Cohort spreadsheet

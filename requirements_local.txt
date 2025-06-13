@@ -1,5 +1,5 @@
 #### Others ####
-requests==2.32.3
+requests==2.32.4
 django-extensions==4.1
 pandas==2.2.3
 openpyxl==3.1.5
