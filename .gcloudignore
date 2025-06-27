@@ -15,7 +15,6 @@
 .gitignore
 
 # Static directories (GAE uses the ones in /static instead)
-/omicspred/static/
 /rest_api/static/
 
 # Curation and release directories (not needed for the website)

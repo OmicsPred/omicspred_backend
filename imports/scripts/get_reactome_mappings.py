@@ -75,7 +75,7 @@ def get_reactome_data(file:str) -> dict:
     reactome_data = {}
     with open(file, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
-        next(reader, None)  # skip the headers
+        # next(reader, None)  # skip the headers
         for row in reader:
             source_id = row[0]
             reactome_id = row[1]
@@ -282,9 +282,14 @@ def run(*args):
         reactome_dir = default_reactome_dir
 
     # Files in https://reactome.org/download/current/
-    reactome_chebi_file = f'{reactome_dir}/ChEBI2Reactome_LOW_Levels_human.txt'
-    reactome_ensembl_file = f'{reactome_dir}/Ensembl2Reactome_LOW_Levels_human.txt'
-    # reactome_uniprot_file = f'{reactome_dir}/UniProt2Reactome_LOW_Levels_human.txt'
+    # Low level
+    # reactome_chebi_file = f'{reactome_dir}/ChEBI/ChEBI2Reactome_LOW_Levels_human.txt'
+    # reactome_ensembl_file = f'{reactome_dir}/Ensembl/Ensembl2Reactome_LOW_Levels_human.txt'
+    # All levels
+    reactome_chebi_file = f'{reactome_dir}/ChEBI/ChEBI2Reactome_All_Levels_human.txt'
+    reactome_ensembl_file = f'{reactome_dir}/Ensembl/Ensembl2Reactome_All_Levels_human_ensg.txt'
+
+    # reactome_uniprot_file = f'{reactome_dir}/UniProt/UniProt2Reactome_LOW_Levels_human.txt'
 
     # Web services: https://reactome.org/ContentService/data/pathways/top/9606
     reactome_top_level_file = f'{reactome_dir}/human_top_level.json'
