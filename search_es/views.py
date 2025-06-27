@@ -8,7 +8,8 @@ from elasticsearch_dsl import Search
 
 # No need to redeclare "custom_exception_handler" as it is already used in rest_api.views
 
-result_size = 25
+# result_size = 25
+result_size = 50
 
 def query_fields():
     return ['id^5','id_colon^5','label^6','name^4','category','synonyms_list^3','description^3',
@@ -19,9 +20,12 @@ def query_fields():
             'phenotype_score.score_id']
 
 
-def get_search(query):
+def get_search(query:str,exclude_pathways:str=None):
     query = query.strip() # Remove whitespaces
-    s = Search(index="*").extra(size=result_size).query("multi_match", query=query, fields=query_fields())
+    indexes_list = "*"
+    if exclude_pathways and str(exclude_pathways) == '1':
+        indexes_list += ',-pathway'
+    s = Search(index=indexes_list).extra(size=result_size).query("multi_match", query=query, fields=query_fields())
     response = s.execute()
 
     data = []
@@ -55,6 +59,7 @@ class ESSearch(generics.RetrieveAPIView):
         self.queryset = []
         search_query = self.request.query_params.get('q')
         print(f'search_query: {search_query}')
+        exclude_pathways = self.request.query_params.get('exclude_pathways')
         if search_query and search_query is not None:
-            response = get_search(search_query)
+            response = get_search(search_query,exclude_pathways)
         return Response(response)
