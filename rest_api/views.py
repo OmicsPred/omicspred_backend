@@ -32,9 +32,23 @@ related_dict = {
     'metabolites': [Prefetch('metabolites', queryset=Metabolite.objects.only(*only_dict['metabolite']).select_related('pathway_group','pathway_subgroup').all().order_by('id'))],
     'proteins': [Prefetch('proteins', queryset=Protein.objects.only('id','name','external_id','external_id_source','description','synonyms').all().order_by('id'))],
     'genes': [Prefetch('genes', queryset=Gene.objects.only('id','name','external_id','external_id_source','synonyms','biotype','description','retired_gene_model').all().order_by('id'))],
-    'molecular_traits': ['genes','transcripts','proteins','metabolites'],
+    # 'molecular_traits': ['genes','transcripts','proteins','metabolites'],
+    'molecular_traits': [
+        Prefetch('genes', queryset=Gene.objects.defer('xrefs').all()),
+        Prefetch('transcripts', queryset=Transcript.objects.defer('xrefs','gene_id').all()),
+        Prefetch('proteins', queryset=Protein.objects.defer('xrefs','gene_id').all()),
+        Prefetch('metabolites', queryset=Metabolite.objects.defer('description','pathway_group_id','pathway_subgroup_id').all())
+    ],
     'pathways': ['pathways', Prefetch('pathways__superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all())],
-    'pathway_prefetch_with_counts': ['superpathways','pathway_genes','pathway_genes__gene_score','pathway_proteins','pathway_proteins__protein_score','pathway_metabolites', 'pathway_metabolites__metabolite_score'],
+    'pathway_prefetch_with_counts': [
+        Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
+        'pathway_genes',
+        Prefetch('pathway_genes__gene_score', queryset=Score.objects.only('id').all()),
+        'pathway_proteins',
+        Prefetch('pathway_proteins__protein_score', queryset=Score.objects.only('id').all()),
+        'pathway_metabolites',
+        Prefetch('pathway_metabolites__metabolite_score', queryset=Score.objects.only('id').all())
+    ],
     'pathway_prefetch_no_counts': [
         Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
         Prefetch('pathway_genes', queryset=Gene.objects.only('id').all()),
@@ -48,7 +62,6 @@ related_dict = {
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'))],
-    'score_prefetch' : ['genes','transcripts','proteins','metabolites'],
     'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
     'score_applications_prefetch': ['genes','proteins','metabolites'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform'],
@@ -93,6 +106,9 @@ def sort_data_list(request,type,queryset,default_col='num'):
             queryset = queryset.order_by(Lower(sort_field).desc(nulls_last=True))
         else:
             queryset = queryset.order_by(Lower(sort_field).asc(nulls_last=True))
+    # # Order by performance metric field
+    # elif sort_field.endswith(f'__training') or sort_field.endswith(f'__R2'):
+    #     queryset = queryset.order_by('score_performance__performance_metric__estimate')
     # Order by other field
     else:
         if is_desc == True:
@@ -891,7 +907,7 @@ class RestListScores(generics.ListAPIView):
             self.serializer_class = ScoreSerializer
         else:
             self.serializer_class = ScoreLightSerializer
-        queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['score_prefetch']).order_by('num')
+        queryset = Score.objects.select_related(*related_dict['score_dataset_full']).all().prefetch_related(*related_dict['molecular_traits']).order_by('num')
 
         # Filter by list of Score IDs
         ids_list = get_ids_list(self)
