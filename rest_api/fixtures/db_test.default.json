@@ -302,7 +302,9 @@
             "name": "Cholesterol biosynthesis",
             "external_id": "R-HSA-191273",
             "external_id_source": "Reactome",
-            "superpathways": [17]
+            "parent_external_id": "R-HSA-8957322",
+            "superpathways": [17],
+            "top_level": false
         }
     },
     {
@@ -312,7 +314,9 @@
             "name": "Immunoregulatory interactions between a Lymphoid and a non-Lymphoid cell",
             "external_id": "R-HSA-198933",
             "external_id_source": "Reactome",
-            "superpathways": [16]
+            "parent_external_id": "R-HSA-1280218",
+            "superpathways": [16],
+            "top_level": false
         }
     },
     {

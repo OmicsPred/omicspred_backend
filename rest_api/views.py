@@ -289,11 +289,25 @@ class RestPathway(generics.RetrieveAPIView):
     """
 
     def get(self, request, pathway_id):
+        include_molecular_traits = self.request.query_params.get('include_molecular_traits')
+
+        exclude_mt = True if include_molecular_traits and str(include_molecular_traits) == '0' else False
+
+        if exclude_mt:
+            pathway_prefetch_related = ['superpathways']
+        else:
+            pathway_prefetch_related = related_dict['pathway_prefetch_with_counts']
+
         try:
-            queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch_with_counts']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+            queryset = Pathway.objects.prefetch_related(*pathway_prefetch_related).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
         except Pathway.DoesNotExist:
             queryset = None
-        serializer = PathwaySerializerExtended(queryset,many=False)
+
+        if exclude_mt:
+            serializer = PathwaySerializer(queryset,many=False)
+        else:
+            serializer = PathwaySerializerExtended(queryset,many=False)
+
         return Response(serializer.data)
 
 
