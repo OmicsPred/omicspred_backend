@@ -386,7 +386,16 @@ class SuperPathway(MolecularTrait):
 
 class Pathway(MolecularTrait):
     """ Class to describe a Pathway entity """
+    parent_external_id = models.CharField('External ID(s) of parent pathway(s)', max_length=100, null=True)
     superpathways = models.ManyToManyField(SuperPathway, related_name='subpathway', verbose_name='SuperPathway(s)')
+    top_level = models.BooleanField('Top level pathway', default=False)
+
+    @property
+    def parent_external_ids_list(self):
+        if self.parent_external_id:
+            return self.parent_external_id.split('|')
+        else:
+            return []
 
 
 class Gene(MolecularTrait):

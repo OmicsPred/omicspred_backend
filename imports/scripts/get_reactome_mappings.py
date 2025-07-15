@@ -224,6 +224,44 @@ def detect_non_associated_pathways():
     print(f">>> Non associated pathways: {count}")
 
 
+def update_top_level_flag():
+    superpathway_ids= SuperPathway.objects.values_list('external_id')
+    # Update all pathways to false
+    Pathway.objects.all().update(top_level=False)
+    # Update the top_level pathways
+    Pathway.objects.filter(external_id__in=superpathway_ids).update(top_level=True)
+
+
+def update_parent_external_id(reactome_parent_child_file:str):
+    child_parent = {}
+    with open(reactome_parent_child_file, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
+        # child->parent association
+        for row in reader:
+            parent = row[0]
+            child = row[1]
+            if not parent.startswith('R-HSA-'):
+                continue
+            # Update parent_id
+            if child not in child_parent.keys():
+                child_parent[child] = set()
+            child_parent[child].add(parent)
+
+    for child_pathway in child_parent.keys():
+        parent = '|'.join(child_parent[child_pathway])
+        Pathway.objects.filter(external_id=child_pathway).update(parent_external_id=parent)
+
+    # Check that all parents have a pathway entry in OmicsPred
+    external_ids = Pathway.objects.values_list('external_id')
+    parent_external_ids = Pathway.objects.values_list('parent_external_id').filter(parent_external_id__isnull=False).distinct()
+    for parent_external_tuple in parent_external_ids:
+        parent_external_id = parent_external_tuple[0]
+
+        for parent_id in parent_external_id.split('|'):
+            if (parent_id,) not in external_ids:
+                print(f"- ERROR: parent external ID '{parent_id}' hasn't a Pathway entry in OmicsPred")
+
+
 def get_reactome_models() -> dict:
     reactome_pathways = {}
     reactome_pathway_models = Pathway.objects.defer('superpathways').all()
@@ -402,7 +440,9 @@ def run(*args):
     # Add cleanup code to remove the Reactome entries not linked to Metabolites nor Genes ?
     detect_non_associated_pathways()
 
-
+    # Update top_level flag
+    update_top_level_flag()
+    update_parent_external_id(reactome_relation_file)
 
 #    compare_ens_uniprot_mappings(mapped_genes,mapped_proteins)
         

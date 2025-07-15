@@ -3,7 +3,7 @@ servers:
   - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
-  version: '1.1'
+  version: '1.1.1'
   description: |
     Programmatic access to the OmicsPred metadata.
 
@@ -68,6 +68,10 @@ info:
 
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
+
+      * <span class="badge badge-pill">1.1.1</span> - August 2025:
+        * New field **parent_external_ids** in the Pathway schemas (`/api/pathway/` endpoints), containing the list of Pathway ID(s) of the parent pathway(s).
+        * New parameter *include_molecular_traits* in the endpoint `/api/pathway/<pathway_id>` to include or not the associated molecular traits (default value = 1).
 
       * <span class="badge badge-pill">1.1</span> - June 2025:
         * Dataset:
@@ -522,6 +526,10 @@ components:
           type: string
           description: "Source of the Pathway ID"
           example: "Reactome"
+        parent_external_ids:
+          type: string
+          description: "List of Pathway ID(s) of the parent pathway(s)"
+          example: "R-HSA-9772573"
         synonyms:
           type: array
           description: "Pathway synonym(s)"
@@ -545,6 +553,10 @@ components:
           description: "Linked top level pathway(s)"
           items:
             $ref: '#/components/schemas/SuperPathway'
+        top_level:
+              type: boolean
+              description: "Flag to indicate if this is a top-level pathway node in Reactome"
+              example: false
 
     Pathway_extended:
       description: "Based on the **Pathway** schema, with the addition of the '**genes**',  '**proteins**' and '**metabolites**'."
@@ -1460,7 +1472,8 @@ paths:
 
         Example of request:
         ```
-        https://rest.omicspred.org/api/pathway/R-HSA-9733458
+        - https://rest.omicspred.org/api/pathway/R-HSA-9733458
+        - https://rest.omicspred.org/api/pathway/R-HSA-9733458?include_molecular_traits=0
         ```
       parameters:
       - name: pathway_id
@@ -1474,6 +1487,19 @@ paths:
             value: 'R-HSA-352230'
         schema:
           type: string
+      - name: include_molecular_traits
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Flag to include or not the Molecular Traits mapped to the Pathway [default=1]  - *optional*
+        examples:
+          exclude_mt_sel:
+            summary: Exclude the list of Molecular Traits
+            value: 0
+          include_mt_sel:
+            summary: Include the list of Molecular Traits
+            value: 1
       responses:
         '200':
           content:

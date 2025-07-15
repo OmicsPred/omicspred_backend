@@ -163,13 +163,19 @@ class SuperPathwaySerializer(serializers.ModelSerializer):
 
 
 class PathwaySerializer(serializers.ModelSerializer):
+    parent_external_ids = serializers.SerializerMethodField()
     superpathways = SuperPathwaySerializer(many=True, read_only=True)
 
     class Meta:
         model = Pathway
-        meta_fields = ('name', 'external_id', 'external_id_source', 'synonyms', 'xrefs', 'superpathways')
+        meta_fields = ('name', 'external_id', 'external_id_source', 'parent_external_ids', 'synonyms', 'xrefs', 'superpathways', 'top_level')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_parent_external_ids(self, obj):
+        if (obj.parent_external_id):
+            return obj.parent_external_ids_list
+        return []
 
 
 #### Gene ####
