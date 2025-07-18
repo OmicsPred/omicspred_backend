@@ -61,21 +61,21 @@ class BrowseEndpointTest(APITestCase):
 
     omics_common_columns = ['id', 'trait_reported_id', 'trait_reported', 'variants_number', 'dataset__publication', 'dataset__platform__version', 'dataset__name']
 
-    # Tuple: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples* )
+    # Tuple structure: ( Endpoint name | Base URL | Flag for results multiplicity | Parameter examples )
     endpoints = [
         # Cohort endpoints
         ('Cohorts', 'cohort/all', 1),
         ('Cohort/SYMBOL', 'cohort', 0, {'path': cohorts_list}),
         # Pathways
         ('Pathways', 'pathway/all', 1),
-        ('Pathways/Name', 'pathway', 0, {'path': pathways_list}),
+        ('Pathways/Name', 'pathway', 0, {'path': pathways_list, 'extra_query': 'include_molecular_traits=0'}),
         # Molecular trait endpoints
         ('Gene/ID', 'gene', 0, {'path': gene_ids_list}),
         ('Gene/Search', 'gene/search', 1, {'query': [search_gene]}),
         ('Protein/Name', 'protein', 0, {'path': proteins_list}),
         ('Protein/Search', 'protein/search', 1, {'query': [search_gene]}),
         ('Metabolite/Name', 'metabolite', 0, {'path': metabolites_list}),
-         # Omics by platform endpoints
+        # Omics by platform endpoints
         ('Proteomics/Name', 'proteomics',1, {'path': platforms_list_proteomics}),
         ('Metabolomics/Name', 'metabolomics',1, {'path': platforms_list_metabolomics}),
         ('Transcriptomics/Name', 'transcriptomics',1, {'path': platforms_list_transcriptomics}),
@@ -280,6 +280,7 @@ class BrowseEndpointTest(APITestCase):
         content = resp.content.decode("utf-8")
         for empty_content in self.empty_resp:
             self.assertNotEqual(content, empty_content)
+        return content
 
 
     def get_empty_response(self, url:str, index:int):
@@ -312,10 +313,12 @@ class BrowseEndpointTest(APITestCase):
                 if ('path' in endpoint[self.index_example]):
                     for example in endpoint[self.index_example]['path']:
                         request = url_endpoint+'/'+example
-                        self.send_request(request)
+                        content = self.send_request(request)
                         if 'extra_query' in endpoint[self.index_example]:
                             request_2 = request+'?'+endpoint[self.index_example]['extra_query']
-                            self.send_request(request_2)
+                            content_extra = self.send_request(request_2)
+                            self.assertNotEqual(content,content_extra)
+
                 # Endpoint with parameter as query
                 if ('query' in endpoint[self.index_example]):
                     for example in endpoint[self.index_example]['query']:
@@ -337,10 +340,11 @@ class BrowseEndpointTest(APITestCase):
                 if ('path' in endpoint[self.index_example]):
                     for example in endpoint[self.index_example]['path']:
                         request = url_endpoint+example+'/'
-                        self.send_request(request)
+                        content = self.send_request(request)
                         if 'extra_query' in endpoint[self.index_example]:
                             request_2 = request+'?'+endpoint[self.index_example]['extra_query']
-                            self.send_request(request_2)
+                            content_extra = self.send_request(request_2)
+                            self.assertNotEqual(content,content_extra)
                 # Endpoint with parameter as query
                 if ('query' in endpoint[self.index_example]):
                     for example in endpoint[self.index_example]['query']:
