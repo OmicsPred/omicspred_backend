@@ -5,9 +5,12 @@ from imports.config import *
 def run():
 
     # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/GTEx_V8_full_metadata.xlsx'
-    # # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/GTEx_V8_sample_metadata.xlsx'
+    # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_enet_sqtl_updated_to_import.xlsx'
+    # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_eqtl_updated_to_import.xlsx'
+    # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_sqtl_1_updated_to_import.xlsx'
+    file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_sqtl_2_updated_to_import.xlsx'
 
-    # dataset_prefix = 'GTExV8'
+    dataset_prefix = 'GTExV8 - sQTL - MASHR - '
 
     # license = 'Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)'
 

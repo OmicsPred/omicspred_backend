@@ -16,20 +16,20 @@ class TissueDocument(Document):
     """ Tissue elasticsearch document """
     # 'label' preferred over 'name' to be more visible in the results
     label = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=name_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
     id = fields.TextField(analyzer=id_analyzer)
     id_colon = fields.TextField(analyzer=id_analyzer)
     description = fields.TextField(
-        analyzer=word_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=word_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
-    scores_count = fields.IntegerField()
+    scores_count = fields.IntegerField(index=False, doc_values=False)
 
     def prepare_id_colon(self, instance):
         return instance.id.replace('_',':')
@@ -43,5 +43,6 @@ class TissueDocument(Document):
         """Inner nested class Django."""
 
         model = EFO # The model associated with this Document
+        # queryset_pagination = settings.ELASTICSEARCH_DSL_QUERYSET_PAGINATION_SMALL # Index pagination
         # Extra fields to store and return
         # fields = []

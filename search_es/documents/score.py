@@ -17,113 +17,136 @@ class ScoreDocument(Document):
 
     id = fields.TextField(analyzer=id_analyzer)
     name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=name_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
-    # variants_number = fields.IntegerField()
-    platform_name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    omics_type = fields.TextField(
-        analyzer=word_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    publication = fields.ObjectField(
-        properties={
-            'title': fields.TextField(),
-            'pmid': fields.TextField(analyzer=id_analyzer),
-            'doi': fields.TextField(analyzer=id_analyzer),
-            'firstauthor': fields.KeywordField(),
-        }
-    )
-    trait_reported = fields.TextField(
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    trait_reported_id = fields.TextField(analyzer=id_analyzer)
+    variants_number = fields.IntegerField(index=False, doc_values=False)
+    platform_name = fields.TextField(index=False)
+    omics_type = fields.TextField(index=False)
     genes = fields.ObjectField(
         properties={
-            'external_id': fields.TextField(
-                analyzer=id_analyzer
-            ),
-            'name': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'synonyms_list': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            )
+            'external_id': fields.TextField(index=False),
+            'name': fields.TextField(index=False),
         }
     )
     proteins = fields.ObjectField(
         properties={
-           'external_id': fields.TextField(
-                analyzer=id_analyzer
-            ),
-            'name': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'synonyms_list': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            )
+            'external_id': fields.TextField(index=False),
+            'name': fields.TextField(index=False)
         }
     )
     metabolites = fields.ObjectField(
         properties={
-            'external_id': fields.TextField(
-                analyzer=id_analyzer
-            ),
-            'name': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            ),
-            'synonyms_list': fields.TextField(
-                analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
-            )
+            'external_id': fields.TextField(index=False),
+            'name': fields.TextField(index=False)
         }
     )
+    # platform_name = fields.TextField(
+    #     analyzer=name_delimiter,
+    #     fields={
+    #         'raw': fields.KeywordField()
+    #     }
+    # )
+    # omics_type = fields.TextField(
+    #     analyzer=word_delimiter,
+    #     fields={
+    #         'raw': fields.KeywordField()
+    #     }
+    # )
+
+    # >> Not searched and not displayed
+    # publication = fields.ObjectField(
+    #     properties={
+    #         'title': fields.TextField(),
+    #         'pmid': fields.TextField(analyzer=id_analyzer),
+    #         'doi': fields.TextField(analyzer=id_analyzer),
+    #         'firstauthor': fields.KeywordField(),
+    #     }
+    # )
+
+    # trait_reported = fields.TextField(
+    #     fields={
+    #         'raw': fields.KeywordField()
+    #     }
+    # )
+    # trait_reported_id = fields.TextField(analyzer=id_analyzer)
+    # genes = fields.ObjectField(
+    #     properties={
+    #         'external_id': fields.TextField(
+    #             analyzer=id_analyzer
+    #         ),
+    #         'name': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         ),
+    #         'description': fields.TextField(
+    #             analyzer=word_delimiter#,
+    #             # fields={
+    #             #     'raw': fields.KeywordField()
+    #             # }
+    #         ),
+    #         'synonyms_list': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         )
+    #     }
+    # )
+    # proteins = fields.ObjectField(
+    #     properties={
+    #        'external_id': fields.TextField(
+    #             analyzer=id_analyzer
+    #         ),
+    #         'name': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         ),
+    #         'description': fields.TextField(
+    #             analyzer=word_delimiter#,
+    #             # fields={
+    #             #     'raw': fields.KeywordField()
+    #             # }
+    #         ),
+    #         'synonyms_list': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         )
+    #     }
+    # )
+    # metabolites = fields.ObjectField(
+    #     properties={
+    #         'external_id': fields.TextField(
+    #             analyzer=id_analyzer
+    #         ),
+    #         'name': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         ),
+    #         'description': fields.TextField(
+    #             analyzer=word_delimiter#,
+    #             # fields={
+    #             #     'raw': fields.KeywordField()
+    #             # }
+    #         ),
+    #         'synonyms_list': fields.TextField(
+    #             analyzer=word_delimiter,
+    #             fields={
+    #                 'raw': fields.KeywordField()
+    #             }
+    #         )
+    #     }
+    # )
 
     def prepare_platform_name(self, instance):
         return [instance.dataset.platform.name]
@@ -140,11 +163,8 @@ class ScoreDocument(Document):
         """Inner nested class Django."""
 
         model = Score  # The model associated with this Document
+        queryset_pagination = settings.ELASTICSEARCH_DSL_QUERYSET_PAGINATION # Index pagination
         # Extra fields to store and return
-        fields = [
-            "variants_number"
-        ]
         # fields = [
-        #     "trait_reported",
-        #     "trait_reported_id"
+        #     "variants_number"
         # ]
