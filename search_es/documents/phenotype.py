@@ -16,10 +16,10 @@ class PhenotypeDocument(Document):
     """ Phenotype elasticsearch document """
     id = fields.TextField(analyzer=id_analyzer)
     name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=name_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
     category = fields.TextField(
         analyzer=name_delimiter,
@@ -27,22 +27,24 @@ class PhenotypeDocument(Document):
             'raw': fields.KeywordField()
         }
     )
-    scores_count = fields.IntegerField()
-    platform_name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
-    omics_type = fields.TextField(
-        analyzer=word_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
-    )
+    scores_count = fields.IntegerField(index=False)
+    platform_name = fields.TextField(index=False)
+    omics_type = fields.TextField(index=False)
+    # platform_name = fields.TextField(
+    #     analyzer=name_delimiter,
+    #     fields={
+    #         'raw': fields.KeywordField()
+    #     }
+    # )
+    # omics_type = fields.TextField(
+    #     analyzer=word_delimiter,
+    #     fields={
+    #         'raw': fields.KeywordField()
+    #     }
+    # )
     phenotype_score = fields.ObjectField(
         properties={
-            'score_id': fields.TextField()
+            'score_id': fields.TextField(analyzer=id_analyzer)
         }
     )
     # molecular_traits = fields.ObjectField(
@@ -87,6 +89,7 @@ class PhenotypeDocument(Document):
         """Inner nested class Django."""
 
         model = Phenotype # The model associated with this Document
+        # queryset_pagination = settings.ELASTICSEARCH_DSL_QUERYSET_PAGINATION_SMALL # Index pagination
         db = 'applications'
         # Extra fields to store and return
         fields = ['source']

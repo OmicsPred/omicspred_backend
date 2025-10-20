@@ -10,6 +10,70 @@ reactome_low_to_top_level = {}
 reactome_mapping_found = {}
 
 pathway_source = 'Reactome'
+external_metabolite_source = 'ChEBI'
+
+legacy_pathway_mappings = {
+    'Alanine and Aspartate Metabolism': [
+        {'reactome_id': 'R-HSA-8964540', 'reactome_name': 'Alanine metabolism'},
+        {'reactome_id': 'R-HSA-8963693', 'reactome_name':'Aspartate and asparagine metabolism'}
+    ],
+    'Creatine Metabolism': [
+        {'reactome_id': 'R-HSA-71288', 'reactome_name': 'Creatine metabolism'}
+    ],
+    'Glutamate Metabolism': [
+        {'reactome_id': 'R-HSA-8964539', 'reactome_name': 'Glutamate and glutamine metabolism'}
+    ],
+    'Glutathione Metabolism': [
+        {'reactome_id': 'R-HSA-174403', 'reactome_name': 'Glutathione synthesis and recycling'}
+    ],
+    'Phenylalanine and Tyrosine Metabolism': [
+        {'reactome_id': 'R-HSA-8963691', 'reactome_name': 'Phenylalanine and tyrosine metabolism'}
+    ],
+    'Polyamine Metabolism': [
+        {'reactome_id': 'R-HSA-351202', 'reactome_name': 'Metabolism of polyamines'}
+    ],
+    'Glycogen Metabolism': [
+        {'reactome_id': 'R-HSA-8982491', 'reactome_name': 'Glycogen metabolism'}
+    ],
+    'Glycolysis, Gluconeogenesis, and Pyruvate Metabolism': [
+        {'reactome_id': 'R-HSA-70171', 'reactome_name': 'Glycolysis'},
+        {'reactome_id': 'R-HSA-70263', 'reactome_name': 'Gluconeogenesis'},
+        {'reactome_id': 'R-HSA-70268', 'reactome_name': 'Pyruvate metabolism'}
+    ],
+    'Ascorbate and Aldarate Metabolism': [
+        {'reactome_id': 'R-HSA-70268', 'reactome_name': 'Vitamin C (ascorbate) metabolism'}
+    ],
+    'Hemoglobin and Porphyrin Metabolism': [
+        {'reactome_id': 'R-HSA-189445', 'reactome_name': 'Metabolism of porphyrins'}
+    ],
+    'Nicotinate and Nicotinamide Metabolism': [
+        {'reactome_id': 'R-HSA-196807', 'reactome_name': 'Nicotinate metabolism'}
+    ],
+    'Pantothenate and CoA Metabolism': [
+        {'reactome_id': 'R-HSA-199220', 'reactome_name': 'Vitamin B5 (pantothenate) metabolism'}
+    ],
+    'Riboflavin Metabolism': [
+        {'reactome_id': 'R-HSA-196843', 'reactome_name': 'Vitamin B2 (riboflavin) metabolism'}
+    ],
+    'TCA Cycle': [
+        {'reactome_id': 'R-HSA-71403', 'reactome_name': 'Citric acid cycle (TCA cycle)'}
+    ],
+    'Fatty Acid Synthesis': [
+        {'reactome_id': 'R-HSA-8978868', 'reactome_name': 'Fatty acid metabolism'}
+    ],
+    'Ketone bodies': [
+        {'reactome_id': 'R-HSA-74182', 'reactome_name': 'Ketone body metabolism'}
+    ],
+    'Phospholipid Metabolism': [
+        {'reactome_id': 'R-HSA-1483257', 'reactome_name': 'Phospholipid metabolism'}
+    ],
+    'Sphingolipid Metabolism': [
+        {'reactome_id': 'R-HSA-428157', 'reactome_name': 'Sphingolipid metabolism'}
+    ],
+    'Steroid': [
+        {'reactome_id': 'R-HSA-8957322', 'reactome_name': 'Metabolism of steroids'}
+    ]
+}
 
 
 def get_top_levels_list(reactome_top_level_file:str) -> None:
@@ -163,10 +227,14 @@ def map_genes(reactome_ensembl_file:str) -> dict:
 
 def map_metabolites(reactome_chebi_file:str) -> dict:
     ''' Extract the association Metabolite-Reactome, using IDs and DB models '''
-    external_source = 'ChEBI'
     reactome_data = get_reactome_data(reactome_chebi_file)
-    metabolites = Metabolite.objects.filter(external_id_source=external_source)
-    return get_mappings(metabolites,reactome_data,external_source)
+    metabolites = Metabolite.objects.filter(external_id_source=external_metabolite_source)
+    return get_mappings(metabolites,reactome_data,external_metabolite_source)
+
+
+def map_legacy_metabolites_pathways() -> dict:
+    metabolites = Metabolite.objects.select_related('pathway_group','pathway_subgroup').exclude(external_id_source=external_metabolite_source).prefetch_related('pathways')
+    return get_legacy_metabolite_mappings(metabolites)
 
 
 def get_mappings(molecular_traits:list,reactome_data:dict,source:str) -> dict:
@@ -188,6 +256,20 @@ def get_mappings(molecular_traits:list,reactome_data:dict,source:str) -> dict:
             mappings[id] = reactome_entries
             count += 1
     print(f"{source}-Reactome mappings: {count}/{count_omics}")
+    return mappings
+
+
+def get_legacy_metabolite_mappings(metabolites:list) -> dict:
+    mappings = {}
+    for metabolite in metabolites:
+        if metabolite.external_id_source != 'ChEBI':
+            op_pathway = metabolite.pathway_subgroup
+            if op_pathway in legacy_pathway_mappings.keys():
+                reactome_entries = legacy_pathway_mappings[op_pathway]
+                # Add Reactome ID to the list of entries found
+                for reactome_entry in reactome_entries:
+                    reactome_mapping_found[reactome_entry['reactome_id']] = True
+                mappings[metabolite.id] = reactome_entries
     return mappings
 
 
@@ -219,7 +301,11 @@ def detect_non_associated_pathways():
             has_asso = True
 
         if has_asso == False:
-            print(f"- {pathway.external_id} ({pathway.name}) is not associated with a molecular trait")
+            children_pathways = Pathway.objects.filter(parent_external_id__icontains=pathway.external_id)
+            if len(children_pathways) > 0:
+                print(f"- {pathway.external_id} ({pathway.name}) is not associated with a molecular trait - but is a parent of {len(children_pathways)} pathway(s)")
+            else:
+                print(f"- {pathway.external_id} ({pathway.name}) is not associated with a molecular trait")
             count += 1
     print(f">>> Non associated pathways: {count}")
 
@@ -372,6 +458,7 @@ def run(*args):
     # Get mappings
     mapped_genes = map_genes(reactome_ensembl_file)
     mapped_metabolites = map_metabolites(reactome_chebi_file)
+    legacy_mapped_metabolites = map_legacy_metabolites_pathways()
 
     # Import Reactome data
     import_reactome_entries()
@@ -380,7 +467,7 @@ def run(*args):
     reactome_pathways = get_reactome_models()
 
     # Genes mappings
-    if (mapped_genes):
+    if mapped_genes:
         print(f"\n# Import Gene mappings ({len(mapped_genes.keys())})")
         count_gene_done = 0
         genes = Gene.objects.prefetch_related('pathways').filter(external_id__in=mapped_genes.keys()).prefetch_related('gene_protein').distinct()
@@ -395,8 +482,6 @@ def run(*args):
             for reactome_id in reactome_ids:
                 try:
                     new_gene_reactome.append(reactome_pathways[reactome_id])
-                    # reactome_pathway = reactome_pathways[reactome_id]
-                    # gene.pathways.add(reactome_pathway)
                 except Exception as e:
                     print(f"Can't create the association between the Reactome entry {reactome_id} and the gene {gene.external_id}: {e}")
             gene.pathways.add(*new_gene_reactome)
@@ -409,7 +494,7 @@ def run(*args):
 
     
     # Metabolites mappings
-    if (mapped_metabolites):
+    if mapped_metabolites:
         print(f"\n# Import Metabolite mappings ({len(mapped_metabolites.keys())})")
         count_metabolite_done = 0
         metabolites = Metabolite.objects.prefetch_related('pathways').filter(external_id__in=mapped_metabolites.keys())
@@ -421,7 +506,7 @@ def run(*args):
             reactome_ids = [x['reactome_id'] for x in mapped_metabolites[metabolite.external_id]]
             # Get Reactome IDs from file associations
             reactome_pathways = Pathway.objects.defer('superpathways').filter(external_id__in=reactome_ids)
-             # Add new Reactome associations when found
+            # Add new Reactome associations when found
             new_metabolite_reactome = []
             for reactome_id in reactome_ids:
                 try:
@@ -434,15 +519,39 @@ def run(*args):
             # metabolite.save()
             count_metabolite_done += 1
 
+    # Legacy metabolomic pathways (from the original OmicsPred metabolomics datasets)
+    if legacy_mapped_metabolites:
+        print(f"\n# Import Legacy Metabolite mappings ({len(legacy_mapped_metabolites.keys())})")
+        count_legacy_metabolite_done = 0
+        metabolites = Metabolite.objects.prefetch_related('pathways').filter(id__in=legacy_mapped_metabolites.keys())
+        for metabolite in metabolites:
+            print_progress(count_legacy_metabolite_done,'metabolite')
+            # Remove the former list of Metabolite-Pathway asssociations
+            metabolite.pathways.clear()
+            # Get Reactome IDs from existing associations
+            reactome_ids = [x['reactome_id'] for x in legacy_mapped_metabolites[metabolite.id]]
+            # Get Reactome IDs from file associations
+            reactome_pathways = Pathway.objects.defer('superpathways').filter(external_id__in=reactome_ids)
+            # Add new Reactome associations when found
+            new_metabolite_reactome = []
+            for reactome_id in reactome_ids:
+                try:
+                    new_metabolite_reactome.append(reactome_pathways[reactome_id])
+                except Exception as e:
+                    print(f"Can't create the association between the Reactome entry {reactome_id} and the metabolite {metabolite.name}: {e}")
+            metabolite.pathways.add(*new_metabolite_reactome)
+            # metabolite.save()
+            count_legacy_metabolite_done += 1
+
     # Add Protein mappings
     add_protein_mappings()
-
-    # Add cleanup code to remove the Reactome entries not linked to Metabolites nor Genes ?
-    detect_non_associated_pathways()
 
     # Update top_level flag
     update_top_level_flag()
     update_parent_external_id(reactome_relation_file)
+
+    # Add cleanup code to remove the Reactome entries not linked to Metabolites nor Genes ?
+    detect_non_associated_pathways()
 
 #    compare_ens_uniprot_mappings(mapped_genes,mapped_proteins)
         

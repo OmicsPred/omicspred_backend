@@ -3,7 +3,7 @@ servers:
   - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
-  version: '1.1.1'
+  version: '1.1.2'
   description: |
     Programmatic access to the OmicsPred metadata.
 
@@ -69,7 +69,10 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
-      * <span class="badge badge-pill">1.1.1</span> - August 2025:
+      * <span class="badge badge-pill">1.1.2</span> - November 2025:
+        * New field **method_name** in the Dataset schemas (`/api/dataset/` endpoints), containing name of the method(s) used to develop the scores in the dataset.
+
+      * <span class="badge badge-pill">1.1.1</span> - September 2025:
         * New field **parent_external_ids** in the Pathway schemas (`/api/pathway/` endpoints), containing the list of Pathway ID(s) of the parent pathway(s).
         * New parameter *include_molecular_traits* in the endpoint `/api/pathway/<pathway_id>` to include or not the associated molecular traits (default value = 1).
 
@@ -264,6 +267,10 @@ components:
           type: integer
           description: "Number of molecular trait detected by the platform"
           example: 2384
+        method_name:
+          type: string
+          description: "The name or description of the method or computational algorithm used to develop the PGS."
+          example: "Bayesian Ridge regression"
         tissue:
           $ref: '#/components/schemas/Tissue'
         samples_training:

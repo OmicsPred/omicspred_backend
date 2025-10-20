@@ -305,6 +305,7 @@ class Dataset(models.Model):
     platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform_dataset', verbose_name='Platform')
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
+    method_name = models.TextField('Score Development Method')
     tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
     scores_count = models.IntegerField('Associated Scores count', null=False)
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
@@ -350,7 +351,7 @@ class Dataset(models.Model):
 
 class MolecularTrait(models.Model):
     """ Generic Class to describe a molecular trait """
-    name = models.CharField('Molecular trait name', max_length=150, null=True)
+    name = models.CharField('Molecular trait name', max_length=150, db_index=True,null=True)
     description = models.TextField('Description', null=True)
     external_id = models.CharField('External ID', max_length=100, db_index=True, null=True)
     external_id_source = models.CharField('External ID source', max_length=100, null=True)

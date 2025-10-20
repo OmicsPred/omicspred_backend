@@ -26,12 +26,13 @@ def fetch_mt_data(objects_list):
 class PathwayDocument(Document):
     """ Pathway elasticsearch document """
     name = fields.TextField(
-        analyzer=name_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=name_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
     id = fields.TextField(attr="external_id", analyzer=id_analyzer)
+    external_id_source = fields.TextField(index=False)
     synonyms_list = fields.TextField(
         analyzer=word_delimiter,
         fields={
@@ -39,10 +40,10 @@ class PathwayDocument(Document):
         }
     )
     description = fields.TextField(
-        analyzer=word_delimiter,
-        fields={
-            'raw': fields.KeywordField()
-        }
+        analyzer=word_delimiter#,
+        # fields={
+        #     'raw': fields.KeywordField()
+        # }
     )
     genes = fields.ObjectField(
         properties={
@@ -56,10 +57,10 @@ class PathwayDocument(Document):
                 }
             ),
             'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
+                analyzer=word_delimiter#,
+                # fields={
+                #     'raw': fields.KeywordField()
+                # }
             ),
             'synonyms_list': fields.TextField(
                 analyzer=word_delimiter,
@@ -81,10 +82,10 @@ class PathwayDocument(Document):
                 }
             ),
             'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
+                analyzer=word_delimiter#,
+                # fields={
+                #     'raw': fields.KeywordField()
+                # }
             ),
             'synonyms_list': fields.TextField(
                 analyzer=word_delimiter,
@@ -106,10 +107,10 @@ class PathwayDocument(Document):
                 }
             ),
             'description': fields.TextField(
-                 analyzer=word_delimiter,
-                fields={
-                    'raw': fields.KeywordField()
-                }
+                analyzer=word_delimiter#,
+                # fields={
+                #     'raw': fields.KeywordField()
+                # }
             ),
             'synonyms_list': fields.TextField(
                 analyzer=word_delimiter,
@@ -133,15 +134,15 @@ class PathwayDocument(Document):
         return fetch_mt_data(metabolites)
 
 
-
-
     class Index:
         name = settings.ELASTICSEARCH_INDEX_NAMES[__name__]
         settings = settings.ELASTICSEARCH_INDEX_SETTINGS
+
 
     class Django:
         """Inner nested class Django."""
 
         model = Pathway # The model associated with this Document
+        # queryset_pagination = settings.ELASTICSEARCH_DSL_QUERYSET_PAGINATION_SMALL # Index pagination
         # Extra fields to store and return
-        fields = ['external_id_source']
+        # fields = ['external_id_source']
