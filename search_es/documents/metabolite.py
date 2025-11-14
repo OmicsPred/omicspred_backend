@@ -1,9 +1,8 @@
 from django.conf import settings
-# from django_elasticsearch_dsl import Document, Index, fields
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from search_es.analyzers import id_analyzer, name_delimiter_analyzer, word_delimiter_analyzer
-from omicspred.models import Metabolite
+from omicspred.models import Metabolite, Dataset
 
 
 # PGS index analyzer
@@ -45,37 +44,22 @@ class MetaboliteDocument(Document):
     scores_count = fields.IntegerField(index=False, doc_values=False)
     platform_name = fields.TextField(index=False)
     omics_type = fields.TextField(index=False)
-    # platform_name = fields.TextField(
-    #     # analyzer=name_delimiter,
-    #     analyzer="keyword",
-    #     # fields={
-    #     #     'raw': fields.KeywordField()
-    #     # }
-    # )
-    # omics_type = fields.TextField(
-    #     # analyzer=word_delimiter,
-    #     analyzer="keyword",
-    #     # fields={
-    #     #     'raw': fields.KeywordField()
-    #     # }
-    # )
 
     def prepare_platform_name(self, instance):
         platforms = set()
-        for score in self.get_metabolite_scores(instance):
-        # for score in instance.metabolite_score.all():
+        data_type = 'dataset__platform__name'
+        scores = instance.metabolite_score.only(data_type).select_related('dataset','dataset__platform').all().distinct(data_type)
+        for score in scores:
             platforms.add(score.dataset.platform.name)
         return list(platforms)
 
     def prepare_omics_type(self, instance):
         types = set()
-        for score in self.get_metabolite_scores(instance):
-        # for score in instance.metabolite_score.all():
+        data_type = 'dataset__platform__platform_master__type'
+        scores = instance.metabolite_score.only(data_type).select_related('dataset','dataset__platform','dataset__platform__platform_master').all().distinct(data_type)
+        for score in scores:
             types.add(score.dataset.platform.platform_master.type)
         return list(types)
-
-    def get_metabolite_scores(self, instance):
-        return instance.metabolite_score.distinct('dataset__platform')
 
 
     class Index:

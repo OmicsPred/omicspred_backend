@@ -51,35 +51,21 @@ class ProteinDocument(Document):
     platform_name = fields.TextField(index=False)
     omics_type = fields.TextField(index=False)
 
-    # platform_name = fields.TextField(
-    #     analyzer=name_delimiter,
-    #     fields={
-    #         'raw': fields.KeywordField()
-    #     }
-    # )
-    # omics_type = fields.TextField(
-    #     analyzer=word_delimiter,
-    #     fields={
-    #         'raw': fields.KeywordField()
-    #     }
-    # )
-
     def prepare_platform_name(self, instance):
         platforms = set()
-        for score in self.get_protein_scores(instance):
-        # for score in instance.protein_score.all():
+        data_type = 'dataset__platform__name'
+        scores = instance.protein_score.only(data_type).select_related('dataset','dataset__platform').all().distinct(data_type)
+        for score in scores:
             platforms.add(score.dataset.platform.name)
         return list(platforms)
 
     def prepare_omics_type(self, instance):
         types = set()
-        for score in self.get_protein_scores(instance):
-        # for score in instance.protein_score.all():
+        data_type = 'dataset__platform__platform_master__type'
+        scores = instance.protein_score.only(data_type).select_related('dataset','dataset__platform','dataset__platform__platform_master').all().distinct(data_type)
+        for score in scores:
             types.add(score.dataset.platform.platform_master.type)
         return list(types)
-
-    def get_protein_scores(self, instance):
-        return instance.protein_score.distinct('dataset__platform')
 
 
     class Index:

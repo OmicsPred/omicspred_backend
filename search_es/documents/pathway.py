@@ -11,6 +11,7 @@ name_delimiter = name_delimiter_analyzer()
 word_delimiter = word_delimiter_analyzer()
 
 mt_attr_list = ['external_id','name','description','synonyms_list']
+mt_fields_list = ['external_id','name','description','synonyms']
 
 def fetch_mt_data(objects_list):
     mt_list = []
@@ -122,15 +123,15 @@ class PathwayDocument(Document):
     )
     
     def prepare_genes(self, instance):
-        genes = instance.pathway_genes.all()
+        genes = instance.pathway_genes.only(*mt_fields_list).all().distinct()
         return fetch_mt_data(genes)
     
     def prepare_proteins(self, instance):
-        proteins = instance.pathway_proteins.all()
+        proteins = instance.pathway_proteins.only(*mt_fields_list).all().distinct()
         return fetch_mt_data(proteins)
 
     def prepare_metabolites(self, instance):
-        metabolites = instance.pathway_metabolites.all().distinct()
+        metabolites = instance.pathway_metabolites.only(*mt_fields_list).all().distinct()
         return fetch_mt_data(metabolites)
 
 
