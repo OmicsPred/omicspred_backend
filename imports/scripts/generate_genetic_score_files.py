@@ -1,5 +1,6 @@
 import os, io, sys
 import re
+import requests
 import sqlite3
 import pathlib
 import zipfile
@@ -28,74 +29,142 @@ from omicspred.models import *
 # +-------------------+------------+----------------------+------------+------------+---------------------+
 # | ENSG00000261456.5 | rs11252127 | chr10_52147_C_T_b38  | C          | T          | 0.0522527061423131  |
 # | ENSG00000261456.5 | rs11252546 | chr10_58487_T_C_b38  | T          | C          | -0.0335449590056556 |
-
+# or
+# +------------------------------+------------------------+------------------------+------------+------------+----------------------+
+# |             gene             |          rsid          |         varID          | ref_allele | eff_allele |        weight        |
+# +------------------------------+------------------------+------------------------+------------+------------+----------------------+
+# | intron_4_127656721_127663381 | chr4_127656228_T_C_b38 | chr4_127656228_T_C_b38 | T          | C          | -0.0176620830039489  |
+# | intron_4_127656721_127663381 | rs75447657             | chr4_127656435_T_G_b38 | T          | G          | 0.000292301470797823 |
 
 pmid = 32913098
-ds_name = '- sQTL - Enet -'
+project_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/'
+variant_coords_sqlite_db_file = f'{project_dir}op_variant_coords.db'
 
 # Enet eQTL
-# dbs_location = '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/elastic_net_models/'
-# scores_root_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/genetic_scores'
+# dbs_location = f'{project_dir}/GTEx_V8/elastic_net_models_expression/'
+# scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_enet_expression'
+# file_prefix = 'en_'
+# file_suffix = ''
+# ds_name = '- eQTL - Enet -'
 
 # Enet sQTL
-dbs_location = '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/elastic_net_models_splicing/'
-scores_root_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/genetic_scores_enet_splicing'
+# dbs_location = f'{project_dir}/GTEx_V8/elastic_net_models_splicing/'
+# scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_enet_splicing'
+# file_prefix = 'gtex_splicing_v8_eur_'
+# file_suffix = '_signif'
+# ds_name = '- sQTL - Enet -'
 
-# datasets_list = {
-#     'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':'gtex_splicing_v8_eur_Adipose_Subcutaneous_signif.db'}
-# }
 
-datasets_list = {
-    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':'gtex_splicing_v8_eur_Adipose_Subcutaneous_signif.db'},
-    'Adipose_Visceral_Omentum': {'tissue_id': 'UBERON_0010414', 'db':'gtex_splicing_v8_eur_Adipose_Visceral_Omentum_signif.db'},
-    'Adrenal_Gland': {'tissue_id': 'UBERON_0002369', 'db':'gtex_splicing_v8_eur_Adrenal_Gland_signif.db'},
-    'Artery_Aorta': {'tissue_id': 'UBERON_0001496', 'db':'gtex_splicing_v8_eur_Artery_Aorta_signif.db'},
-    'Artery_Coronary': {'tissue_id': 'UBERON_0001621', 'db':'gtex_splicing_v8_eur_Artery_Coronary_signif.db'},
-    'Artery_Tibial': {'tissue_id': 'UBERON_0007610', 'db':'gtex_splicing_v8_eur_Artery_Tibial_signif.db'},
-    'Brain_Amygdala': {'tissue_id': 'UBERON_0001876', 'db':'gtex_splicing_v8_eur_Brain_Amygdala_signif.db'},
-    'Brain_Anterior_cingulate_cortex_BA24': {'tissue_id': 'UBERON_0009835', 'db':'gtex_splicing_v8_eur_Brain_Anterior_cingulate_cortex_BA24_signif.db'},
-    'Brain_Caudate_basal_ganglia': {'tissue_id': 'UBERON_0001873', 'db':'gtex_splicing_v8_eur_Brain_Caudate_basal_ganglia_signif.db'},
-    'Brain_Cerebellar_Hemisphere': {'tissue_id': 'UBERON_0002245', 'db':'gtex_splicing_v8_eur_Brain_Cerebellar_Hemisphere_signif.db'},
-    'Brain_Cerebellum': {'tissue_id': 'UBERON_0002037', 'db':'gtex_splicing_v8_eur_Brain_Cerebellum_signif.db'},
-    'Brain_Cortex': {'tissue_id': 'UBERON_0001870', 'db':'gtex_splicing_v8_eur_Brain_Cortex_signif.db'},
-    'Brain_Frontal_Cortex_BA9': {'tissue_id': 'UBERON_0009834', 'db':'gtex_splicing_v8_eur_Brain_Frontal_Cortex_BA9_signif.db'},
-    'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':'gtex_splicing_v8_eur_Brain_Hippocampus_signif.db'},
-    'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':'gtex_splicing_v8_eur_Brain_Hypothalamus_signif.db'},
-    'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':'gtex_splicing_v8_eur_Brain_Nucleus_accumbens_basal_ganglia_signif.db'},
-    'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':'gtex_splicing_v8_eur_Brain_Putamen_basal_ganglia_signif.db'},
-    'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':'gtex_splicing_v8_eur_Brain_Spinal_cord_cervical_c-1_signif.db'},
-    'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':'gtex_splicing_v8_eur_Brain_Substantia_nigra_signif.db'},
-    'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':'gtex_splicing_v8_eur_Breast_Mammary_Tissue_signif.db'},
-    'Cells_Cultured_fibroblasts': {'tissue_id': 'EFO_0002009', 'db':'gtex_splicing_v8_eur_Cells_Cultured_fibroblasts_signif.db'},
-    'Cells_EBV-transformed_lymphocytes': {'tissue_id': 'EFO_0000572', 'db':'gtex_splicing_v8_eur_Cells_EBV-transformed_lymphocytes_signif.db'},
-    'Colon_Sigmoid': {'tissue_id': 'UBERON_0001159', 'db':'gtex_splicing_v8_eur_Colon_Sigmoid_signif.db'},
-    'Colon_Transverse': {'tissue_id': 'UBERON_0001157', 'db':'gtex_splicing_v8_eur_Colon_Transverse_signif.db'},
-    'Esophagus_Gastroesophageal_Junction': {'tissue_id': 'UBERON_0004550', 'db':'gtex_splicing_v8_eur_Esophagus_Gastroesophageal_Junction_signif.db'},
-    'Esophagus_Mucosa': {'tissue_id': 'UBERON_0006920', 'db':'gtex_splicing_v8_eur_Esophagus_Mucosa_signif.db'},
-    'Esophagus_Muscularis': {'tissue_id': 'UBERON_0004648', 'db':'gtex_splicing_v8_eur_Esophagus_Muscularis_signif.db'},
-    'Heart_Atrial_Appendage': {'tissue_id': 'UBERON_0006631', 'db':'gtex_splicing_v8_eur_Heart_Atrial_Appendage_signif.db'},
-    'Heart_Left_Ventricle': {'tissue_id': 'UBERON_0006566', 'db':'gtex_splicing_v8_eur_Heart_Left_Ventricle_signif.db'},
-    'Kidney_Cortex': {'tissue_id': 'UBERON_0001225', 'db':'gtex_splicing_v8_eur_Kidney_Cortex_signif.db'},
-    'Liver': {'tissue_id': 'UBERON_0001114', 'db':'gtex_splicing_v8_eur_Liver_signif.db'},
-    'Lung': {'tissue_id': 'UBERON_0008952', 'db':'gtex_splicing_v8_eur_Lung_signif.db'},
-    'Minor_Salivary_Gland': {'tissue_id': 'UBERON_0006330', 'db':'gtex_splicing_v8_eur_Minor_Salivary_Gland_signif.db'},
-    'Muscle_Skeletal': {'tissue_id': 'UBERON_0011907', 'db':'gtex_splicing_v8_eur_Muscle_Skeletal_signif.db'},
-    'Nerve_Tibial': {'tissue_id': 'UBERON_0001323', 'db':'gtex_splicing_v8_eur_Nerve_Tibial_signif.db'},
-    'Ovary': {'tissue_id': 'UBERON_0000992', 'db':'gtex_splicing_v8_eur_Ovary_signif.db'},
-    'Pancreas': {'tissue_id': 'UBERON_0001150', 'db':'gtex_splicing_v8_eur_Pancreas_signif.db'},
-    'Pituitary': {'tissue_id': 'UBERON_0000007', 'db':'gtex_splicing_v8_eur_Pituitary_signif.db'},
-    'Prostate': {'tissue_id': 'UBERON_0002367', 'db':'gtex_splicing_v8_eur_Prostate_signif.db'},
-    'Skin_Not_Sun_Exposed_Suprapubic': {'tissue_id': 'UBERON_0036149', 'db':'gtex_splicing_v8_eur_Skin_Not_Sun_Exposed_Suprapubic_signif.db'},
-    'Skin_Sun_Exposed_Lower_leg': {'tissue_id': 'UBERON_0004264', 'db':'gtex_splicing_v8_eur_Skin_Sun_Exposed_Lower_leg_signif.db'},
-    'Small_Intestine_Terminal_Ileum': {'tissue_id': 'UBERON_0001211', 'db':'gtex_splicing_v8_eur_Small_Intestine_Terminal_Ileum_signif.db'},
-    'Spleen': {'tissue_id': 'UBERON_0002106', 'db':'gtex_splicing_v8_eur_Spleen_signif.db'},
-    'Stomach': {'tissue_id': 'UBERON_0000945', 'db':'gtex_splicing_v8_eur_Stomach_signif.db'},
-    'Testis': {'tissue_id': 'UBERON_0000473', 'db':'gtex_splicing_v8_eur_Testis_signif.db'},
-    'Thyroid': {'tissue_id': 'UBERON_0002046', 'db':'gtex_splicing_v8_eur_Thyroid_signif.db'},
-    'Uterus': {'tissue_id': 'UBERON_0000995', 'db':'gtex_splicing_v8_eur_Uterus_signif.db'},
-    'Vagina': {'tissue_id': 'UBERON_0000996', 'db':'gtex_splicing_v8_eur_Vagina_signif.db'},
-    'Whole_Blood': {'tissue_id': 'UBERON_0013756', 'db':'gtex_splicing_v8_eur_Whole_Blood_signif.db'}
+# # MASHR eQTL
+# dbs_location = f'{project_dir}/GTEx_V8/mashr_models_expression/'
+# scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_mashr_expression'
+# file_prefix = 'mashr_'
+# file_suffix = ''
+# ds_name = '- eQTL - MASHR -'
+
+# MASHR sQTL
+dbs_location = f'{project_dir}/GTEx_V8/mashr_models_splicing/'
+scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_mashr_splicing'
+file_prefix = 'mashr_'
+file_suffix = ''
+ds_name = '- sQTL - MASHR -'
+
+
+datasets_info_test = {
+    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{file_prefix}Adipose_Subcutaneous{file_suffix}.db'}
 }
+datasets_info = {
+    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{file_prefix}Adipose_Subcutaneous{file_suffix}.db'},
+    'Adipose_Visceral_Omentum': {'tissue_id': 'UBERON_0010414', 'db':f'{file_prefix}Adipose_Visceral_Omentum{file_suffix}.db'},
+    'Adrenal_Gland': {'tissue_id': 'UBERON_0002369', 'db':f'{file_prefix}Adrenal_Gland{file_suffix}.db'},
+    'Artery_Aorta': {'tissue_id': 'UBERON_0001496', 'db':f'{file_prefix}Artery_Aorta{file_suffix}.db'},
+    'Artery_Coronary': {'tissue_id': 'UBERON_0001621', 'db':f'{file_prefix}Artery_Coronary{file_suffix}.db'},
+    'Artery_Tibial': {'tissue_id': 'UBERON_0007610', 'db':f'{file_prefix}Artery_Tibial{file_suffix}.db'},
+    'Brain_Amygdala': {'tissue_id': 'UBERON_0001876', 'db':f'{file_prefix}Brain_Amygdala{file_suffix}.db'},
+    'Brain_Anterior_cingulate_cortex_BA24': {'tissue_id': 'UBERON_0009835', 'db':f'{file_prefix}Brain_Anterior_cingulate_cortex_BA24{file_suffix}.db'},
+    'Brain_Caudate_basal_ganglia': {'tissue_id': 'UBERON_0001873', 'db':f'{file_prefix}Brain_Caudate_basal_ganglia{file_suffix}.db'},
+    'Brain_Cerebellar_Hemisphere': {'tissue_id': 'UBERON_0002245', 'db':f'{file_prefix}Brain_Cerebellar_Hemisphere{file_suffix}.db'},
+    'Brain_Cerebellum': {'tissue_id': 'UBERON_0002037', 'db':f'{file_prefix}Brain_Cerebellum{file_suffix}.db'},
+    'Brain_Cortex': {'tissue_id': 'UBERON_0001870', 'db':f'{file_prefix}Brain_Cortex{file_suffix}.db'},
+    'Brain_Frontal_Cortex_BA9': {'tissue_id': 'UBERON_0009834', 'db':f'{file_prefix}Brain_Frontal_Cortex_BA9{file_suffix}.db'},
+    'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':f'{file_prefix}Brain_Hippocampus{file_suffix}.db'},
+    'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':f'{file_prefix}Brain_Hypothalamus{file_suffix}.db'},
+    'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':f'{file_prefix}Brain_Nucleus_accumbens_basal_ganglia{file_suffix}.db'},
+    'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':f'{file_prefix}Brain_Putamen_basal_ganglia{file_suffix}.db'},
+    'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':f'{file_prefix}Brain_Spinal_cord_cervical_c-1{file_suffix}.db'},
+    'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':f'{file_prefix}Brain_Substantia_nigra{file_suffix}.db'},
+    'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':f'{file_prefix}Breast_Mammary_Tissue{file_suffix}.db'},
+    'Cells_Cultured_fibroblasts': {'tissue_id': 'EFO_0002009', 'db':f'{file_prefix}Cells_Cultured_fibroblasts{file_suffix}.db'},
+    'Cells_EBV-transformed_lymphocytes': {'tissue_id': 'EFO_0000572', 'db':f'{file_prefix}Cells_EBV-transformed_lymphocytes{file_suffix}.db'},
+    'Colon_Sigmoid': {'tissue_id': 'UBERON_0001159', 'db':f'{file_prefix}Colon_Sigmoid{file_suffix}.db'},
+    'Colon_Transverse': {'tissue_id': 'UBERON_0001157', 'db':f'{file_prefix}Colon_Transverse{file_suffix}.db'},
+    'Esophagus_Gastroesophageal_Junction': {'tissue_id': 'UBERON_0004550', 'db':f'{file_prefix}Esophagus_Gastroesophageal_Junction{file_suffix}.db'},
+    'Esophagus_Mucosa': {'tissue_id': 'UBERON_0006920', 'db':f'{file_prefix}Esophagus_Mucosa{file_suffix}.db'},
+    'Esophagus_Muscularis': {'tissue_id': 'UBERON_0004648', 'db':f'{file_prefix}Esophagus_Muscularis{file_suffix}.db'},
+    'Heart_Atrial_Appendage': {'tissue_id': 'UBERON_0006631', 'db':f'{file_prefix}Heart_Atrial_Appendage{file_suffix}.db'},
+    'Heart_Left_Ventricle': {'tissue_id': 'UBERON_0006566', 'db':f'{file_prefix}Heart_Left_Ventricle{file_suffix}.db'},
+    'Kidney_Cortex': {'tissue_id': 'UBERON_0001225', 'db':f'{file_prefix}Kidney_Cortex{file_suffix}.db'},
+    'Liver': {'tissue_id': 'UBERON_0001114', 'db':f'{file_prefix}Liver{file_suffix}.db'},
+    'Lung': {'tissue_id': 'UBERON_0008952', 'db':f'{file_prefix}Lung{file_suffix}.db'},
+    'Minor_Salivary_Gland': {'tissue_id': 'UBERON_0006330', 'db':f'{file_prefix}Minor_Salivary_Gland{file_suffix}.db'},
+    'Muscle_Skeletal': {'tissue_id': 'UBERON_0011907', 'db':f'{file_prefix}Muscle_Skeletal{file_suffix}.db'},
+    'Nerve_Tibial': {'tissue_id': 'UBERON_0001323', 'db':f'{file_prefix}Nerve_Tibial{file_suffix}.db'},
+    'Ovary': {'tissue_id': 'UBERON_0000992', 'db':f'{file_prefix}Ovary{file_suffix}.db'},
+    'Pancreas': {'tissue_id': 'UBERON_0001150', 'db':f'{file_prefix}Pancreas{file_suffix}.db'},
+    'Pituitary': {'tissue_id': 'UBERON_0000007', 'db':f'{file_prefix}Pituitary{file_suffix}.db'},
+    'Prostate': {'tissue_id': 'UBERON_0002367', 'db':f'{file_prefix}Prostate{file_suffix}.db'},
+    'Skin_Not_Sun_Exposed_Suprapubic': {'tissue_id': 'UBERON_0036149', 'db':f'{file_prefix}Skin_Not_Sun_Exposed_Suprapubic{file_suffix}.db'},
+    'Skin_Sun_Exposed_Lower_leg': {'tissue_id': 'UBERON_0004264', 'db':f'{file_prefix}Skin_Sun_Exposed_Lower_leg{file_suffix}.db'},
+    'Small_Intestine_Terminal_Ileum': {'tissue_id': 'UBERON_0001211', 'db':f'{file_prefix}Small_Intestine_Terminal_Ileum{file_suffix}.db'},
+    'Spleen': {'tissue_id': 'UBERON_0002106', 'db':f'{file_prefix}Spleen{file_suffix}.db'},
+    'Stomach': {'tissue_id': 'UBERON_0000945', 'db':f'{file_prefix}Stomach{file_suffix}.db'},
+    'Testis': {'tissue_id': 'UBERON_0000473', 'db':f'{file_prefix}Testis{file_suffix}.db'},
+    'Thyroid': {'tissue_id': 'UBERON_0002046', 'db':f'{file_prefix}Thyroid{file_suffix}.db'},
+    'Uterus': {'tissue_id': 'UBERON_0000995', 'db':f'{file_prefix}Uterus{file_suffix}.db'},
+    'Vagina': {'tissue_id': 'UBERON_0000996', 'db':f'{file_prefix}Vagina{file_suffix}.db'},
+    'Whole_Blood': {'tissue_id': 'UBERON_0013756', 'db':f'{file_prefix}Whole_Blood{file_suffix}.db'}
+}
+
+
+datasets_list = datasets_info
+# datasets_list = datasets_info_test
+
+rsid_list = {}
+
+
+def ensembl_rest_call(rsids_list:list):
+    # print(f'rsids_list: {rsids_list}')
+    data = '["'+'","'.join(rsids_list)+'"]'
+    coords = {}
+    headers={ "Content-Type" : "application/json", "Accept" : "application/json"}
+    rest_url = f'https://rest.ensembl.org/variation/homo_sapiens'
+    response = requests.post(rest_url, headers=headers, data='{ "ids": '+data+' }')
+    # response = requests.get(rest_url, headers=headers)
+    response_json = response.json()
+    if response_json:
+        if 'error' in response_json.keys():
+            return coords
+        else:
+            for rsid in response_json.keys():
+                rsid_entry = response_json[rsid]
+                coords[rsid] = {}
+                if 'mappings' in rsid_entry.keys():
+                    for mapping in rsid_entry['mappings']:
+                        if mapping['coord_system'] == 'chromosome':
+                            chr_name = mapping['seq_region_name']
+                            if str(chr_name) == 'X':
+                                chr_name = 23
+                            coords[rsid]['chr_name'] = chr_name
+                            coords[rsid]['chr_position'] = mapping['start']
+    return coords
+
+
+def get_rsid_coords(sqlite_kb_conn:sqlite3.Connection,rsids_list:list):
+    variants_coords = ensembl_rest_call(rsids_list)
+    for rsid in variants_coords.keys():
+        if variants_coords[rsid]:
+            insert_rsid_coords_to_kb(sqlite_kb_conn,rsid,variants_coords[rsid])
+            # rsid_list[rsid] = variants_coords[rsid]
 
 
 def get_dataset(pmid:int, tissue_id:str, name:str) -> Dataset:
@@ -118,12 +187,52 @@ def get_score_molecular_trait(score:Score) -> str:
     else:
         return score.trait_reported_id
 
+def get_rsid(sqlite_cursor:sqlite3.Cursor) -> sqlite3.Cursor:
+    ''' Build and execute the SQL query to list rsID variants which are associated with non rsID variant, from the SQLite database. '''
+    # print(f"SELECT rsid, ref_allele, eff_allele, weight FROM weights WHERE gene='{reported_trait_id}';")
+    qcursor = sqlite_cursor.execute("SELECT distinct (rsid) FROM weights WHERE rsid like 'rs%' and gene in (select distinct gene FROM weights WHERE rsid like 'chr%');")
+    return qcursor
+
+
+def count_non_rsid(sqlite_cursor:sqlite3.Cursor,reported_trait_id:str) -> sqlite3.Cursor:
+    ''' Build and execute the SQL query to list rsID variants which are associated with non rsID variant, from the SQLite database. '''
+    # print(f"SELECT rsid, ref_allele, eff_allele, weight FROM weights WHERE gene='{reported_trait_id}';")
+    qcursor = sqlite_cursor.execute(f"SELECT count(distinct rsid) FROM weights WHERE rsid like 'chr%' and gene='{reported_trait_id}';")
+    return qcursor.fetchone()[0]
+
 
 def get_genetic_score_data(sqlite_cursor:sqlite3.Cursor,reported_trait_id:str) -> sqlite3.Cursor:
     ''' Build and execute the SQL query to fetch the genetic score variant information from the SQLite database. '''
     # print(f"SELECT rsid, ref_allele, eff_allele, weight FROM weights WHERE gene='{reported_trait_id}';")
-    qcursor = sqlite_cursor.execute(f"SELECT rsid, ref_allele, eff_allele, weight FROM weights WHERE gene='{reported_trait_id}';")
+    qcursor = sqlite_cursor.execute(f"SELECT rsid, varID, ref_allele, eff_allele, weight FROM weights WHERE gene='{reported_trait_id}';")
     return qcursor
+
+
+def check_rsid_is_in_kb(sqlite_kb_conn:sqlite3.Connection,rsid:str) -> sqlite3.Cursor:
+    sqlite_kb_cursor = sqlite_kb_conn.cursor()
+    qcursor = sqlite_kb_cursor.execute(f"SELECT rsid FROM variant_coords WHERE rsid='{rsid}';")
+    result = qcursor.fetchone()
+    sqlite_kb_cursor.close()
+    return result
+
+
+def fetch_rsid_coords_from_kb(sqlite_kb_conn:sqlite3.Connection,rsid:str) -> sqlite3.Cursor:
+    sqlite_kb_cursor = sqlite_kb_conn.cursor()
+    qcursor = sqlite_kb_cursor.execute(f"SELECT chr_name, chr_position FROM variant_coords WHERE rsid='{rsid}';")
+    result = qcursor.fetchone()
+    sqlite_kb_cursor.close()
+    return result
+
+
+def insert_rsid_coords_to_kb(sqlite_kb_conn:sqlite3.Connection,rsid:str,rsid_coords:dict):
+    sqlite_kb_cursor = sqlite_kb_conn.cursor()
+    chr_name = rsid_coords['chr_name']
+    chr_position = rsid_coords['chr_position']
+
+    # print(f"SQL: INSERT INTO variant_coords (rsid, chr_name, chr_position) VALUES ('{rsid}',{chr_name},{chr_position});")
+    sqlite_kb_cursor.execute(f"INSERT OR IGNORE INTO variant_coords (rsid, chr_name, chr_position) VALUES ('{rsid}',{chr_name},{chr_position});")
+    sqlite_kb_conn.commit()
+    sqlite_kb_cursor.close()
 
 
 def build_zip_file(scores_root_dir:str, dataset_directory:pathlib.Path, dataset_label:str):
@@ -199,6 +308,10 @@ def write_row(filehandle:io.TextIOWrapper,row_content:str,order:int=2):
         filehandle.write(f'{row_content}\n')
 
 
+def thousandify(number):
+    return f'{number:,}'
+
+
 def run():
 
     start_time = datetime.now()
@@ -206,6 +319,7 @@ def run():
 
     datasets_count = len(datasets_list.keys())
     dataset_number = 1
+    count_rest_api_calls = 0
 
     for dataset_label in datasets_list.keys():
         print(f"# Dataset {dataset_label} ({dataset_number}/{datasets_count})")
@@ -233,9 +347,42 @@ def run():
         scores = Score.objects.filter(dataset=dataset)
         scores_count = Score.objects.filter(dataset=dataset).count()
 
-        # 3 - Extract variant data and build genetic scores files
-        print("  - Get variant data from SQLite database for each genetic score of the current dataset & build scoring files")
-        for score in scores:
+
+        # 3 - Fetch list of rsID which need chr_name and chr_position
+        sqlite_rsid_kb_file = variant_coords_sqlite_db_file
+        sqlite_rsid_kb_connection = sqlite3.connect(sqlite_rsid_kb_file)
+        # sqlite_rsid_kb_cursor = sqlite_rsid_kb_connection.cursor()
+
+        q_rsid_cursor = get_rsid(sqlite_cursor)
+        max_var_list = 50
+        rsids_list = set()
+        count_variants = 0
+        for row in q_rsid_cursor:
+            rsid = row[0]
+            # print(f"RSID {rsid} FOUND!") #rs35477708
+            count_variants += 1
+            if str(count_variants).endswith('000') or str(count_variants).endswith('500'):
+                print(f"    > {thousandify(count_variants)} rsIDs with coordinates to fetch")
+            is_rsid_in_kb = check_rsid_is_in_kb(sqlite_rsid_kb_connection, rsid)
+            if not is_rsid_in_kb:
+                rsids_list.add(rsid)
+            if len(list(rsids_list)) == max_var_list:
+                get_rsid_coords(sqlite_rsid_kb_connection,list(rsids_list))
+                rsids_list = set()
+        if rsids_list:
+            get_rsid_coords(sqlite_rsid_kb_connection,list(rsids_list))
+
+
+        # 4 - Extract variant data and build genetic scores files
+        print(f"  - Get variant data from SQLite database for each genetic score of the current dataset & build scoring files ({thousandify(len(scores))} scores)")
+        count_ens_calls = 0
+        for count_scores, score in enumerate(scores,start=1):
+            # if str(count_scores).endswith('0000') or str(count_scores).endswith('5000'):
+            if str(count_scores).endswith('0000'):
+                print(f"    > {thousandify(count_scores)} scores")
+            if str(count_ens_calls).endswith('00'):
+                print(f"    >> {thousandify(count_ens_calls)} Ensembl REST API calls")
+            count_scores += 1
             score_id = score.id
             genetic_scores[score_id] = []
             # score_trait = score.trait_reported_id
@@ -245,14 +392,41 @@ def run():
             file = open(scoring_file_name,'w')
             # 3a - Generate header content
             write_header(file,score,dataset)
+            non_rsid_count = count_non_rsid(sqlite_cursor,score_trait)
             qcursor = get_genetic_score_data(sqlite_cursor,score_trait)
             # 3b - Generate variants content
-            write_row(file,'rsID\teffect_allele\tother_allele\teffect_weight')
+            common_cols='effect_allele\tother_allele\teffect_weight'
+            if non_rsid_count:
+                write_row(file,f'rsID\tchr_name\tchr_position\t{common_cols}\tvariant_description')
+            else:
+                write_row(file,f'rsID\t{common_cols}')
             first_row = True
             count_rows = 0
             for row in qcursor:
-                rsid, ref_allele, eff_allele, weight = row
-                row_string = f'{rsid}\t{eff_allele}\t{ref_allele}\t{weight}'
+                rsid, varid, ref_allele, eff_allele, weight = row
+                var_desc_content = ''
+                if non_rsid_count:
+                    var_desc_content = '\t'
+                    if rsid.startswith('chr'):
+                        variant_id = re.match(r'^chr(\w+)_(\d+)_',rsid)
+                        rsid = f'.\t{variant_id.group(1)}\t{variant_id.group(2)}'
+                        var_desc_content += f'variant_id={varid}'
+                    else:
+                        data = fetch_rsid_coords_from_kb(sqlite_rsid_kb_connection, rsid)
+                        # if rsid in rsid_list.keys():
+                        #     data = rsid_list[rsid]
+                        # else:
+                        #     data = ensembl_rest_call(rsid)
+                        #     count_ens_calls =+ 1
+                        #     count_rest_api_calls += 1
+                        #     rsid_list[rsid] = data
+                        if data:
+                            chr_name = data[0]
+                            chr_position = data[1]
+                            rsid = f'{rsid}\t{chr_name}\t{chr_position}'
+                        else:
+                            rsid = f'{rsid}\t\t'
+                row_string = f'{rsid}\t{eff_allele}\t{ref_allele}\t{weight}{var_desc_content}'
                 if first_row:
                     write_row(file,row_string,0)
                     first_row = False
@@ -267,21 +441,23 @@ def run():
                 # })
             file.close()
             if count_rows != score.variants_number:
-                print(f"    >> Score {score_id}: discrepancies between the number of variants in metadata ({score.variants_number}) and sqlite ({count_rows}).")
+                print(f"    >> Score {score_id}: discrepancies between the number of variants in metadata ({thousandify(score.variants_number)}) and sqlite ({thousandify(count_rows)}).")
+        print(f"    > {thousandify(count_scores)} scores")
         sqlite_cursor.close()
         sqlite_connection.close()
 
-        # 4 - Build zip file for the dataset
+        # 5 - Build zip file for the dataset
         print("  - Build Zip file")
         dataset_directory = pathlib.Path(dataset_dir)
         count_files = len(list(dataset_directory.glob('*')))
         if scores_count == count_files:
             build_zip_file(scores_root_dir, dataset_directory, dataset_label)
         else:
-            print(f"    >> Zip file error: the number of Genetic Scores ({scores_count}) differs from the number of scoring files generated ({count_files}) ")
+            print(f"    >> Zip file error: the number of Genetic Scores ({thousandify(scores_count)}) differs from the number of scoring files generated ({thousandify(count_files)}) ")
             sys.exit()
 
     end_time = datetime.now()
     print(f"Started time: {start_time}")
     print(f"Ended time: {end_time}")
+    print(f"Ensembl REST API calls: {thousandify(count_rest_api_calls)}")
 
