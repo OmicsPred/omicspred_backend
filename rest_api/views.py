@@ -312,7 +312,7 @@ class RestListPathways(generics.ListAPIView):
                                            Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
                                            Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term))
         # Sort data
-        queryset = sort_data_list(self.request,'pathway',queryset,'name',distinct_col='id')
+        queryset = sort_data_list(self.request,'pathway',queryset,'name')
         return queryset
 
 
