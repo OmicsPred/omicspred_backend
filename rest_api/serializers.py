@@ -590,7 +590,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
         return PlatformSerializer(platform, many=False, read_only=True).data
 
     def get_tissue(self, obj):
-        ''' Get EFO/Tissue model '''
+        ''' Get EFO (Tissue) model '''
         tissue = obj.dataset.tissue
         return TissueSerializer(tissue, many=False, read_only=True).data
 
@@ -622,11 +622,12 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
     dataset_id = serializers.SerializerMethodField()
     dataset_name = serializers.SerializerMethodField()
     publication = serializers.SerializerMethodField()
+    tissue = serializers.SerializerMethodField()
     platform_version = serializers.SerializerMethodField()
 
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','dataset_id','dataset_name','platform_version','publication','ancestry')
+        meta_fields = ('id','variants_number','dataset_id','dataset_name','platform_version','publication','tissue','ancestry')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -647,6 +648,11 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
         ''' Get Publication model '''
         publication = obj.dataset.publication
         return PublicationSerializer(publication, many=False, read_only=True).data
+
+    def get_tissue(self, obj):
+        ''' Get EFO (Tissue) model '''
+        tissue = obj.dataset.tissue
+        return TissueSerializer(tissue, many=False, read_only=True).data
 
 
 class ScoreMetaboliteSerializer(ScoreMolecularTraitSerializer):

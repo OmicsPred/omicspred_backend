@@ -3,7 +3,7 @@ servers:
   - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
-  version: '1.1.2'
+  version: '1.1.3'
   description: |
     Programmatic access to the OmicsPred metadata.
 
@@ -68,6 +68,9 @@ info:
 
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
+
+      * <span class="badge badge-pill">1.1.3</span> - December 2025:
+        * New field **tissue** in the Omics schemas (`/api/transcriptomics/`, /api/proteomics/` and /api/metabolomics/` endpoints), containing the mapped tissue ontology information (identifier, label, description) of the sampled tissue.
 
       * <span class="badge badge-pill">1.1.2</span> - November 2025:
         * New field **method_name** in the Dataset schemas (`/api/dataset/` endpoints), containing name of the method(s) used to develop the scores in the dataset.
@@ -1039,6 +1042,8 @@ components:
           example: "3.0"
         publication:
           $ref: '#/components/schemas/Publication'
+        tissue:
+          $ref: '#/components/schemas/Tissue'
         performance_data:
           type: array
           description: "Simplified structure containing information about a Performance Metrics for a Cohort."
@@ -1790,6 +1795,7 @@ paths:
           * Dataset ID and name
           * Platform version
           * Publication information
+          * Tissue information
           * Ancestry distribution
           * Performance Metrics data
           * Reported Molecular Trait
@@ -1895,6 +1901,7 @@ paths:
           * Dataset ID and name
           * Platform version
           * Publication information
+          * Tissue information
           * Ancestry distribution
           * Performance Metrics data
           * Linked genes
@@ -2006,6 +2013,7 @@ paths:
           * Dataset ID and name
           * Platform version
           * Publication information
+          * Tissue information
           * Ancestry distribution
           * Performance Metrics data
           * Linked genes
