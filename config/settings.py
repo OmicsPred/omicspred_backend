@@ -265,7 +265,7 @@ STATICFILES_FINDERS = [
 #  REST API Settings  #
 #---------------------#
 
-REST_API_VERSION = '1.1.2'
+REST_API_VERSION = '1.1.3'
 
 #REST_SAFELIST_IPS = [
 #    '127.0.0.1'

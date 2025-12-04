@@ -23,7 +23,7 @@ only_dict = {
     'scores_pp_table': [
         'id','variants_number','trait_reported_id','trait_reported','ancestry',
         'dataset__id','dataset__name',
-        'dataset__platform__id','dataset__platform__version', *dataset_publication],
+        'dataset__platform__id','dataset__platform__version', *dataset_publication, 'dataset__tissue'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
 }
 
@@ -78,7 +78,7 @@ related_dict = {
     'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts').order_by('num'))],
     'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
     'score_applications_prefetch': ['genes','proteins','metabolites'],
-    'score_dataset': ['dataset','dataset__publication','dataset__platform'],
+    'score_dataset': ['dataset','dataset__publication','dataset__platform', 'dataset__tissue'],
     'score_dataset_full': [
         'dataset',
         'dataset__publication',
@@ -145,6 +145,39 @@ def sort_data_list(request,type,queryset,default_col='num',distinct_col=None):
             sort_field = '-'+sort_field
         queryset = queryset.order_by(sort_field)
     return queryset
+
+
+def filter_data(queryset, filter_params):
+    filters_data = {}
+    for filter in filter_params.split(';'):
+        (type,value) = filter.split(':')
+        filters_data[type] = value
+    filters_types = filters_data.keys()
+    query_filter_list = []
+
+    if 'score_id' in filters_types:
+        query_filter_list.append(Q(id__iexact=filters_data['score_id']))
+    if 'mt_id' in filters_types:
+        mt_id = filters_data['mt_id']
+        mt_type = filters_data['mt_type']
+        if mt_type == 'Gene':
+            query_filter_list.append(Q(genes__external_id__iexact=mt_id) | Q(genes__name__icontains=mt_id))
+        elif mt_type == 'Protein':
+            query_filter_list.append(Q(proteins__external_id__iexact=mt_id) | Q(proteins__name__icontains=mt_id))
+        elif mt_type == 'Metabolite':
+            query_filter_list.append(Q(metabolites__external_id__iexact=mt_id) | Q(metabolites__name__icontains=mt_id))
+    if 'platform' in filters_types:
+        query_filter_list.append(Q(dataset__platform__name__exact=filters_data['platform']))
+    if 'omics_type' in filters_types:
+        query_filter_list.append(Q(dataset__platform__platform_master__type__exact=filters_data['omics_type']))
+    if 'publication' in filters_types:
+        query_filter_list.append(Q(dataset__publication__id__iexact=filters_data['publication']))
+    if 'tissue' in filters_types:
+        query_filter_list.append(Q(dataset__tissue__id__iexact=filters_data['tissue']))
+    if 'dataset' in filters_types:
+        query_filter_list.append(Q(dataset__id__exact=filters_data['dataset']))
+
+    return queryset.filter(reduce(operator.and_,query_filter_list))
 
 
 def custom_exception_handler(exc, context):
@@ -501,17 +534,21 @@ class RestMetabolomics(generics.ListAPIView):
             #                            Q(dataset__publication__id__iexact=filter_term) |
             #                            Q(metabolites__pathway_group__name__iexact=filter_term) | Q(metabolites__pathway_subgroup__name__iexact=filter_term) |
             #                            Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
-            query__filter_list = [Q(id__iexact=filter_term), Q(trait_reported_id__iexact=filter_term), Q(trait_reported__icontains=filter_term)]
+            query_filter_list = [Q(id__iexact=filter_term), Q(trait_reported_id__iexact=filter_term), Q(trait_reported__icontains=filter_term)]
             if not dataset or dataset == None:
-                query__filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
+                query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
             if (not opp_id or opp_id == None) and filter_term.upper().startswith('OPP0'):
-                query__filter_list.append(Q(dataset__publication__id__iexact=filter_term))
+                query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
             # Metabolite old pathways
-            query__filter_list.extend([Q(metabolites__pathway_group__name__iexact=filter_term), Q(metabolites__pathway_subgroup__name__iexact=filter_term)])
+            query_filter_list.extend([Q(metabolites__pathway_group__name__iexact=filter_term), Q(metabolites__pathway_subgroup__name__iexact=filter_term)])
             # Metabolite
-            query__filter_list.extend([Q(metabolites__external_id__iexact=filter_term), Q(metabolites__name__icontains=filter_term)])
+            query_filter_list.extend([Q(metabolites__external_id__iexact=filter_term), Q(metabolites__name__icontains=filter_term)])
 
-            queryset = queryset.filter(reduce(operator.or_,query__filter_list))
+            queryset = queryset.filter(reduce(operator.or_,query_filter_list))
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
 
         # Sort data + distinct scores
         queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
@@ -589,20 +626,25 @@ class RestProteomics(generics.ListAPIView):
             #                            Q(dataset__platform__version__icontains=filter_term) | Q(dataset__publication__id__iexact=filter_term) |
             #                            Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
             #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
-            query__filter_list = [Q(id__iexact=filter_term)]
+            query_filter_list = [Q(id__iexact=filter_term)]
             if not dataset or dataset == None:
-                query__filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
+                query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
             if version and version is not None:
-                query__filter_list.append(Q(dataset__platform__version__icontains=filter_term))
+                query_filter_list.append(Q(dataset__platform__version__icontains=filter_term))
             if (not opp_id or opp_id == None) and filter_term.upper().startswith('OPP0'):
-                query__filter_list.append(Q(dataset__publication__id__iexact=filter_term))
+                query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
             # Proteins
-            query__filter_list.extend([Q(proteins__external_id__iexact=filter_term), Q(proteins__name__icontains=filter_term)])
+            query_filter_list.extend([Q(proteins__external_id__iexact=filter_term), Q(proteins__name__icontains=filter_term)])
             # Genes
-            query__filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__iexact=filter_term)])
-            queryset = queryset.filter(reduce(operator.or_,query__filter_list))
+            query_filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__iexact=filter_term)])
+            queryset = queryset.filter(reduce(operator.or_,query_filter_list))
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
 
         # Sort data + distinct scores
+        # queryset = sort_data_list(self.request,'score',queryset)
         queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
         # # Distinct scores
         # queryset = queryset.distinct('num')
@@ -657,14 +699,18 @@ class RestTranscriptomics(generics.ListAPIView):
             #                            Q(dataset__id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
             #                            Q(dataset__publication__id__iexact=filter_term) |
             #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
-            query__filter_list = [Q(id__iexact=filter_term)]
+            query_filter_list = [Q(id__iexact=filter_term)]
             if not dataset or dataset == None:
-                query__filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__icontains=filter_term)])
+                query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__icontains=filter_term)])
             if (not opp_id or opp_id == None) and filter_term.upper().startswith('OPP0'):
-                query__filter_list.append(Q(dataset__publication__id__iexact=filter_term))
+                query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
             # Genes
-            query__filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__iexact=filter_term)])
-            queryset = queryset.filter(reduce(operator.or_,query__filter_list))
+            query_filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__iexact=filter_term)])
+            queryset = queryset.filter(reduce(operator.or_,query_filter_list))
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
 
         # Sort data + distinct scores
         queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
@@ -1027,8 +1073,16 @@ class RestListScores(generics.ListAPIView):
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
                                        Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) | 
                                        Q(dataset__publication__id__iexact=filter_term) | Q(dataset__publication__firstauthor__iexact=filter_term))
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
+        # if filter_count:
+        #     # queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
+        #     queryset = sort_data_list(self.request,'score',queryset)
+        # else:
+        #     queryset = sort_data_list(self.request,'score',queryset)
         return queryset
 
 
@@ -1198,26 +1252,31 @@ class RestScoreSearch(generics.ListAPIView):
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            query__filter_list = [Q(id__iexact=filter_term), Q(dataset__name__iexact=filter_term), Q(dataset__platform__platform_master__type__iexact=filter_term)]
+            query_filter_list = [Q(id__iexact=filter_term), Q(dataset__name__iexact=filter_term), Q(dataset__platform__platform_master__type__iexact=filter_term)]
             if (not opd_id or opd_id == None) and filter_term.upper().startswith('OPD0'):
-                query__filter_list.append(Q(dataset__id__iexact=filter_term))
+                query_filter_list.append(Q(dataset__id__iexact=filter_term))
             if (not opp_id or opp_id == None) and filter_term.upper().startswith('OPP0'):
-                query__filter_list.append(Q(dataset__publication__id__iexact=filter_term))
+                query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
             if not platform or platform == None:
-                query__filter_list.append(Q(dataset__platform__name__iexact=filter_term))
+                query_filter_list.append(Q(dataset__platform__name__iexact=filter_term))
             # Genes
-            query__filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__icontains=filter_term)])
+            query_filter_list.extend([Q(genes__external_id__iexact=filter_term), Q(genes__name__icontains=filter_term)])
             # Proteins
-            query__filter_list.extend([Q(proteins__external_id__iexact=filter_term), Q(proteins__name__icontains=filter_term)])
+            query_filter_list.extend([Q(proteins__external_id__iexact=filter_term), Q(proteins__name__icontains=filter_term)])
             # Metabolites
-            query__filter_list.extend([Q(metabolites__external_id__iexact=filter_term), Q(metabolites__name__icontains=filter_term)])
+            query_filter_list.extend([Q(metabolites__external_id__iexact=filter_term), Q(metabolites__name__icontains=filter_term)])
 
-            queryset = queryset.filter(reduce(operator.or_,query__filter_list))
+            queryset = queryset.filter(reduce(operator.or_,query_filter_list))
             # queryset = queryset.filter(Q(id__iexact=filter_term) |
             #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
             #                            Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
             #                            Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
             #                            Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term))
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
+            params += 1
 
         if params == 0:
             queryset = []
