@@ -836,7 +836,7 @@ class RestPerformanceSearchByMolecularTrait(generics.ListAPIView):
         # Sort data
         queryset = sort_data_list(self.request,'performance',queryset,'score_id')
         # Distinct performance
-        queryset = queryset.distinct('id','score_id')
+        # queryset = queryset.distinct('id','score_id')
 
         return queryset
 
@@ -903,7 +903,7 @@ class RestDatasetSearch(generics.ListAPIView):
     def get_queryset(self):
         try:
             # Database filtering
-            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).all()
+            queryset = Dataset.objects.select_related(*related_dict['dataset_select']).prefetch_related(*related_dict['dataset_prefetch']).all().order_by('num')
             # Filter by publication
             opp_id = self.request.query_params.get('opp_id')
             if opp_id and opp_id is not None:
@@ -920,7 +920,6 @@ class RestDatasetSearch(generics.ListAPIView):
             if tissue_id and tissue_id is not None:
                 tissue_id = tissue_id.upper().replace(':','_')
                 queryset = queryset.filter(tissue__id__iexact=tissue_id)
-                params += 1
         except Dataset.DoesNotExist:
             queryset = []
         return queryset
@@ -1248,6 +1247,8 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(dataset__tissue__id__iexact=tissue_id)
             params += 1
 
+        # Filter Ancestry - FOR PRIVATE USE CASE
+        queryset = filter_ancestry(queryset,self.request)
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')

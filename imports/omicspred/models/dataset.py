@@ -69,8 +69,8 @@ class DatasetData(GenericData):
     @transaction.atomic
     def create_model(self):
         '''
-        Create an instance of the Score model.
-        Return type: Score model
+        Create an instance of the Dataset model.
+        Return type: Dataset model
         '''
         try:
             with transaction.atomic():
@@ -88,5 +88,26 @@ class DatasetData(GenericData):
         except IntegrityError as e:
             self.model = None
             logger.error(f'Error with the creation of the Dataset(s): {e}')
-            # print(f'Error with the creation of the Score(s): {e}')
+        return self.model
+
+
+    @transaction.atomic
+    def create_model_from_existing_components(self):
+        '''
+        Create an instance of the Dataset model, using other exsiting models
+        Return type: Dataset model
+        '''
+        try:
+            with transaction.atomic():
+                self.check_model_exist()
+                if not self.model:
+                    self.model = Dataset()
+                    self.model.set_dataset_ids(self.next_id_number(Dataset, 'num'))
+                    for field, val in self.data.items():
+                        setattr(self.model, field, val)
+                    self.model.save()
+
+        except IntegrityError as e:
+            self.model = None
+            logger.error(f'Error with the creation of the Dataset(s): {e}')
         return self.model
