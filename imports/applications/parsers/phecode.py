@@ -1,5 +1,5 @@
 import re
-from psycopg2.extras import NumericRange
+from psycopg.types.range import Range
 
 class PhecodeFullParser():
 
@@ -31,7 +31,7 @@ class PhecodeFullParser():
         if len(values) == 3:
             ci_low = values[1].replace('(','')
             ci_upper = values[2].replace(')','')
-            self.score_application['hr_ci'] = NumericRange(lower=float(ci_low), upper=float(ci_upper), bounds='[]')
+            self.score_application['hr_ci'] = Range(lower=float(ci_low), upper=float(ci_upper), bounds='[]')
     
 
     def fix_phecode_id(self):

@@ -1,6 +1,7 @@
 import re
 from django.db import IntegrityError, transaction
 from imports.generic_model import GenericData
+from imports.omicspred.models.cohort import CohortData
 from omicspred.models import Sample
 
 class SampleData(GenericData):
@@ -54,7 +55,10 @@ class SampleData(GenericData):
                         if field == 'cohorts':
                             # Stored as list of CohortData -> Cohort Model
                             for cohort_data in val:
-                                cohort = cohort_data.create_model()
+                                if isinstance(cohort_data,CohortData):
+                                    cohort = cohort_data.create_model()
+                                else:
+                                    cohort = cohort_data
                                 cohorts.append(cohort)
                             continue
                         elif field in ['ancestry_broad','ancestry_country','ancestry_free']:

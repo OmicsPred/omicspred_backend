@@ -1,8 +1,8 @@
 #### Django library ####
 Django==5.2.8
 #### Python PostgreSQL library ####
-psycopg2-binary==2.9.11
-# psycopg-binary==3.2.10
+# psycopg2-binary==2.9.11
+psycopg[binary]==3.3.2
 # psycopg==3.2.10
 #### Django REST API libraries ####
 djangorestframework==3.16.1

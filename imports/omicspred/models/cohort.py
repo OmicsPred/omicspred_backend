@@ -8,6 +8,7 @@ class CohortData(GenericData):
     def __init__(self,name_short:str,cohort_data:dict):
         GenericData.__init__(self)
         self.name_short = name_short
+        self.data['name_short'] = name_short
         for item in cohort_data.keys():
             if cohort_data[item]:
                  self.data[item] = cohort_data[item]
