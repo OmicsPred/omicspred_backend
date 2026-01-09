@@ -371,10 +371,12 @@ class SamplePerformanceSpreadSheet(SpreadSheet):
                 metrics.append(metric)
             # print(f"==> Metrics: {len(metrics)}")
             # Perforance
-            performance = PerformanceData(score_name, metrics)
+            # performance = PerformanceData(score_name, metrics)
+            performance = PerformanceData()
+            for metric in metrics:
+                performance.add_metrics(metric)
             for p_key, p_val in performance_data.items():
                 performance.add_data(p_key, p_val)
-            performance.add_metrics(metrics)
             # print(f"==> Performance Metrics: {performance.metrics}")
 
             # Take into account when there are more than 1 performance per score
