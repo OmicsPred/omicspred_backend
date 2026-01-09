@@ -23,8 +23,8 @@ class DatasetData(GenericData):
         self.publication = publication
         self.platform = platform
         self.tissue = tissue
+        self.name = name
         if name:
-            self.name = name
             self.data['name'] = name
         if data_type in self.omics_data_types.keys():
             self.data['omics_type'] = self.omics_data_types[data_type]

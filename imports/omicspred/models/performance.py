@@ -18,17 +18,23 @@ class PerformanceData(GenericData):
     ancestries = {
         'Ad Mixed American': 'AMR',
         'African': 'AFR',
+        'African American or Afro-Caribbean': 'AFR',
         'East Asian': 'EAS',
         'European': 'EUR',
         'European,Ad Mixed American,African,East Asian,South Asian': 'ALL',
+        'African American or Afro-Caribbean, East Asian, European, Hispanic or Latin American': 'ALL',
+        'Hispanic or Latin American': 'AMR',
         'South Asian': 'SAS'
     }
 
 
-    def __init__(self,score_name,metrics):
+    def __init__(self):
         GenericData.__init__(self)
-        self.score_name = score_name # Could be removed ?
-        self.metrics = metrics
+        self.metrics = []
+
+
+    def add_eval_type(self, eval_type:str):
+        self.data['eval_type'] = eval_type
 
 
     def add_score_model(self, score_model:Score):
@@ -48,7 +54,7 @@ class PerformanceData(GenericData):
         '''
         Method adding MetricData objects to the metrics array.
         '''
-        self.metrics = metrics_data
+        self.metrics.append(metrics_data)
         # for metric_type in metric_values.keys():
         #     metric_val = None
         #     pvalue_val = None
@@ -67,7 +73,8 @@ class PerformanceData(GenericData):
     def get_cohort_label(self, sample_model:Sample) -> str:
         cohorts = [x.name_short for x in sample_model.cohorts.all()]
         cohort_label = '_'.join(sorted(cohorts))
-        if cohort_label in ['MEC','MESA','UKB_Withheld']:
+        # if cohort_label in ['MEC','MESA','UKB_Withheld']:
+        if cohort_label in ['MEC','UKB_Withheld']:
             sample_anc = sample_model.ancestry_broad
             if sample_anc in self.ancestries.keys():
                 cohort_label = f'{cohort_label}_{self.ancestries[sample_anc]}'
@@ -92,7 +99,7 @@ class PerformanceData(GenericData):
         '''
         try:
             with transaction.atomic():
-                self.update_eval_type()
+                # self.update_eval_type()
                 self.model = Performance(**self.data)
                 self.model.save()
 

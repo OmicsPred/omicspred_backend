@@ -43,7 +43,9 @@ class ScoreData(GenericData):
         try:
             with transaction.atomic():
                 self.model = Score()
-                self.model.set_score_ids(self.next_id_number(Score, 'num'))
+                id_number = Score.objects.latest('num').pk + 1
+                # self.model.set_score_ids(self.next_id_number(Score, 'num'))
+                self.model.set_score_ids(id_number)
                 for field, val in self.data.items():
                     setattr(self.model, field, val)
                 self.model.save()
