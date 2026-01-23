@@ -69,10 +69,11 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
-      * <span class="badge badge-pill">1.1.3</span> - December 2025:
-        * New field **tissue** in the Omics schemas (`/api/transcriptomics/`, /api/proteomics/` and /api/metabolomics/` endpoints), containing the mapped tissue ontology information (identifier, label, description) of the sampled tissue.
+      * <span class="badge badge-pill">1.1.3</span> - February 2026:
+        * New field **datasets** in the Info schemas (`/api/info/` endpoint), containing the number of datasets in OmicsPred.
 
-      * <span class="badge badge-pill">1.1.2</span> - November 2025:
+      * <span class="badge badge-pill">1.1.2</span> - January 2026:
+        * New field **tissue** in the Omics schemas (`/api/transcriptomics/`, /api/proteomics/` and /api/metabolomics/` endpoints), containing the mapped tissue ontology information (identifier, label, description) of the sampled tissue.
         * New field **method_name** in the Dataset schemas (`/api/dataset/` endpoints), containing name of the method(s) used to develop the scores in the dataset.
 
       * <span class="badge badge-pill">1.1.1</span> - September 2025:
@@ -285,30 +286,28 @@ components:
           items:
             $ref: '#/components/schemas/Sample'
         scoring_files_urls:
-          type: array
-          items:
-            type: object
-            properties:
-              gwas_sumstats:
-                type: string
-                description: "GWAS summary stats file"
-                example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
-              scoring_files:
-                type: string
-                description: "Scoring files"
-                example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
-              score_variant_info:
-                type: string
-                description: "Variant information file"
-                example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
-              validation_results:
-                type: string
-                description: "PGS performance metrics"
-                example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
-              scoring_files_pgsc_calc:
-                type: string
-                description: "Scoring files - pgsc_calc compatible"
-                example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
+          type: object
+          properties:
+            gwas_sumstats:
+              type: string
+              description: "GWAS summary stats file"
+              example: "https://app.box.com/shared/static/u3flbp13zjydegrxjb2uepagp1vb6bj2"
+            scoring_files:
+              type: string
+              description: "Scoring files"
+              example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
+            score_variant_info:
+              type: string
+              description: "Variant information file"
+              example: "https://app.box.com/shared/static/eac8psw30dxh9evwu9z0bj8hncru2ioa"
+            validation_results:
+              type: string
+              description: "PGS performance metrics"
+              example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
+            scoring_files_pgsc_calc:
+              type: string
+              description: "Scoring files - pgsc_calc compatible"
+              example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
 
     Dataset_extended:
       description: "Based on the **Dataset** schema, with the addition of the '**publication**'."
@@ -3857,6 +3856,10 @@ paths:
                     type: object
                     description: "Counts of the different type of data in OmicsPred"
                     properties:
+                      datasets:
+                        type: number
+                        description: "Number of Datasets in OmicsPred"
+                        example: 213
                       scores:
                         type: number
                         description: "Number of Genetic Scores in OmicsPred"

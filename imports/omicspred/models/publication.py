@@ -1,7 +1,7 @@
+import requests
 from django.db import IntegrityError, transaction
 from imports.generic_model import GenericData
 from omicspred.models import Publication
-import requests
 
 
 class PublicationData(GenericData):
@@ -35,8 +35,12 @@ class PublicationData(GenericData):
         payload['query'] = query
         result = requests.get('https://www.ebi.ac.uk/europepmc/webservices/rest/search', params=payload)
         result = result.json()
-        result = result['resultList']['result'][0]
-        return result
+        if result:
+            result = result['resultList']['result'][0]
+            return result
+        else:
+            print("Can't retrieve publication information from EuropePMC")
+            exit(1)
 
 
     def fetch_publication_information(self):

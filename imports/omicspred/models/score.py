@@ -30,6 +30,13 @@ class ScoreData(GenericData):
         self.data['species'] = dataset.species
 
 
+    def get_score_method_name(self):
+        method_name = None
+        if 'method_name' in self.data.keys():
+            method_name = self.data['method_name']
+        return method_name
+
+
     def generate_model(self):
         return self.generate_generic_model(Score)
 

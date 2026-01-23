@@ -1,5 +1,5 @@
 #### Django library ####
-Django==5.2.8
+Django==5.2.10
 #### Python PostgreSQL library ####
 # psycopg2-binary==2.9.11
 psycopg[binary]==3.3.2

@@ -7,10 +7,15 @@ from omicspred.models import *
 
 insert_block_max = 100
 
+# default_values = {
+#     'opp_id': 'OPP000003',
+#     'sqlite_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/sqlite_exports',
+#     'scoring_files_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/genetic_scores_gzip'
+# }
 default_values = {
-    'opp_id': 'OPP000003',
-    'sqlite_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/sqlite_exports',
-    'scoring_files_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/genetic_scores_gzip'
+    'opp_id': 'OPP000002',
+    'sqlite_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/PredictDB_exports',
+    'scoring_files_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/Scores'
 }
 
 tissues_mapping = {
@@ -66,7 +71,7 @@ tissues_mapping = {
 }
 
 
-def read_scoring_file(scoring_files_dir:str, dataset_dir:str, score_id:str, molecular_traits:dict) -> list:
+def read_scoring_file(scoring_files_dir:str, dataset_dir:str, score_id:str, molecular_traits:dict, genome_build:str) -> list:
     scoring_file = f'{scoring_files_dir}/{dataset_dir}/{score_id}.txt'
     scoring_file_gz = f'{scoring_files_dir}/{dataset_dir}/{score_id}.txt.gz'
     data = []
@@ -79,7 +84,7 @@ def read_scoring_file(scoring_files_dir:str, dataset_dir:str, score_id:str, mole
             # Ignore lines starting with '#'
             reader = csv.DictReader(filter(lambda row: row[0]!='#', sc_file), delimiter='\t')
             for row in reader:
-                variant_info = get_variant_info(row,score_id,molecular_traits)
+                variant_info = get_variant_info(row,score_id,molecular_traits,genome_build)
                 data.append(variant_info)
     # Zipped file
     elif os.path.isfile(scoring_file_gz):
@@ -87,18 +92,21 @@ def read_scoring_file(scoring_files_dir:str, dataset_dir:str, score_id:str, mole
             # Ignore lines starting with '#'
             reader = csv.DictReader(filter(lambda row: row[0]!='#', sc_file), delimiter='\t')
             for row in reader:
-                variant_info = get_variant_info(row,score_id,molecular_traits)
+                variant_info = get_variant_info(row,score_id,molecular_traits,genome_build)
                 data.append(variant_info)
     else:
         print(f">>> ERROR: file not found ({scoring_file} nor {scoring_file_gz}")
     return data
 
 
-def get_variant_info(row:dict, score_id:str, molecular_traits:dict) -> tuple:
+def get_variant_info(row:dict, score_id:str, molecular_traits:dict, genome_build:str) -> tuple:
     rsid = row['rsID'] if 'rsID' in row.keys() else row['rsid']
-    # TODO - 1: generate varID =>
-    # => fetch chr_name and chr_position if they exist in the file
-    # => otherwise use Ensembl REST API to fetch coordinates 
+    varid = None
+    if 'chr_name' in row.keys() and 'chr_position' in row.keys():
+        # 1_156000340_A_G_b38
+        to_replace = 'GRCh' if genome_build.startswith('GRCh') else 'hg'
+        build = 'b'+genome_build.replace(to_replace,'')
+        varid = f"{row['chr_name']}_{row['chr_position']}_{row['other_allele']}_{row['effect_allele']}_{build}"
     gene_id = molecular_traits['gene_id']
     variant_info_list = [
         score_id,             # omicspred_id
@@ -109,7 +117,7 @@ def get_variant_info(row:dict, score_id:str, molecular_traits:dict) -> tuple:
     
     variant_info_list.extend([
         rsid,                 # rsid
-        None,                 # var_id
+        varid,                 # var_id
         row['other_allele'],  # ref_allele
         row['effect_allele'], # eff_allele
         row['effect_weight']  # weight
@@ -136,6 +144,7 @@ def run(*args):
     ds_total_count = len(datasets)
     for dataset in datasets:
         print(f"- Dataset: {dataset.id} ({ds_count}/{ds_total_count})")
+        genome_build = ''
         ds_count += 1
         dataset_name = dataset.name
         dataset_type = dataset.platform.platform_master.type
@@ -149,15 +158,17 @@ def run(*args):
         cur = con.cursor()
         ## Create tables
         # Table 'extra'
-        cols_extra = ['omicspred_id', 'gene', 'genename', 'gene_type']
+        # cols_extra = ['omicspred_id', 'gene', 'genename', 'gene_type']
+        cols_extra = ['gene', 'gene_id', 'genename', 'gene_type']
         if is_proteomics:
             cols_extra.append('protein')
-        cols_extra.extend(['"n.snps.in.model"', 'cv_R2_avg', 'nested_cv_fisher_pval', 'rho_avg', '"pred.perf.pval"'])
+        cols_extra.extend(['"n.snps.in.model"', 'cv_R2_avg', '"pred.perf.R2"', 'nested_cv_fisher_pval', 'rho_avg', '"pred.perf.pval"', '"pred.perf.qval"'])
         cur.execute("DROP TABLE IF EXISTS extra;")
         cur.execute(f"CREATE TABLE extra({', '.join(cols_extra)})")
 
         # Table 'weights'
-        cols_weights = ['omicspred_id', 'gene']
+        # cols_weights = ['omicspred_id', 'gene']
+        cols_weights = ['gene', 'gene_id']
         if is_proteomics:
             cols_weights.append('protein')
         cols_weights.extend(['rsid', 'varID', 'ref_allele', 'eff_allele','weight'])
@@ -167,6 +178,10 @@ def run(*args):
         # Table 'sample_info'
         cur.execute("DROP TABLE IF EXISTS sample_info;")
         cur.execute(f'CREATE TABLE sample_info("n.samples")')
+
+        # Table 'genome_build'
+        cur.execute("DROP TABLE IF EXISTS genome_build;")
+        cur.execute(f'CREATE TABLE genome_build("build")')
 
         dataset_tissue = dataset.tissue.label
         # dataset_tissue = 'subcutaneous adipose tissue'
@@ -186,9 +201,8 @@ def run(*args):
             cur.execute("INSERT INTO sample_info VALUES (?)", (sample_count,))
             con.commit()
 
-        extra_values = '?, ?, ?, ?, ?, ?, ?, ?, ?'
-        if is_proteomics:
-            extra_values += ', ?'
+        extra_values_list = [ '?' for x in cols_extra]
+        extra_values = ', '.join(extra_values_list)
 
         # For each score
         scores = Score.objects.filter(dataset=dataset).order_by('num')
@@ -206,10 +220,16 @@ def run(*args):
                         metrics['Rho'] = metric.estimate
                         metrics['Rho_pval'] = metric.pvalue
 
+            # Genome build
+            if genome_build == '':
+                genome_build = score.variants_genomebuild
+
             # 1 - Extract metadata data from DB + insert data in SQLite
             score_data = {
-                'omicspred_id': score.id,
-                'gene': gene_id, 
+                # 'omicspred_id': score.id,
+                # 'gene': gene_id,
+                'gene': score.id,
+                'gene_id': gene_id,
                 'genename': gene.name,
                 'gene_type': gene.biotype
             }
@@ -219,9 +239,11 @@ def run(*args):
                 score_data['protein'] = protein.external_id
             score_data['"n.snps.in.model"'] = score.variants_number
             score_data['cv_R2_avg'] = metrics['R2']
+            score_data['"pred.perf.R2"'] = None
             score_data['nested_cv_fisher_pval'] = metrics['R2_pval']
             score_data['rho_avg'] = metrics['Rho']
             score_data['"pred.perf.pval"'] = metrics['Rho_pval']
+            score_data['"pred.perf.qval"'] = None
 
             data_list = []
             for col in cols_extra:
@@ -240,7 +262,7 @@ def run(*args):
             if is_proteomics:
                 molecular_traits['protein_id'] = protein.external_id
                 weights_values += ', ?'
-            insert_weights_block = read_scoring_file(scoring_files_dir,dataset_dir,score.id,molecular_traits)
+            insert_weights_block = read_scoring_file(scoring_files_dir,dataset_dir,score.id,molecular_traits,genome_build)
            
             cur.executemany(f"INSERT INTO weights VALUES({weights_values})", insert_weights_block)
             con.commit()
@@ -250,5 +272,12 @@ def run(*args):
             cur.executemany(f"INSERT INTO extra VALUES({extra_values})", insert_extra_block)
             con.commit()
             insert_extra_block = []
+
+
+        # Add genome build information
+        if genome_build == '':
+            genome_build = 'NA'
+        cur.execute("INSERT INTO genome_build VALUES (?)", (genome_build,))
+        con.commit()
 
     con.close()
