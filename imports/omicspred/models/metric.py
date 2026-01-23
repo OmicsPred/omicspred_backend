@@ -7,10 +7,7 @@ class MetricData(GenericData):
     # Type of metric
     type_choices = {
         'R2' : "Pearson's correlation",
-        # 'R2_pvalue'  : "Pearson's correlation",
         'Rho': "Spearman's rank correlation",
-        # 'Rho_pvalue' : "Spearman's rank correlation",
-        # 'MissingRate': "Variant Missing Rate",
         'MatchingRate': "Variant Match Rate"
     }
 
@@ -21,26 +18,21 @@ class MetricData(GenericData):
         'AUROC': ('Area Under the Receiver-Operating Characteristic Curve', 'AUROC'),
         'Cindex': ('Concordance Statistic', 'C-index'),
         'R2': ('Proportion of the variance explained', 'R2'),
-        # 'R2_pvalue': ('p-value', 'p-value'),
         'Rho': ('Spearman correlation coefficient', 'Rho'),
-        # 'Rho_pvalue': ('p-value', 'p-value'),
-        # 'MissingRate': ('Missing Rate', 'Missing Rate')
         'MatchingRate': ('Variant Match Rate', 'Match Rate')
     }
 
+
     def __init__(self,metric_data):
         GenericData.__init__(self)
-        estimate = metric_data['estimate']
-        if 'E' in str(estimate):
-            estimate = estimate.replace('E','e')
-            estimate = float(estimate)
+        estimate = self.convert_values(metric_data['estimate'])
         self.name = metric_data['name'].strip()
         self.data = {
             'type': self.type_choices[self.name],
             'estimate': estimate
         }
         if 'pvalue' in metric_data.keys():
-            self.data['pvalue'] = metric_data['pvalue']
+            self.data['pvalue'] = self.convert_values(metric_data['pvalue'])
 
         # Add extra information
         if self.name in self.name_common.keys():
@@ -55,6 +47,20 @@ class MetricData(GenericData):
             self.add_data('name_short', self.name)
 
 
+    def convert_values(self,value):
+        if 'E' in str(value):
+            value = value.replace('E','e')
+        # Limit to 5 decimals, e.g. 0.111222333 -> 0.11122
+        if len(str(float(value))) > 7: # first digit + dot + at least 6 decimals
+            if 'e' in str(value):
+                value = "{:.5e}".format(value)
+            elif value < 0.001:
+                value = "{:.5e}".format(value)
+            else:
+                value = "{:.5f}".format(value)
+                value = float(value)
+        return value
+
     # def set_names(self):
     #     ''' Set the metric names (short and long). '''
     #     if self.name in self.name_common.keys():
@@ -67,7 +73,6 @@ class MetricData(GenericData):
 
     #     if not 'name_short' in self.data and len(self.name) <= 20:
     #         self.add_data('name_short', self.name)
-
 
     @transaction.atomic
     def create_model(self,performance):

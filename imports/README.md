@@ -1,13 +1,16 @@
 # OmicsPred import steps:
 
 ## Data import
-Run `import_metadata.py`
 
-```
+1. Update config file `scripts/config.py`
+2. Run `import_metadata.py`
+
+```bash
 python manage.py runscript import_metadata
 ```
 
 ## Post-processing
+
 1. metadata_post_proccessing.py
 2. get_score_ancestry_dist.py
 3. update_ensembl_genes.py

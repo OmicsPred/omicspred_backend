@@ -8,13 +8,15 @@ def run():
     # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_enet_sqtl_updated_to_import.xlsx'
     # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_eqtl_updated_to_import.xlsx'
     # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_sqtl_1_updated_to_import.xlsx'
-    file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_sqtl_2_updated_to_import.xlsx'
+    # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/PredictDB/full_metadata_mashr_sqtl_2_updated_to_import.xlsx'
+    # file_loc = '/Users/lg10/Documents/OmicsPred/metadata/ARIC/ARIC_metadata.xlsx'
 
-    dataset_prefix = 'GTExV8 - sQTL - MASHR - '
+    # dataset_prefix = 'ARIC - '
 
     # license = 'Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)'
 
-    metadata_template = MetadataTemplate(file_loc,license,species)
+    # Use data from the config file
+    metadata_template = MetadataTemplate(file_loc,omics_type,license,species)
 
     start_time = datetime.datetime.now()
 

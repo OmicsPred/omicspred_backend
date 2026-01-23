@@ -1,9 +1,7 @@
 import os
-# import pandas as pd
 import logging
 from imports.omicspred.spreadsheets.spreadsheet import CohortSpreadSheet, PublicationSpreadSheet, ScoreSpreadSheet, SamplePerformanceSpreadSheet
 from imports.omicspred.models.species import SpeciesData
-from imports.omicspred.models.score import ScoreData
 from omicspred.models import *
 
 
@@ -23,7 +21,7 @@ class MetadataTemplate():
 
     max_bulk_count = 200
 
-    def __init__(self, file_loc:str, license:str=default_license, species:str=default_species):
+    def __init__(self, file_loc:str, omics_type:str, license:str=default_license, species:str=default_species):
         self.file_loc = file_loc
         self.parsed_publication = None
         self.parsed_scores = {}
@@ -35,6 +33,7 @@ class MetadataTemplate():
         self.parsed_metabolites = {}
         self.imported_molecular_traits = { 'genes': {}, 'proteins': {}, 'metabolites': {} }
         self.species = species
+        self.omics_type = omics_type
         self.license = license
         # self.parsed_samples_scores = []
         # self.parsed_samples_testing = []
@@ -67,25 +66,23 @@ class MetadataTemplate():
         loc_excel = self.file_loc
         if loc_excel != None:
 
-            omics_type = 'Transcriptomics'
-
             # Species
             species_data = SpeciesData(self.species)
             self.species = species_data.create_model()
 
             # Cohort spreadsheet
-            cohort_spreadsheet = CohortSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Cohort'],omics_type)
+            cohort_spreadsheet = CohortSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Cohort'],self.omics_type)
             cohort_spreadsheet.extract_data()
             self.parsed_cohorts = cohort_spreadsheet.export_parser_data()
 
             # Publication spreadsheet
-            publication_spreadsheet = PublicationSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Publication'],omics_type)
+            publication_spreadsheet = PublicationSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Publication'],self.omics_type)
             publication_spreadsheet.extract_data()
             publication_data = publication_spreadsheet.export_parser_data()
             self.parsed_publication = list(publication_data.values())[0]
 
             # Score spreadsheet (including Platform and Tissue)
-            score_spreadsheet = ScoreSpreadSheet(loc_excel, self.loc_schema, self.spreadsheet_names['Score'], omics_type, self.parsed_publication, self.license, self.species, dataset_prefix)
+            score_spreadsheet = ScoreSpreadSheet(loc_excel, self.loc_schema, self.spreadsheet_names['Score'], self.omics_type, self.parsed_publication, self.license, self.species, dataset_prefix)
             score_spreadsheet.extract_data()
             self.parsed_scores = score_spreadsheet.export_parser_data()
             self.parsed_datasets = score_spreadsheet.export_datasets()
@@ -94,7 +91,7 @@ class MetadataTemplate():
             self.parsed_metabolites = score_spreadsheet.export_metabolites()
 
             # Sample and Performance Metrics spreadsheet
-            sample_performance_spreadsheet = SamplePerformanceSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Sample'],omics_type,self.parsed_cohorts)
+            sample_performance_spreadsheet = SamplePerformanceSpreadSheet(loc_excel,self.loc_schema, self.spreadsheet_names['Sample'],self.omics_type,self.parsed_cohorts)
             sample_performance_spreadsheet.extract_data()
             self.parsed_sample_performance = sample_performance_spreadsheet.export_parser_data()
             

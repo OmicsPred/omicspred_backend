@@ -15,7 +15,9 @@ from .serializers import *
 
 
 opd_prefix = 'OPD'
+opd_length = 9
 opp_prefix = 'OPP'
+opp_length = 9
 
 generic_defer = ['curation_notes']
 
@@ -557,7 +559,7 @@ class RestMetabolomics(generics.ListAPIView):
             query_filter_list = [Q(id__iexact=filter_term), Q(trait_reported_id__iexact=filter_term), Q(trait_reported__icontains=filter_term)]
             if not dataset or dataset == None:
                 query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
-            if (not opp_id or opp_id == None) and filter_term.upper().startswith(opp_prefix):
+            if (not opp_id or opp_id == None) and len(filter_term) == opp_length and filter_term.upper().startswith(opp_prefix):
                 publication_num = get_publication_num(filter_term)
                 query_filter_list.append(Q(dataset__publication__num=publication_num))
                 # query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
@@ -645,7 +647,7 @@ class RestProteomics(generics.ListAPIView):
                 query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
             if version and version is not None:
                 query_filter_list.append(Q(dataset__platform__version__icontains=filter_term))
-            if (not opp_id or opp_id == None) and filter_term.upper().startswith(opp_prefix):
+            if (not opp_id or opp_id == None) and len(filter_term) == opp_length and filter_term.upper().startswith(opp_prefix):
                 publication_num = get_publication_num(filter_term)
                 query_filter_list.append(Q(dataset__publication__num=publication_num))
                 # query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
@@ -716,14 +718,10 @@ class RestTranscriptomics(generics.ListAPIView):
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            # queryset = queryset.filter(Q(id__iexact=filter_term) |
-            #                            Q(dataset__id__iexact=filter_term) | Q(dataset__name__icontains=filter_term) |
-            #                            Q(dataset__publication__id__iexact=filter_term) |
-            #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term))
             query_filter_list = [Q(id__iexact=filter_term)]
             if not dataset or dataset == None:
                 query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__icontains=filter_term)])
-            if (not opp_id or opp_id == None) and filter_term.upper().startswith(opp_prefix):
+            if (not opp_id or opp_id == None) and len(filter_term) == opp_length and filter_term.upper().startswith(opp_prefix):
                 publication_num = get_publication_num(filter_term)
                 query_filter_list.append(Q(dataset__publication__num=publication_num))
                 # query_filter_list.append(Q(dataset__publication__id__iexact=filter_term))
@@ -938,7 +936,7 @@ class RestDatasetSearch(generics.ListAPIView):
             if opp_id and opp_id is not None:
                 if opp_id.upper().startswith(opp_prefix):
                     publication_num = get_publication_num(opp_id)
-                    queryset = queryset.filter(Q(dataset__publication__num=publication_num))
+                    queryset = queryset.filter(Q(publication__num=publication_num))
                 # queryset = queryset.filter(Q(publication__id__iexact=opp_id))
             pmid = self.request.query_params.get('pmid')
             if pmid and pmid.isnumeric():
@@ -1291,11 +1289,10 @@ class RestScoreSearch(generics.ListAPIView):
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
             query_filter_list = [Q(id__iexact=filter_term), Q(dataset__name__iexact=filter_term), Q(dataset__platform__platform_master__type__iexact=filter_term)]
-            if (not opd_id or opd_id == None) and filter_term.upper().startswith(opd_prefix):
+            if (not opd_id or opd_id == None) and len(filter_term) == opd_length and filter_term.upper().startswith(opd_prefix):
                 dataset_num = get_dataset_num(filter_term)
-                # query_filter_list.append(Q(dataset__id__iexact=filter_term))
                 query_filter_list.append(Q(dataset__num=dataset_num))
-            if (not opp_id or opp_id == None) and filter_term.upper().startswith(opp_prefix):
+            if (not opp_id or opp_id == None) and len(filter_term) == opp_length and filter_term.upper().startswith(opp_prefix):
                 publication_num = get_publication_num(filter_term)
                 query_filter_list.append(Q(dataset__publication__num=publication_num))
             if not platform or platform == None:
@@ -1349,10 +1346,10 @@ class RestPlotSearch(generics.ListAPIView):
         # Search by Publication ID
         opp_id = self.request.query_params.get('opp_id')
         if opp_id and opp_id is not None:
-            if opp_id.upper().startswith(opp_prefix):
-                publication_num = get_publication_num(opp_id)
-                queryset = queryset.filter(publication__num=publication_num)
-            # queryset = queryset.filter(publication_id__iexact=opp_id)
+            # if opp_id.upper().startswith(opp_prefix):
+            #     publication_num = get_publication_num(opp_id)
+            #     queryset = queryset.filter(dataset__publication__num=publication_num)
+            queryset = queryset.filter(publication_id__iexact=opp_id)
             params += 1
 
         # Search by Pubmed ID
@@ -1370,9 +1367,9 @@ class RestPlotSearch(generics.ListAPIView):
         # Search by dataset
         dataset = self.request.query_params.get('dataset')
         if dataset and dataset is not None:
-            dataset_num = get_dataset_num(dataset)
-            queryset = queryset.filter(dataset__num=dataset_num)
-            # queryset = queryset.filter(dataset__id=dataset)
+            # dataset_num = get_dataset_num(dataset)
+            # queryset = queryset.filter(dataset__num=dataset_num)
+            queryset = queryset.filter(dataset_id=dataset)
             params += 1
 
         if params == 0:
@@ -1706,6 +1703,7 @@ class RestInfo(generics.RetrieveAPIView):
                 "version": settings.REST_API_VERSION
             },
             'data_count': {
+                'datasets': Dataset.objects.count(),
                 'scores': Score.objects.count(),
                 'publications': Publication.objects.count(),
                 'platforms': PlatformMaster.objects.count(),

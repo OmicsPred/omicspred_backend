@@ -186,6 +186,7 @@ class ScoreSpreadSheet(SpreadSheet):
         scores_count = len(self.dataframe.index)
         s_count = 0
         distinct_rows = {}
+        dataset_methods = set()
         # Loop throught the rows (i.e. score)
         for score_name, score_info in self.dataframe.iterrows():
             parsed_score = ScoreData({'name': score_name, 'license': self.license})
@@ -234,9 +235,12 @@ class ScoreSpreadSheet(SpreadSheet):
                     # Add Platform (version)
                     elif m == 'Platform' and f == 'version':
                         # Fetch/build Platform
-                        platform = PlatformData(platform_master,val)
+                        platform = PlatformData(platform_master,str(val))
                         # parsed_score.add_other_model('platform',platform)
                         # print(f"  - Platform: {val} | {platform_master}")
+            score_method = parsed_score.get_score_method_name()
+            if score_method:
+                dataset_methods.add(score_method)
             if not platform:
                 platform = PlatformData(platform_master,None)
     
@@ -268,7 +272,17 @@ class ScoreSpreadSheet(SpreadSheet):
 
             # Add/create dataset
             platform_version = platform.version if platform and platform.version else ''
-            dataset_tag = f'{platform.name}_{platform_version}_{self.publication.pmid}_{tissue.id}'
+            dataset_tag_suffix = tissue.id
+            dataset_name_suffix = tissue.label
+
+            ############ TEMP (for ARIC imports) ############ TODO -> to remove
+            if score_name.endswith('_AA') or score_name.endswith('_EA'):
+                score_components = score_name.rsplit('_', 1)
+                dataset_tag_suffix = score_components[1]
+                dataset_name_suffix = score_components[1]
+            #################################################
+
+            dataset_tag = f'{platform.name}_{platform_version}_{self.publication.pmid}_{dataset_tag_suffix}'
             if dataset_tag in self.datasets.keys():
                 dataset = self.datasets[dataset_tag]
                 dataset.add_score()
@@ -276,8 +290,8 @@ class ScoreSpreadSheet(SpreadSheet):
                 dataset_name = ''
                 if self.dataset_prefix != '':
                     dataset_name = self.dataset_prefix+' '
-                dataset_name += tissue.label
-                dataset = DatasetData(self.publication,platform,tissue,self.data_type,self.species,dataset_name)
+                dataset_name += dataset_name_suffix
+                dataset = DatasetData(self.publication,platform,tissue,self.data_type,self.species,dataset_methods,dataset_name)
             self.datasets[dataset_tag] = dataset
             # print(f"  - Dataset id: {dataset_tag}")
 
