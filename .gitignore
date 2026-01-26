@@ -3,3 +3,4 @@
 /static/
 app.yaml
 **/.DS_Store
+.vscode/

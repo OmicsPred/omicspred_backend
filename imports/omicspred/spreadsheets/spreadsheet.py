@@ -19,9 +19,8 @@ logger = logging.getLogger('spreadsheet parsing')
 
 class SpreadSheet():
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str, header_rows:list=[0]):
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, header_rows:list=[0]):
         self.spreadsheet_name = spreadsheet_name
-        self.data_type = data_type
         self.parsed_data = {}
         self.dataframe = pd.read_excel(loc_excel, sheet_name=self.spreadsheet_name, header=header_rows, index_col=0)
         # print(f">>> LOC SCHEMA: {loc_schema}")
@@ -104,8 +103,8 @@ class SpreadSheet():
 
 class CohortSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str):
-        super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type)
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str):
+        super().__init__(loc_excel,loc_schema,spreadsheet_name)
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
 
 
@@ -127,8 +126,8 @@ class CohortSpreadSheet(SpreadSheet):
 
 class PublicationSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str):
-        super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type)
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str):
+        super().__init__(loc_excel,loc_schema,spreadsheet_name)
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
 
 
@@ -153,14 +152,15 @@ class PublicationSpreadSheet(SpreadSheet):
 
 class ScoreSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str,
-                 publication:PublicationData, license:str, species:Species, dataset_prefix:str=''):
-        super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type,[0, 1])
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, publication:PublicationData,
+                 license:str, species:Species, platform_types:dict, dataset_prefix:str=''):
+        super().__init__(loc_excel,loc_schema,spreadsheet_name,[0, 1])
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
         self.dataset_prefix = dataset_prefix
         self.publication = publication
         self.license = license
         self.species = species
+        self.platform_types = platform_types
         self.datasets = {}
         self.tissues = {}
         self.genes = {}
@@ -200,6 +200,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 print(f"  - {s_count} scores parsed")
             platform_master = None
             platform = None
+            platform_type = None
             tissue = ''
             molecular_trait = {}
             # Loop throught the columns
@@ -225,12 +226,15 @@ class ScoreSpreadSheet(SpreadSheet):
                             tissue = TissueData(val)
                             tissue.fetch_tissue_information()
                             self.tissues[val] = tissue
-                        # print(f"  - Tissue: {','.join(efo_list)}")
-                        # parsed_score.add_other_model('efo',tissues_list)
                     # Add Platform Master
                     elif m == 'PlatformMaster' and f == 'name':
+                        if val in self.platform_types.keys():
+                            platform_type = self.platform_types[val]
+                        else:
+                            print(f"Error: platform '{val}' is not found in the 'platform_types' dictionary (in imports/config.py). Please add the platform name with its type (e.g. Transcriptomics) in the dict before re-running the script")
+                            exit(1)
                         # Fetch/build PlatformMaster
-                        platform_master = PlatformMasterData(val,self.data_type)
+                        platform_master = PlatformMasterData(val,platform_type)
                         # parsed_score.add_other_model('platform_master',platform_master)
                     # Add Platform (version)
                     elif m == 'Platform' and f == 'version':
@@ -243,7 +247,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 dataset_methods.add(score_method)
             if not platform:
                 platform = PlatformData(platform_master,None)
-    
+
             # Add molecular trait objects (gene, protein, metabolite)
             if molecular_trait:
 
@@ -255,16 +259,16 @@ class ScoreSpreadSheet(SpreadSheet):
                 if 'name' in molecular_trait.keys():
                     mt_name = molecular_trait['name']
 
-                if self.data_type == 'Transcriptomics':
+                if platform_type == 'Transcriptomics':
                     gene_data = GeneData(mt_id, mt_name)
                     self.genes[gene_data.data_id] = gene_data
                     parsed_score.add_other_model('genes',[gene_data])
                     # print(f"  - Gene: {mt_id} | {mt_name}")
-                elif self.data_type == 'Proteomics':
+                elif platform_type == 'Proteomics':
                     protein_data = ProteinData(mt_id, mt_name)
                     self.proteins[protein_data.data_id] = protein_data
                     parsed_score.add_other_model('proteins',[protein_data])
-                elif self.data_type == 'Metabolomics':
+                elif platform_type == 'Metabolomics':
                     metabolite_data = MetaboliteData(mt_id, mt_name)
                     self.metabolites[metabolite_data.data_id] = metabolite_data
                     parsed_score.add_other_model('metabolites',[metabolite_data])
@@ -291,7 +295,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 if self.dataset_prefix != '':
                     dataset_name = self.dataset_prefix+' '
                 dataset_name += dataset_name_suffix
-                dataset = DatasetData(self.publication,platform,tissue,self.data_type,self.species,dataset_methods,dataset_name)
+                dataset = DatasetData(self.publication,platform,tissue,platform_type,self.species,dataset_methods,dataset_name)
             self.datasets[dataset_tag] = dataset
             # print(f"  - Dataset id: {dataset_tag}")
 
@@ -306,8 +310,8 @@ class ScoreSpreadSheet(SpreadSheet):
 
 class SamplePerformanceSpreadSheet(SpreadSheet):
 
-    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, data_type:str, cohorts_data:dict):
-        super().__init__(loc_excel, loc_schema,spreadsheet_name, data_type, [0, 1, 2])
+    def __init__(self,loc_excel:str, loc_schema:str, spreadsheet_name:str, cohorts_data:dict):
+        super().__init__(loc_excel,loc_schema,spreadsheet_name,[0, 1, 2])
         self.spreadsheet_schema = self.metadata_template_schema.loc[spreadsheet_name].set_index('Column')
         self.cohorts_data = cohorts_data
 
