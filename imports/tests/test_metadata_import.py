@@ -1,5 +1,6 @@
 from django.test import TestCase
 from imports.omicspred.parsers.metadata import MetadataTemplate
+from imports.tests.config import *
 from omicspred.models import *
 
 
@@ -73,21 +74,14 @@ metric_data_rho = { # 2nd score entry + External Validation
 }
 pmid = 36991119
 
-file_loc = './imports/tests/metadata_test.xlsx'
-
-dataset_prefix = 'Test'
-
-species = 'Homo sapiens'
-
-license = 'Creative Commons 4.0 International (CC BY 4.0)'
-
 
 class ImportMetadataTest(TestCase):
     ''' Test the Metadata import '''
 
     def __init__(self, methodName = "runTest"):
         super().__init__(methodName)
-        self.metadata_template = MetadataTemplate(file_loc,license,species)
+        # Variables used from 'imports.tests.config' module
+        self.metadata_template = MetadataTemplate(file_loc,platform_types,license,species)
 
 
     def parser_data_count(self, parsed_data:dict, type:str):
@@ -98,8 +92,10 @@ class ImportMetadataTest(TestCase):
         ''' Compare the attributes from the data example with the content of the parser "data" '''
         data2test = parsed_data.data
         for item in example_data.keys():
-            self.assertEqual(data2test[item], example_data[item])
-
+            if isinstance(example_data[item], float):
+                self.assertEqual(float(data2test[item]), float(example_data[item]))
+            else:
+                self.assertEqual(data2test[item], example_data[item])
 
     def nested_parser_data_check(self, parsed_data:dict, example_data:dict, index:int=0):
         data_key = list(parsed_data.keys())[index]
