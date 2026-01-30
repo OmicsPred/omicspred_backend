@@ -134,7 +134,7 @@ class DatasetSerializer(DatasetLightSerializer):
     publication = PublicationSerializer(many=False, read_only=True)
 
     class Meta(DatasetLightSerializer.Meta):
-        meta_fields = ('publication',)
+        meta_fields = ('publication','license')
         fields = DatasetLightSerializer.Meta.fields + meta_fields
         read_only_fields = DatasetLightSerializer.Meta.fields + meta_fields
 

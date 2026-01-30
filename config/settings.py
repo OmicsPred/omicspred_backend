@@ -103,7 +103,8 @@ if PUBLIC_SITE == False or IS_TEST == False:
 if OP_ON_GAE == 0:
     local_apps = [
         'django_extensions',
-        'imports.apps.ImportsConfig'
+        'exports.apps.ExportsConfig',
+        'imports.apps.ImportsConfig',
     ]
     INSTALLED_APPS.extend(local_apps)
 

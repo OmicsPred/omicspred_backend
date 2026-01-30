@@ -295,7 +295,7 @@ class ScoreSpreadSheet(SpreadSheet):
                 if self.dataset_prefix != '':
                     dataset_name = self.dataset_prefix+' '
                 dataset_name += dataset_name_suffix
-                dataset = DatasetData(self.publication,platform,tissue,platform_type,self.species,dataset_methods,dataset_name)
+                dataset = DatasetData(self.publication,platform,tissue,platform_type,self.species,self.license,dataset_methods,dataset_name)
             self.datasets[dataset_tag] = dataset
             # print(f"  - Dataset id: {dataset_tag}")
 

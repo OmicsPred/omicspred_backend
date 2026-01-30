@@ -5,6 +5,7 @@ from datetime import datetime
 
 box_shared_url = 'https://app.box.com/shared/static/'
 box_folder_shared_url = 'https://app.box.com/s/'
+default_license = 'Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)'
 
 class Species(models.Model):
     """ Class for species information """
@@ -113,7 +114,7 @@ class PlatformMaster(models.Model):
 
 class Platform(models.Model):
     """ Class to describe the versioned platform used to get the omics data """
-    name = models.CharField('Platform name', max_length=100)
+    name = models.CharField('Platform name', max_length=100, db_index=True)
     # full_name = models.CharField('Platform full name', max_length=100)
     version = models.CharField('Platform version', max_length=50)
     # technic = models.CharField('Platform technic', max_length=100)
@@ -314,6 +315,8 @@ class Dataset(models.Model):
     species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_dataset', verbose_name='Species', null=False) # Associated species
     # Dir ID
     files_ids = models.JSONField('Files IDs on Box', default=dict)
+    # LICENSE information/text
+    license = models.TextField('License/Terms of Use', default=default_license)
 
     class Meta:
         get_latest_by = 'num'
@@ -463,7 +466,7 @@ class Score(models.Model):
     variants_genomebuild = models.CharField('Original Genome Build', max_length=10, default='NR')
 
     # Curation/release information
-    date_released = models.DateField('OmicsPred Release Date', null=True, db_index=True)
+    date_released = models.DateField('OmicsPred Release Date', null=True)
     curation_notes = models.TextField('Curation Notes', default='')
 
     # Links to related models
@@ -483,7 +486,7 @@ class Score(models.Model):
     comment = models.TextField('Additional comment', null=True)
 
     # LICENSE information/text
-    license = models.TextField('License/Terms of Use', default='Creative Commons Attribution 4.0 International (CC BY 4.0)')
+    license = models.TextField('License/Terms of Use', default=default_license)
 
 
     # Methods
