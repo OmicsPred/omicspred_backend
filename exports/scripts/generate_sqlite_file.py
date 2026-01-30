@@ -212,13 +212,14 @@ def run(*args):
             gene_id = gene.external_id
             metrics = {}
             for perf in score.score_performance.all():
-                for metric in perf.performance_metric.all():
-                    if metric.name_short == 'R2':
-                        metrics['R2'] = metric.estimate
-                        metrics['R2_pval'] = metric.pvalue
-                    elif metric.name_short == 'Rho':
-                        metrics['Rho'] = metric.estimate
-                        metrics['Rho_pval'] = metric.pvalue
+                if perf.eval_type == 'Training' or perf.eval_type == 'T':
+                    for metric in perf.performance_metric.all():
+                        if metric.name_short == 'R2':
+                            metrics['R2'] = metric.estimate
+                            metrics['R2_pval'] = metric.pvalue
+                        elif metric.name_short == 'Rho':
+                            metrics['Rho'] = metric.estimate
+                            metrics['Rho_pval'] = metric.pvalue
 
             # Genome build
             if genome_build == '':
