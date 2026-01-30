@@ -268,7 +268,8 @@ class ImportMetadataTest(TestCase):
         dataset_model = Dataset.objects.get(
             platform=platform_model,
             publication=publication_model,
-            tissue=tissue_model
+            tissue=tissue_model,
+            license=license
         )
         self.assertIsInstance(dataset_model, Dataset)
         scores_dataset_count = Score.objects.filter(dataset=dataset_model).count()

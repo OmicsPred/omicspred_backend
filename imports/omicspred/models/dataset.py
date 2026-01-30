@@ -18,7 +18,7 @@ class DatasetData(GenericData):
     }
 
     def __init__(self, publication:PublicationData, platform:PlatformData, tissue:TissueData,
-                 data_type:str, species:Species, dataset_methods:set, name:str=None):
+                 data_type:str, species:Species, license:str, dataset_methods:set, name:str=None):
         GenericData.__init__(self)
         self.publication = publication
         self.platform = platform
@@ -31,6 +31,7 @@ class DatasetData(GenericData):
         self.data['scores_count'] = 1
         self.data['omics_count'] = 1
         self.data['species'] = species
+        self.data['license'] = license
         if dataset_methods:
             self.data['method_name'] = ','.join(dataset_methods)
 

@@ -70,10 +70,12 @@ info:
     <div id="content_changelog">
 
       * <span class="badge badge-pill">1.1.3</span> - February 2026:
+        * New field **name** in the Omics schemas (`/api/transcriptomics/`, `/api/proteomics/` and /api/metabolomics/` endpoints), containing the score name.
         * New field **datasets** in the Info schemas (`/api/info/` endpoint), containing the number of datasets in OmicsPred.
+        * New field **license** in the Dataset schemas (`/api/dataset/` endpoint), containing the license attached to the scores of the dataset.
 
       * <span class="badge badge-pill">1.1.2</span> - January 2026:
-        * New field **tissue** in the Omics schemas (`/api/transcriptomics/`, /api/proteomics/` and /api/metabolomics/` endpoints), containing the mapped tissue ontology information (identifier, label, description) of the sampled tissue.
+        * New field **tissue** in the Omics schemas (`/api/transcriptomics/`, `/api/proteomics/` and /api/metabolomics/` endpoints), containing the mapped tissue ontology information (identifier, label, description) of the sampled tissue.
         * New field **method_name** in the Dataset schemas (`/api/dataset/` endpoints), containing name of the method(s) used to develop the scores in the dataset.
 
       * <span class="badge badge-pill">1.1.1</span> - September 2025:
@@ -317,6 +319,10 @@ components:
           properties:
             publication:
               $ref: '#/components/schemas/Publication'
+            license:
+              type: string
+              description: "License applied to the score"
+              example: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 
     # Error message #
@@ -936,7 +942,7 @@ components:
           example: "OPGS002402"
         name:
           type: string
-          description: This may be the name that the authors describe the genetic score with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a Genetic Score ID has been given)
+          description: Name that the authors describe the genetic score with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a Genetic Score ID has been given)
           example: "CLEC12A.11187.11.3"
         trait_reported:
           type: string
@@ -1024,6 +1030,10 @@ components:
           type: string
           description: "OmicsPred Score ID"
           example: "OPGS002402"
+        name:
+          type: string
+          description: Name that the authors describe the genetic score with in the source publication, or a name that a curator has assigned to identify the score during the curation process (before a Genetic Score ID has been given)
+          example: "CLEC12A.11187.11.3"
         variants_number:
           type: integer
           example: 182
@@ -1790,6 +1800,7 @@ paths:
       description: |
         Retrieve all the scores linked with the given metabolomics platform, including for each of the scores:
           * OmicsPred Score ID
+          * Score name
           * Variants number
           * Dataset ID and name
           * Platform version
@@ -1896,6 +1907,7 @@ paths:
       description: |
         Retrieve all the scores linked with the given proteomics platform, including for each of the scores:
           * OmicsPred Score ID
+          * Score name
           * Variants number
           * Dataset ID and name
           * Platform version
@@ -2008,6 +2020,7 @@ paths:
       description: |
         Retrieve all the scores linked with the given transcriptomics platform, including for each of the scores:
           * OmicsPred Score ID
+          * Score name
           * Variants number
           * Dataset ID and name
           * Platform version
