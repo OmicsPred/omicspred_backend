@@ -4,3 +4,6 @@
 app.yaml
 **/.DS_Store
 .vscode/
+/exports/config.py
+/imports/config.py
+/exports/tests/output/

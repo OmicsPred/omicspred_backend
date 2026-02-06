@@ -6,6 +6,7 @@ import pathlib
 import zipfile
 import datetime
 from omicspred.models import *
+from exports.config import scoring_file_config
 
 # OPGS018874.txt
 
@@ -36,93 +37,90 @@ from omicspred.models import *
 # | intron_4_127656721_127663381 | chr4_127656228_T_C_b38 | chr4_127656228_T_C_b38 | T          | C          | -0.0176620830039489  |
 # | intron_4_127656721_127663381 | rs75447657             | chr4_127656435_T_G_b38 | T          | G          | 0.000292301470797823 |
 
-pmid = 32913098
-project_dir = '/Users/lg10/Workspace/datafiles/OmicsPred/'
-variant_coords_sqlite_db_file = f'{project_dir}op_variant_coords.db'
-
 # Enet eQTL
 # dbs_location = f'{project_dir}/GTEx_V8/elastic_net_models_expression/'
 # scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_enet_expression'
-# file_prefix = 'en_'
-# file_suffix = ''
+# sqlite_file_prefix = 'en_'
+# sqlite_file_suffix = ''
 # ds_name = '- eQTL - Enet -'
 
 # Enet sQTL
 # dbs_location = f'{project_dir}/GTEx_V8/elastic_net_models_splicing/'
 # scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_enet_splicing'
-# file_prefix = 'gtex_splicing_v8_eur_'
-# file_suffix = '_signif'
+# sqlite_file_prefix = 'gtex_splicing_v8_eur_'
+# sqlite_file_suffix = '_signif'
 # ds_name = '- sQTL - Enet -'
 
 
 # # MASHR eQTL
 # dbs_location = f'{project_dir}/GTEx_V8/mashr_models_expression/'
 # scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_mashr_expression'
-# file_prefix = 'mashr_'
-# file_suffix = ''
+# sqlite_file_prefix = 'mashr_'
+# sqlite_file_suffix = ''
 # ds_name = '- eQTL - MASHR -'
 
-# MASHR sQTL
-dbs_location = f'{project_dir}/GTEx_V8/mashr_models_splicing/'
-scores_root_dir = f'{project_dir}/GTEx_V8/scoring_files/genetic_scores_mashr_splicing'
-file_prefix = 'mashr_'
-file_suffix = ''
-ds_name = '- sQTL - MASHR -'
+pmid = scoring_file_config['pmid']
+variant_coords_sqlite_db_file = scoring_file_config['variant_coords_sqlite_db_file']
+dbs_location = scoring_file_config['dbs_location']
+scores_root_dir = scoring_file_config['scores_root_dir']
+sqlite_file_prefix = scoring_file_config['sqlite_file_prefix']
+sqlite_file_suffix = scoring_file_config['sqlite_file_suffix']
+ds_name = scoring_file_config['ds_name']
 
 
 datasets_info_test = {
-    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{file_prefix}Adipose_Subcutaneous{file_suffix}.db'}
+    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{sqlite_file_prefix}Adipose_Subcutaneous{sqlite_file_suffix}.db'}
 }
 datasets_info = {
-    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{file_prefix}Adipose_Subcutaneous{file_suffix}.db'},
-    'Adipose_Visceral_Omentum': {'tissue_id': 'UBERON_0010414', 'db':f'{file_prefix}Adipose_Visceral_Omentum{file_suffix}.db'},
-    'Adrenal_Gland': {'tissue_id': 'UBERON_0002369', 'db':f'{file_prefix}Adrenal_Gland{file_suffix}.db'},
-    'Artery_Aorta': {'tissue_id': 'UBERON_0001496', 'db':f'{file_prefix}Artery_Aorta{file_suffix}.db'},
-    'Artery_Coronary': {'tissue_id': 'UBERON_0001621', 'db':f'{file_prefix}Artery_Coronary{file_suffix}.db'},
-    'Artery_Tibial': {'tissue_id': 'UBERON_0007610', 'db':f'{file_prefix}Artery_Tibial{file_suffix}.db'},
-    'Brain_Amygdala': {'tissue_id': 'UBERON_0001876', 'db':f'{file_prefix}Brain_Amygdala{file_suffix}.db'},
-    'Brain_Anterior_cingulate_cortex_BA24': {'tissue_id': 'UBERON_0009835', 'db':f'{file_prefix}Brain_Anterior_cingulate_cortex_BA24{file_suffix}.db'},
-    'Brain_Caudate_basal_ganglia': {'tissue_id': 'UBERON_0001873', 'db':f'{file_prefix}Brain_Caudate_basal_ganglia{file_suffix}.db'},
-    'Brain_Cerebellar_Hemisphere': {'tissue_id': 'UBERON_0002245', 'db':f'{file_prefix}Brain_Cerebellar_Hemisphere{file_suffix}.db'},
-    'Brain_Cerebellum': {'tissue_id': 'UBERON_0002037', 'db':f'{file_prefix}Brain_Cerebellum{file_suffix}.db'},
-    'Brain_Cortex': {'tissue_id': 'UBERON_0001870', 'db':f'{file_prefix}Brain_Cortex{file_suffix}.db'},
-    'Brain_Frontal_Cortex_BA9': {'tissue_id': 'UBERON_0009834', 'db':f'{file_prefix}Brain_Frontal_Cortex_BA9{file_suffix}.db'},
-    'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':f'{file_prefix}Brain_Hippocampus{file_suffix}.db'},
-    'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':f'{file_prefix}Brain_Hypothalamus{file_suffix}.db'},
-    'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':f'{file_prefix}Brain_Nucleus_accumbens_basal_ganglia{file_suffix}.db'},
-    'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':f'{file_prefix}Brain_Putamen_basal_ganglia{file_suffix}.db'},
-    'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':f'{file_prefix}Brain_Spinal_cord_cervical_c-1{file_suffix}.db'},
-    'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':f'{file_prefix}Brain_Substantia_nigra{file_suffix}.db'},
-    'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':f'{file_prefix}Breast_Mammary_Tissue{file_suffix}.db'},
-    'Cells_Cultured_fibroblasts': {'tissue_id': 'EFO_0002009', 'db':f'{file_prefix}Cells_Cultured_fibroblasts{file_suffix}.db'},
-    'Cells_EBV-transformed_lymphocytes': {'tissue_id': 'EFO_0000572', 'db':f'{file_prefix}Cells_EBV-transformed_lymphocytes{file_suffix}.db'},
-    'Colon_Sigmoid': {'tissue_id': 'UBERON_0001159', 'db':f'{file_prefix}Colon_Sigmoid{file_suffix}.db'},
-    'Colon_Transverse': {'tissue_id': 'UBERON_0001157', 'db':f'{file_prefix}Colon_Transverse{file_suffix}.db'},
-    'Esophagus_Gastroesophageal_Junction': {'tissue_id': 'UBERON_0004550', 'db':f'{file_prefix}Esophagus_Gastroesophageal_Junction{file_suffix}.db'},
-    'Esophagus_Mucosa': {'tissue_id': 'UBERON_0006920', 'db':f'{file_prefix}Esophagus_Mucosa{file_suffix}.db'},
-    'Esophagus_Muscularis': {'tissue_id': 'UBERON_0004648', 'db':f'{file_prefix}Esophagus_Muscularis{file_suffix}.db'},
-    'Heart_Atrial_Appendage': {'tissue_id': 'UBERON_0006631', 'db':f'{file_prefix}Heart_Atrial_Appendage{file_suffix}.db'},
-    'Heart_Left_Ventricle': {'tissue_id': 'UBERON_0006566', 'db':f'{file_prefix}Heart_Left_Ventricle{file_suffix}.db'},
-    'Kidney_Cortex': {'tissue_id': 'UBERON_0001225', 'db':f'{file_prefix}Kidney_Cortex{file_suffix}.db'},
-    'Liver': {'tissue_id': 'UBERON_0001114', 'db':f'{file_prefix}Liver{file_suffix}.db'},
-    'Lung': {'tissue_id': 'UBERON_0008952', 'db':f'{file_prefix}Lung{file_suffix}.db'},
-    'Minor_Salivary_Gland': {'tissue_id': 'UBERON_0006330', 'db':f'{file_prefix}Minor_Salivary_Gland{file_suffix}.db'},
-    'Muscle_Skeletal': {'tissue_id': 'UBERON_0011907', 'db':f'{file_prefix}Muscle_Skeletal{file_suffix}.db'},
-    'Nerve_Tibial': {'tissue_id': 'UBERON_0001323', 'db':f'{file_prefix}Nerve_Tibial{file_suffix}.db'},
-    'Ovary': {'tissue_id': 'UBERON_0000992', 'db':f'{file_prefix}Ovary{file_suffix}.db'},
-    'Pancreas': {'tissue_id': 'UBERON_0001150', 'db':f'{file_prefix}Pancreas{file_suffix}.db'},
-    'Pituitary': {'tissue_id': 'UBERON_0000007', 'db':f'{file_prefix}Pituitary{file_suffix}.db'},
-    'Prostate': {'tissue_id': 'UBERON_0002367', 'db':f'{file_prefix}Prostate{file_suffix}.db'},
-    'Skin_Not_Sun_Exposed_Suprapubic': {'tissue_id': 'UBERON_0036149', 'db':f'{file_prefix}Skin_Not_Sun_Exposed_Suprapubic{file_suffix}.db'},
-    'Skin_Sun_Exposed_Lower_leg': {'tissue_id': 'UBERON_0004264', 'db':f'{file_prefix}Skin_Sun_Exposed_Lower_leg{file_suffix}.db'},
-    'Small_Intestine_Terminal_Ileum': {'tissue_id': 'UBERON_0001211', 'db':f'{file_prefix}Small_Intestine_Terminal_Ileum{file_suffix}.db'},
-    'Spleen': {'tissue_id': 'UBERON_0002106', 'db':f'{file_prefix}Spleen{file_suffix}.db'},
-    'Stomach': {'tissue_id': 'UBERON_0000945', 'db':f'{file_prefix}Stomach{file_suffix}.db'},
-    'Testis': {'tissue_id': 'UBERON_0000473', 'db':f'{file_prefix}Testis{file_suffix}.db'},
-    'Thyroid': {'tissue_id': 'UBERON_0002046', 'db':f'{file_prefix}Thyroid{file_suffix}.db'},
-    'Uterus': {'tissue_id': 'UBERON_0000995', 'db':f'{file_prefix}Uterus{file_suffix}.db'},
-    'Vagina': {'tissue_id': 'UBERON_0000996', 'db':f'{file_prefix}Vagina{file_suffix}.db'},
-    'Whole_Blood': {'tissue_id': 'UBERON_0013756', 'db':f'{file_prefix}Whole_Blood{file_suffix}.db'}
+    'Adipose_Subcutaneous': {'tissue_id': 'UBERON_0002190', 'db':f'{sqlite_file_prefix}Adipose_Subcutaneous{sqlite_file_suffix}.db'},
+    'Adipose_Visceral_Omentum': {'tissue_id': 'UBERON_0010414', 'db':f'{sqlite_file_prefix}Adipose_Visceral_Omentum{sqlite_file_suffix}.db'},
+    'Adrenal_Gland': {'tissue_id': 'UBERON_0002369', 'db':f'{sqlite_file_prefix}Adrenal_Gland{sqlite_file_suffix}.db'},
+    'Artery_Aorta': {'tissue_id': 'UBERON_0001496', 'db':f'{sqlite_file_prefix}Artery_Aorta{sqlite_file_suffix}.db'},
+    'Artery_Coronary': {'tissue_id': 'UBERON_0001621', 'db':f'{sqlite_file_prefix}Artery_Coronary{sqlite_file_suffix}.db'},
+    'Artery_Tibial': {'tissue_id': 'UBERON_0007610', 'db':f'{sqlite_file_prefix}Artery_Tibial{sqlite_file_suffix}.db'},
+    'Brain_Amygdala': {'tissue_id': 'UBERON_0001876', 'db':f'{sqlite_file_prefix}Brain_Amygdala{sqlite_file_suffix}.db'},
+    'Brain_Anterior_cingulate_cortex_BA24': {'tissue_id': 'UBERON_0009835', 'db':f'{sqlite_file_prefix}Brain_Anterior_cingulate_cortex_BA24{sqlite_file_suffix}.db'},
+    'Brain_Caudate_basal_ganglia': {'tissue_id': 'UBERON_0001873', 'db':f'{sqlite_file_prefix}Brain_Caudate_basal_ganglia{sqlite_file_suffix}.db'},
+    'Brain_Cerebellar_Hemisphere': {'tissue_id': 'UBERON_0002245', 'db':f'{sqlite_file_prefix}Brain_Cerebellar_Hemisphere{sqlite_file_suffix}.db'},
+    'Brain_Cerebellum': {'tissue_id': 'UBERON_0002037', 'db':f'{sqlite_file_prefix}Brain_Cerebellum{sqlite_file_suffix}.db'},
+    'Brain_Cortex': {'tissue_id': 'UBERON_0001870', 'db':f'{sqlite_file_prefix}Brain_Cortex{sqlite_file_suffix}.db'},
+    'Brain_Frontal_Cortex_BA9': {'tissue_id': 'UBERON_0009834', 'db':f'{sqlite_file_prefix}Brain_Frontal_Cortex_BA9{sqlite_file_suffix}.db'},
+    'Brain_Hippocampus': {'tissue_id': 'UBERON_0001954', 'db':f'{sqlite_file_prefix}Brain_Hippocampus{sqlite_file_suffix}.db'},
+    'Brain_Hypothalamus': {'tissue_id': 'UBERON_0001898', 'db':f'{sqlite_file_prefix}Brain_Hypothalamus{sqlite_file_suffix}.db'},
+    'Brain_Nucleus_accumbens_basal_ganglia': {'tissue_id': 'UBERON_0001882', 'db':f'{sqlite_file_prefix}Brain_Nucleus_accumbens_basal_ganglia{sqlite_file_suffix}.db'},
+    'Brain_Putamen_basal_ganglia': {'tissue_id': 'UBERON_0001874', 'db':f'{sqlite_file_prefix}Brain_Putamen_basal_ganglia{sqlite_file_suffix}.db'},
+    'Brain_Spinal_cord_cervical_c-1': {'tissue_id': 'UBERON_0006469', 'db':f'{sqlite_file_prefix}Brain_Spinal_cord_cervical_c-1{sqlite_file_suffix}.db'},
+    'Brain_Substantia_nigra': {'tissue_id': 'UBERON_0002038', 'db':f'{sqlite_file_prefix}Brain_Substantia_nigra{sqlite_file_suffix}.db'},
+    'Breast_Mammary_Tissue': {'tissue_id': 'UBERON_0008367', 'db':f'{sqlite_file_prefix}Breast_Mammary_Tissue{sqlite_file_suffix}.db'},
+    'Cells_Cultured_fibroblasts': {'tissue_id': 'EFO_0002009', 'db':f'{sqlite_file_prefix}Cells_Cultured_fibroblasts{sqlite_file_suffix}.db'},
+    'Cells_EBV-transformed_lymphocytes': {'tissue_id': 'EFO_0000572', 'db':f'{sqlite_file_prefix}Cells_EBV-transformed_lymphocytes{sqlite_file_suffix}.db'},
+    'Colon_Sigmoid': {'tissue_id': 'UBERON_0001159', 'db':f'{sqlite_file_prefix}Colon_Sigmoid{sqlite_file_suffix}.db'},
+    'Colon_Transverse': {'tissue_id': 'UBERON_0001157', 'db':f'{sqlite_file_prefix}Colon_Transverse{sqlite_file_suffix}.db'},
+    'Esophagus_Gastroesophageal_Junction': {'tissue_id': 'UBERON_0004550', 'db':f'{sqlite_file_prefix}Esophagus_Gastroesophageal_Junction{sqlite_file_suffix}.db'},
+    'Esophagus_Mucosa': {'tissue_id': 'UBERON_0006920', 'db':f'{sqlite_file_prefix}Esophagus_Mucosa{sqlite_file_suffix}.db'},
+    'Esophagus_Muscularis': {'tissue_id': 'UBERON_0004648', 'db':f'{sqlite_file_prefix}Esophagus_Muscularis{sqlite_file_suffix}.db'},
+    'Heart_Atrial_Appendage': {'tissue_id': 'UBERON_0006631', 'db':f'{sqlite_file_prefix}Heart_Atrial_Appendage{sqlite_file_suffix}.db'},
+    'Heart_Left_Ventricle': {'tissue_id': 'UBERON_0006566', 'db':f'{sqlite_file_prefix}Heart_Left_Ventricle{sqlite_file_suffix}.db'},
+    'Kidney_Cortex': {'tissue_id': 'UBERON_0001225', 'db':f'{sqlite_file_prefix}Kidney_Cortex{sqlite_file_suffix}.db'},
+    'Liver': {'tissue_id': 'UBERON_0001114', 'db':f'{sqlite_file_prefix}Liver{sqlite_file_suffix}.db'},
+    'Lung': {'tissue_id': 'UBERON_0008952', 'db':f'{sqlite_file_prefix}Lung{sqlite_file_suffix}.db'},
+    'Minor_Salivary_Gland': {'tissue_id': 'UBERON_0006330', 'db':f'{sqlite_file_prefix}Minor_Salivary_Gland{sqlite_file_suffix}.db'},
+    'Muscle_Skeletal': {'tissue_id': 'UBERON_0011907', 'db':f'{sqlite_file_prefix}Muscle_Skeletal{sqlite_file_suffix}.db'},
+    'Nerve_Tibial': {'tissue_id': 'UBERON_0001323', 'db':f'{sqlite_file_prefix}Nerve_Tibial{sqlite_file_suffix}.db'},
+    'Ovary': {'tissue_id': 'UBERON_0000992', 'db':f'{sqlite_file_prefix}Ovary{sqlite_file_suffix}.db'},
+    'Pancreas': {'tissue_id': 'UBERON_0001150', 'db':f'{sqlite_file_prefix}Pancreas{sqlite_file_suffix}.db'},
+    'Pituitary': {'tissue_id': 'UBERON_0000007', 'db':f'{sqlite_file_prefix}Pituitary{sqlite_file_suffix}.db'},
+    'Prostate': {'tissue_id': 'UBERON_0002367', 'db':f'{sqlite_file_prefix}Prostate{sqlite_file_suffix}.db'},
+    'Skin_Not_Sun_Exposed_Suprapubic': {'tissue_id': 'UBERON_0036149', 'db':f'{sqlite_file_prefix}Skin_Not_Sun_Exposed_Suprapubic{sqlite_file_suffix}.db'},
+    'Skin_Sun_Exposed_Lower_leg': {'tissue_id': 'UBERON_0004264', 'db':f'{sqlite_file_prefix}Skin_Sun_Exposed_Lower_leg{sqlite_file_suffix}.db'},
+    'Small_Intestine_Terminal_Ileum': {'tissue_id': 'UBERON_0001211', 'db':f'{sqlite_file_prefix}Small_Intestine_Terminal_Ileum{sqlite_file_suffix}.db'},
+    'Spleen': {'tissue_id': 'UBERON_0002106', 'db':f'{sqlite_file_prefix}Spleen{sqlite_file_suffix}.db'},
+    'Stomach': {'tissue_id': 'UBERON_0000945', 'db':f'{sqlite_file_prefix}Stomach{sqlite_file_suffix}.db'},
+    'Testis': {'tissue_id': 'UBERON_0000473', 'db':f'{sqlite_file_prefix}Testis{sqlite_file_suffix}.db'},
+    'Thyroid': {'tissue_id': 'UBERON_0002046', 'db':f'{sqlite_file_prefix}Thyroid{sqlite_file_suffix}.db'},
+    'Uterus': {'tissue_id': 'UBERON_0000995', 'db':f'{sqlite_file_prefix}Uterus{sqlite_file_suffix}.db'},
+    'Vagina': {'tissue_id': 'UBERON_0000996', 'db':f'{sqlite_file_prefix}Vagina{sqlite_file_suffix}.db'},
+    'Whole_Blood': {'tissue_id': 'UBERON_0013756', 'db':f'{sqlite_file_prefix}Whole_Blood{sqlite_file_suffix}.db'}
 }
 
 

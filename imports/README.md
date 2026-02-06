@@ -1,4 +1,4 @@
-# OmicsPred import steps:
+# OmicsPred import steps
 
 ## Data import
 

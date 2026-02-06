@@ -85,12 +85,15 @@ fields_to_export = {
         ]
 }
 
+dataset_files = [ x['name'] for x in fields_to_export['Dataset'] if x['name'].startswith('file_url_')]
+
+
 #-----------------#
-# Class PGSExport #
+# Class OPExport #
 #-----------------#
 
-class PGSExport:
-    ''' Export each PGS metadata in different Excel file. '''
+class OPExport:
+    ''' Export each OmicsPred metadata in different Excel file (one per dataset). '''
 
     #---------------#
     # Configuration #
@@ -117,12 +120,11 @@ class PGSExport:
     # Data separator
     separator = '|'
 
-
     #-----------------#
     # General methods #
     #-----------------#
 
-    def __init__(self, filename, data, ancestry_categories,pub_focused=None):
+    def __init__(self, filename, data):
         self.filename = filename
         self.data = data
         # self.ancestry_categories = ancestry_categories
@@ -131,7 +133,6 @@ class PGSExport:
         # Order of the spreadsheets
         self.spreadsheets_list = [
             'publication', 'dataset', 'scores', 'sample_perf', 'cohorts'
-            # 'publication', 'dataset', 'scores', 'sample_perf', 'cohorts'
         ]
 
         # Spreadsheets content creation
@@ -141,10 +142,6 @@ class PGSExport:
             'scores'     : ('Scores', self.create_scores_spreadsheet),
             'sample_perf': ('Performances', self.create_performance_metrics_spreadsheet),
             'cohorts'    : ('Cohorts', self.create_cohorts_spreadsheet)
-            # 'samplesets' : ('Evaluation Sample Sets', self.create_samplesets_spreadsheet),
-            # 'samples_development': ('Score Development Samples', self.create_samples_development_spreadsheet),
-            # 'efo_traits' : ('EFO Traits', self.create_efo_traits_spreadsheet),
-            
         }
 
         # Force data type in some columns
@@ -230,8 +227,8 @@ class PGSExport:
         return model_labels
 
 
-    def not_in_extra_fields_to_include(self,column):
-        if column not in self.extra_fields_to_include:
+    def not_in_extra_fields_to_include(self,column:str,data:dict) -> bool:
+        if column not in self.extra_fields_to_include and column in data.keys():
             return True
         else:
             return False
@@ -281,7 +278,7 @@ class PGSExport:
 
         for score in self.data['scores']:
             for column in score_labels.keys():
-                if self.not_in_extra_fields_to_include(column):
+                if self.not_in_extra_fields_to_include(column,score):
                     value = self.cleanup_field_value(score[column])
                     scores_data[score_labels[column]].append(value)
         return scores_data
@@ -299,7 +296,7 @@ class PGSExport:
         for perf in self.data['performances']:
             # Load the data into the dictionnary
             for column in perf_labels.keys():
-                if self.not_in_extra_fields_to_include(column):
+                if self.not_in_extra_fields_to_include(column,perf):
                     value = self.cleanup_field_value(perf[column])
                     perf_data[perf_labels[column]].append(value)
         return perf_data
@@ -316,7 +313,7 @@ class PGSExport:
 
         d_data = self.data['dataset']
         for column in object_labels.keys():
-            if self.not_in_extra_fields_to_include(column):
+            if self.not_in_extra_fields_to_include(column,d_data):
                 value = self.cleanup_field_value(d_data[column])
                 object_data[object_labels[column]].append(value)
         return object_data
@@ -333,7 +330,7 @@ class PGSExport:
 
         pub_data = self.data['publication']
         for column in object_labels.keys():
-            if self.not_in_extra_fields_to_include(column):
+            if self.not_in_extra_fields_to_include(column,pub_data):
                 value = self.cleanup_field_value(pub_data[column])
                 object_data[object_labels[column]].append(value)
         return object_data
@@ -350,30 +347,7 @@ class PGSExport:
 
         for cohort in self.data['cohorts']:
             for column in object_labels.keys():
-                if self.not_in_extra_fields_to_include(column):
+                if self.not_in_extra_fields_to_include(column,cohort):
                     value = self.cleanup_field_value(cohort[column])
                     object_data[object_labels[column]].append(value)
         return object_data
-
-
-#----------------------------#
-# Class PGSExportAllMetadata #
-#----------------------------#
-
-class PGSExportAllMetadata(PGSExport):
-    ''' Export all the PGS metadata in a unique Excel file. '''
-
-    def create_readme_spreadsheet(self, release):
-        ''' Info/readme spreadsheet '''
-
-        readme_data = {}
-
-        readme_data['PGS Catalog version'] = [release]
-        readme_data['Number of Polygenic Scores'] = [len(self.data['score'])]
-        readme_data['Number of Traits'] = [len(self.data['trait'])]
-        readme_data['Number of Publications'] = [len(self.data['publication'])]
-
-        df = pd.DataFrame(readme_data)
-        df = df.transpose()
-        df.to_excel(self.writer, sheet_name="Readme", header=False)
-

@@ -1,6 +1,6 @@
-file_loc = '/Users/lg10/Documents/OmicsPred/metadata/ARIC/ARIC_metadata.xlsx'
+file_loc = '<path_to_metadata_spreadsheet_file'
 
-dataset_prefix = 'ARIC - '
+dataset_prefix = '<dataset_prefix_if_needed>'
 
 license = 'Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)'
 

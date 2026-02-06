@@ -186,7 +186,7 @@
         "pk": 1,
         "fields": {
             "id": "OPD000001",
-            "name": null,
+            "name": "DS1",
             "omics_count": 2384,
             "omics_type": "protein",
             "scores_count": 2384,
@@ -202,6 +202,7 @@
             "method_name": "Bayesian Ridge regression",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "samples_training": [ 1 ],
             "samples_validation": [ 2 ]
         }
@@ -226,6 +227,7 @@
             "publication": 1,
             "species_id": 9606,
             "tissue_id": "BTO_0000133",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "samples_training": [ 1 ],
             "samples_validation": [ 2 ]
         }
@@ -251,6 +253,7 @@
             "method_name": "Bayesian Ridge regression",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "samples_training": [ 1 ],
             "samples_validation": [ 2 ]
         }
@@ -276,6 +279,7 @@
             "method_name": "Bayesian Ridge regression",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
+            "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "samples_training": [ 1 ],
             "samples_validation": [ 2 ]
         }
@@ -377,7 +381,7 @@
             "trait_reported_id": "P31994",
             "method_name": "Bayesian Ridge regression",
             "method_params": null,
-            "variants_number": 327,
+            "variants_number": 8,
             "variants_interactions": 0,
             "variants_genomebuild": "GRCh37",
             "date_released": "2023-03-29",
@@ -592,6 +596,40 @@
             "estimate": 0.876,
             "performance_id": 25,
             "type": "Spearman's rank correlation"
+        }
+    },
+
+    {
+        "model": "omicspred.Metric",
+        "pk": 65,
+        "fields": {
+            "name": "Proportion of the variance explained",
+            "name_short": "R2",
+            "estimate": 0.497,
+            "performance_id": 25,
+            "type": "Pearson's correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 66,
+        "fields": {
+            "name": "Spearman correlation coefficient",
+            "name_short": "Rho",
+            "estimate": 0.657,
+            "performance": 25,
+            "type": "Spearman's rank correlation"
+        }
+    },
+    {
+        "model": "omicspred.Metric",
+        "pk": 67,
+        "fields": {
+            "name": "Match Rate",
+            "name_short": "Match Rate",
+            "estimate": 1,
+            "performance": 25,
+            "type": "Variant Match Rate"
         }
     },
 
