@@ -1,0 +1,19 @@
+#omicspred_id=OPGS000005
+#pgs_name=FCGR2B.3310.62.1
+#trait_type=proteomics
+#measurement_tissue=blood plasma (UBERON_0001969)
+#measurement_platform=Somalogic (3.0)
+#trait_reported=Low affinity immunoglobulin gamma Fc region receptor II-b (P31994)
+#genome_build=GRCh37
+#variants_number=8
+#citation=Xu Y et al. Nature (2023). doi:10.1038/s41586-023-05844-9
+#license=Creative Commons Attribution 4.0 International (CC BY 4.0)
+rsID	chr_name	chr_position	effect_allele	other_allele	effect_weight
+rs4149307	9	107589744	T	C	0.0336081417431742
+rs67740686	9	107639180	A	G	-0.0067795383662815
+rs36229786	16	56993901	C	A	0.0272298743995312
+rs711751	16	56993909	C	A	0.0213827394308023
+rs34823732	17	66545034	T	C	-0.0213502157649509
+rs11655740	17	66553479	C	T	0.0091514299903595
+rs7235080	18	47149635	C	A	0.0369882386490998
+rs117503795	19	49539586	A	G	-0.0163905536571453
