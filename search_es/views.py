@@ -1,8 +1,5 @@
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import Throttled
-from rest_framework.serializers import ValidationError
 from elasticsearch_dsl import Search
 
 
@@ -20,7 +17,7 @@ def query_fields():
             'phenotype_score.score_id']
 
 
-def get_search(query:str,exclude_pathways:str=None):
+def get_search(query:str, exclude_pathways:str=None):
     query = query.strip() # Remove whitespaces
     indexes_list = "*"
     if exclude_pathways and str(exclude_pathways) == '1':
@@ -54,11 +51,11 @@ class ESSearch(generics.RetrieveAPIView):
     Send Elasticsearch query and return the result as JSON
     """
 
-    def get(self,request):
+    def get(self, request):
         response = []
         self.queryset = []
         search_query = self.request.query_params.get('q')
-        print(f'search_query: {search_query}')
+        # print(f'search_query: {search_query}')
         exclude_pathways = self.request.query_params.get('exclude_pathways')
         if search_query and search_query is not None:
             response = get_search(search_query,exclude_pathways)
