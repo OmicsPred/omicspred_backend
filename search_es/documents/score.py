@@ -51,18 +51,32 @@ class ScoreDocument(Document):
         }
     )
 
-
     def prepare_genes_data(self, instance):
-        genes_db = instance.genes.only(*molecular_trait_attr).all().distinct('id')
-        return self.get_molecular_traits(genes_db)
+        # Limit fetch of gene data to protein and gene platforms
+        omics_type = self.get_omics_type(instance)
+        if omics_type in ['protein', 'gene expression']:
+            genes_db = instance.genes.only(*molecular_trait_attr).all().distinct('id')
+            return self.get_molecular_traits(genes_db)
+        else:
+            return []
 
     def prepare_proteins_data(self, instance):
-        proteins_db = instance.proteins.only(*molecular_trait_attr).all().distinct('id')
-        return self.get_molecular_traits(proteins_db)
+        # Limit fetch of protein data to protein platforms
+        omics_type = self.get_omics_type(instance)
+        if omics_type in ['protein']:
+            proteins_db = instance.proteins.only(*molecular_trait_attr).all().distinct('id')
+            return self.get_molecular_traits(proteins_db)
+        else:
+            return []
 
     def prepare_metabolites_data(self, instance):
-        metabolites_db = instance.metabolites.only(*molecular_trait_attr).all().distinct('id')
-        return self.get_molecular_traits(metabolites_db)
+        # Limit fetch of metabolite data to metabolite platforms
+        omics_type = self.get_omics_type(instance)
+        if omics_type in ['metabolite']:
+            metabolites_db = instance.metabolites.only(*molecular_trait_attr).all().distinct('id')
+            return self.get_molecular_traits(metabolites_db)
+        else:
+            return []
 
     def prepare_platform_name(self, instance):
         dataset_id = instance.dataset_id
@@ -72,16 +86,28 @@ class ScoreDocument(Document):
         # return [instance.dataset.platform.name]
 
     def prepare_omics_type(self, instance):
+        omics_type = self.get_omics_type(instance)
+        return [omics_types_list[omics_type]]
+
+    def get_omics_type(self,instance):
         dataset_id = instance.dataset_id
         dataset = Dataset.objects.only('omics_type').get(num=dataset_id)
-        return [omics_types_list[dataset.omics_type]]
+        return dataset.omics_type
+
+    # def get_molecular_traits_data(self,mt_model):
+    #     return {'external_id': mt_model.external_id,'name': mt_model.name}
 
     def get_molecular_traits(self,mt_db_list):
-        mt_list = []
-        for mt_db in mt_db_list:
-            mt_list.append({'external_id': mt_db.external_id,'name': mt_db.name})
-        return mt_list
-        # return [ {'external_id': mt_db.external_id,'name': mt_db.name} for mt_db in mt_db_list ]
+        # # Test with classic loop
+        # mt_list = []
+        # for mt_db in mt_db_list:
+        #     mt_list.append({'external_id': mt_db.external_id,'name': mt_db.name})
+        # return mt_list
+        # # Test with map
+        # mt_list = map(self.get_molecular_traits_data,mt_db_list)
+        # return list(mt_list)
+        # Test with List Comprehension
+        return [ {'external_id': mt_db.external_id,'name': mt_db.name} for mt_db in mt_db_list ]
 
 
     class Index:
