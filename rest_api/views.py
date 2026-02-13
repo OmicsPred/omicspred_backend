@@ -90,10 +90,10 @@ related_dict = {
         'dataset__platform',
         'dataset__platform__platform_master',
         'dataset__tissue'],
-    'score_search_cohort': [
-        Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','sample_id').all()),
-        Prefetch('score_performance__sample', queryset=Sample.objects.only('id','cohorts').all())
-    ],
+    # 'score_search_cohort': [
+    #     Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','sample_id').all()),
+    #     Prefetch('score_performance__sample', queryset=Sample.objects.only('id','cohorts').all())
+    # ],
     'score_search_cohort_training_via_dataset': [
         Prefetch('dataset__samples_training', queryset=Sample.objects.only('id','cohorts').all())
     ],
@@ -1267,16 +1267,16 @@ class RestScoreSearch(generics.ListAPIView):
         cohort_training = self.request.query_params.get('cohort_training')
         cohort_validation = self.request.query_params.get('cohort_validation')
         if cohort and cohort is not None:
-            queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related(*related_dict['score_search_cohort'])
-            # queryset = queryset.filter(Q(dataset__samples_training__cohorts__name_short__iexact=cohort)|Q(dataset__samples_validation__cohorts__name_short__iexact=cohort)).prefetch_related(*related_dict['score_search_cohort_training_via_dataset'],*related_dict['score_search_cohort_validation_via_dataset'])
+            queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort)
+            # queryset = queryset.filter(score_performance__sample__cohorts__name_short__iexact=cohort).prefetch_related(*related_dict['score_search_cohort'])
             params += 1
         elif cohort_training and cohort_training is not None:
-            queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_training),Q(score_performance__eval_type='T')).prefetch_related(*related_dict['score_search_cohort'])
-        #     queryset = queryset.filter(dataset__samples_training__cohorts__name_short__iexact=cohort_training).prefetch_related(*related_dict['score_search_cohort_training_via_dataset'])
+            queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_training),Q(score_performance__eval_type='T'))
+            # queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_training),Q(score_performance__eval_type='T')).prefetch_related(*related_dict['score_search_cohort'])
             params += 1
         elif cohort_validation and cohort_validation is not None:
-            queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_validation),~Q(score_performance__eval_type='T')).prefetch_related(*related_dict['score_search_cohort'])
-        #     queryset = queryset.filter(dataset__samples_validation__cohorts__name_short__iexact=cohort_validation).prefetch_related(*related_dict['score_search_cohort_validation_via_dataset'])
+            queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_validation),~Q(score_performance__eval_type='T'))
+            # queryset = queryset.filter(Q(score_performance__sample__cohorts__name_short__iexact=cohort_validation),~Q(score_performance__eval_type='T')).prefetch_related(*related_dict['score_search_cohort'])
             params += 1
 
         # Search by OmicsPred Dataset ID
