@@ -2,6 +2,7 @@ import os
 import gzip
 import csv
 import sqlite3
+import shutil
 from omicspred.models import *
 from exports.config import sqlite_default_values
 
@@ -268,7 +269,8 @@ class SqliteExport:
             print(f"\t-> SQLite: {sql_file}")
             
             ## Create database
-            con = sqlite3.connect(f'{self.sqlite_dir}/{sql_file}')
+            sqlite_filepath = f'{self.sqlite_dir}/{sql_file}'
+            con = sqlite3.connect(sqlite_filepath)
             cur = con.cursor()
 
             ## Create tables
@@ -350,6 +352,14 @@ class SqliteExport:
                 genome_build = 'NA'
             cur.execute("INSERT INTO genome_build VALUES (?)", (genome_build,))
             con.commit()
+
+            # Gzip the SQLite file
+            with open(sqlite_filepath, 'rb') as f_in:
+                with gzip.open(f'{sqlite_filepath}.gz', 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+            os.remove(sqlite_filepath)
+            print(f"\t-> File zipped")
+
 
             ## FOR test - begin ##
             # con.close()
