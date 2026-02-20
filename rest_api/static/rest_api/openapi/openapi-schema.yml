@@ -298,6 +298,22 @@ components:
               type: string
               description: "Scoring files"
               example: "https://app.box.com/shared/static/z86fg93jg5gwdmmu4xn6u287mre2g5o7"
+            scoring_files_pgsc_calc:
+              type: string
+              description: "Scoring files - pgsc_calc compatible"
+              example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
+            metadata:
+              type: string
+              description: "Metadata Excel spreadsheet"
+              example: "https://app.box.com/shared/static/anwpkxcpaixbfj67vd6odzqbsb7rk8a8"
+            predictdb:
+              type: string
+              description: "PredictDB prediction weigths - SQLite database"
+              example: "https://app.box.com/shared/static/unjn1bmt2xhwkd33pp0wczldfzrkevu2"
+            covariance:
+              type: string
+              description: "Covariance file, to be used alongside the PredictDB database in MetaXcan tools"
+              example: "https://app.box.com/shared/static/24avhdwb2gfo083oz3r6j8w6qqburbp2"
             score_variant_info:
               type: string
               description: "Variant information file"
@@ -306,10 +322,6 @@ components:
               type: string
               description: "PGS performance metrics"
               example: "https://app.box.com/shared/static/7j7233otah0yxl4rypqx44wzsj7xywxp"
-            scoring_files_pgsc_calc:
-              type: string
-              description: "Scoring files - pgsc_calc compatible"
-              example: "https://app.box.com/shared/static/7qgaa2ci00x9kggyd48qodxd1ffo3ol7"
 
     Dataset_extended:
       description: "Based on the **Dataset** schema, with the addition of the '**publication**'."

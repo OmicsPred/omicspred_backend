@@ -73,24 +73,37 @@ class SqliteExport:
     }
 
 
-    def __init__(self, opp_id:str, sqlite_dir:str, scoring_files_dir:str, datasets: list, use_opgs_id_as_gene:bool, insert_block_max:int=100):
+    def __init__(self, opp_id:str, sqlite_dir:str, scoring_files_dir:str, datasets: list, use_different_id_as_gene:bool, insert_block_max:int=100):
         self.opp_id = opp_id
         self.sqlite_dir = sqlite_dir
         self.scoring_files_dir = scoring_files_dir
         self.datasets = datasets # List of Dataset models
-        self.use_opgs_id_as_gene = use_opgs_id_as_gene
+        self.use_different_id_as_gene = use_different_id_as_gene
         self.insert_block_max = insert_block_max
 
 
     def read_scoring_file(self, dataset_dir:str, score_id:str, dataset_name:str, reported_trait_id:str, molecular_traits:dict, genome_build:str) -> list:
         ''' Read content of the scoring file '''
+
+        data = []
+        # Fetch correct directory (usually composed of the dataset ID + suffix)
+        if not os.path.isdir(f'{self.scoring_files_dir}/{dataset_dir}'):
+            for ds_dir in os.listdir(self.scoring_files_dir):
+                if ds_dir.startswith(dataset_dir) and os.path.isdir(f'{self.scoring_files_dir}/{ds_dir}'):
+                    dataset_dir = ds_dir
+                    break
+        if not os.path.isdir(f'{self.scoring_files_dir}/{dataset_dir}'):
+            print(f">> Can't find the directory {self.scoring_files_dir}/{dataset_dir}")
+            exit()
+
+        # Initiate file path(s)
         scoring_file = f'{self.scoring_files_dir}/{dataset_dir}/{score_id}.txt'
         scoring_file_gz = f'{self.scoring_files_dir}/{dataset_dir}/{score_id}.txt.gz'
-        data = []
+
         if not os.path.isfile(scoring_file):
             scoring_file = f'{self.scoring_files_dir}/{dataset_dir}/{score_id}_model.txt'
 
-        # Text file
+        # Case of a text file
         if os.path.isfile(scoring_file):
             with open(scoring_file, newline='') as sc_file:
                 # Ignore lines starting with '#'
@@ -98,7 +111,7 @@ class SqliteExport:
                 for row in reader:
                     variant_info = self.get_variant_info(row,score_id,dataset_name,reported_trait_id,molecular_traits,genome_build)
                     data.append(variant_info)
-        # Zipped file
+        # Case of a zipped file
         elif os.path.isfile(scoring_file_gz):
             with gzip.open(scoring_file_gz, mode="rt") as sc_file:
                 # Ignore lines starting with '#'
@@ -113,18 +126,24 @@ class SqliteExport:
 
     def get_variant_info(self, row:dict, score_id:str, dataset_name:str, reported_trait_id:str, molecular_traits:dict, genome_build:str) -> tuple:
         ''' Fetch variant information of a row in the scoring file '''
-        rsid = row['rsID'] if 'rsID' in row.keys() else row['rsid']
+        rsid = None
+        if 'rsID' in row.keys():
+            rsid = row['rsID']
+        elif 'rsid' in row.keys():
+            rsid = row['rsid']
         varid = None
         if 'chr_name' in row.keys() and 'chr_position' in row.keys():
             # 1_156000340_A_G_b38
             to_replace = 'GRCh' if genome_build.startswith('GRCh') else 'hg'
             build = 'b'+genome_build.replace(to_replace,'')
             varid = f"{row['chr_name']}_{row['chr_position']}_{row['other_allele']}_{row['effect_allele']}_{build}"
+            if not rsid:
+                rsid = f'chr{row['chr_name']}:{row['chr_position']}'
         elif 'variant_description' in row.keys():
             if row['variant_description'].startswith('variant_id=chr'):
                 varid = row['variant_description'].split('=')[1]
         gene_id = molecular_traits['gene_id']
-        if self.gtex_prefix_study in dataset_name:
+        if (self.gtex_prefix_study in dataset_name) or self.use_different_id_as_gene == 'name':
             variant_info_list = [
                 score_id,             # omicspred_id
                 reported_trait_id,    # gene
@@ -148,7 +167,7 @@ class SqliteExport:
     
 
     def create_table_extra(self, cur:sqlite3.Cursor, is_proteomics:bool) -> list:
-        if self.use_opgs_id_as_gene:
+        if self.use_different_id_as_gene == 'opgs_id':
             cols_extra = ['gene', 'gene_id', 'genename', 'gene_type']
         else:
             cols_extra = ['omicspred_id', 'gene', 'genename', 'gene_type']
@@ -161,7 +180,7 @@ class SqliteExport:
 
 
     def create_table_weights(self, cur:sqlite3.Cursor, is_proteomics:bool) -> None:
-        if self.use_opgs_id_as_gene:
+        if self.use_different_id_as_gene == 'opgs_id':
             cols_weights = ['gene', 'gene_id']
         else:
             cols_weights = ['omicspred_id', 'gene']
@@ -214,20 +233,28 @@ class SqliteExport:
                 'gene_type': gene.biotype
             }
         else:
-            if self.use_opgs_id_as_gene:
-                score_data = {
-                    'gene': score_id,
-                    'gene_id': gene_id,
-                    'genename': gene.name,
-                    'gene_type': gene.biotype
-                }
-            else:
-                score_data = {
-                    'omicspred_id': score_id,
-                    'gene': gene_id,
-                    'genename': gene.name,
-                    'gene_type': gene.biotype
-                }
+            match self.use_different_id_as_gene:
+                case 'opgs_id':
+                    score_data = {
+                        'gene': score_id,
+                        'gene_id': gene_id,
+                        'genename': gene.name,
+                        'gene_type': gene.biotype
+                    }
+                case 'name':
+                    score_data = {
+                        'omicspred_id': score_id,
+                        'gene': reported_trait_id,
+                        'genename': gene.name,
+                        'gene_type': gene.biotype
+                    }
+                case _:
+                    score_data = {
+                        'omicspred_id': score_id,
+                        'gene': gene_id,
+                        'genename': gene.name,
+                        'gene_type': gene.biotype
+                    }
         if is_proteomics:
             proteins = score.proteins.all()
             protein = proteins[0]
@@ -243,7 +270,7 @@ class SqliteExport:
         return score_data
 
 
-    def generate_sqlite_files(self):
+    def generate_sqlite_files(self,skip_zip:bool=False):
         ds_count = 1
         ds_total_count = len(self.datasets)
         for dataset in self.datasets:
@@ -310,6 +337,8 @@ class SqliteExport:
                 if self.gtex_prefix_study in dataset_name and score.name.startswith('intron_'):
                     intron_name = score.name.split('_')
                     reported_trait_id = f'{intron_name[0]}_{intron_name[1]}_{intron_name[2]}_{intron_name[3]}'
+                elif self.use_different_id_as_gene == 'name':
+                    reported_trait_id = score.name
                 # Get performance metrics (Training)
                 metrics = self.get_metrics(score)
 
@@ -354,11 +383,12 @@ class SqliteExport:
             con.commit()
 
             # Gzip the SQLite file
-            with open(sqlite_filepath, 'rb') as f_in:
-                with gzip.open(f'{sqlite_filepath}.gz', 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            os.remove(sqlite_filepath)
-            print(f"\t-> File zipped")
+            if not skip_zip:
+                with open(sqlite_filepath, 'rb') as f_in:
+                    with gzip.open(f'{sqlite_filepath}.gz', 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                os.remove(sqlite_filepath)
+                print(f"\t-> File zipped")
 
 
             ## FOR test - begin ##

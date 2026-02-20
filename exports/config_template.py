@@ -10,7 +10,7 @@ sqlite_default_values = {
     'scoring_files_dir': '<path_to_scoring_files_dataset_directory>', # Uncompressed dataset directory 
     'method_name': '<dataset_method_name>',  # Only needed for GTEx exports
     'platform_name': '<platform_name>',      # Only needed for GTEx exports
-    'use_opgs_id_as_gene': '<True_or_False>' # Use the OmicsPred ID in the 'gene' column or not
+    'use_different_id_as_gene': '<opgs_id_OR_name>' # Use the OmicsPred ID, the score name in the 'gene' column or not. None if the key is missing
 }
 
 
