@@ -27,6 +27,8 @@ fields_to_export = {
             {'name': 'file_url_scoring_files_pgsc_calc', 'label': 'Scoring files (pgsc_calc compatible)', 'skip_auto_import': True},
             {'name': 'file_url_scoring_files_hm_38', 'label': 'Harmonised scoring files (mapped to GRCh38)', 'skip_auto_import': True},
             {'name': 'file_url_scoring_files', 'label': 'Scoring files', 'skip_auto_import': True},
+            {'name': 'file_url_predictdb', 'label': 'PredictDB', 'skip_auto_import': True},
+            {'name': 'file_url_covariance', 'label': 'Covariance', 'skip_auto_import': True},
             {'name': 'file_url_validation_results', 'label': 'Validation data file', 'skip_auto_import': True},
             {'name': 'file_url_score_variant_info', 'label': 'Score variant info file', 'skip_auto_import': True},
             {'name': 'file_url_gwas_sumstats', 'label': 'GWAS summary stats files', 'skip_auto_import': True}

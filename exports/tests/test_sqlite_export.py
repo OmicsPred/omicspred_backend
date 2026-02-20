@@ -18,7 +18,7 @@ class ExportSQLiteTest(TestCase):
     dataset_label = 'DS1'
     current_dir = os.getcwd()
     scoring_files_dir = sqlite_default_values['scoring_files_dir']
-    use_opgs_id_as_gene = sqlite_default_values['use_opgs_id_as_gene']
+    use_different_id_as_gene = sqlite_default_values['use_different_id_as_gene']
     
     sqlite_filename = f'{opd_id}_{dataset_label}.db'
 
@@ -71,8 +71,8 @@ class ExportSQLiteTest(TestCase):
     def test_sqlite_export(self):
         print("# Test SQLite export")
         datasets = Dataset.objects.filter(id=self.opd_id)
-        sqlite_export = SqliteExport(self.opp_id,self.output_sqlite_dir,self.scoring_files_dir,datasets,self.use_opgs_id_as_gene)
-        sqlite_export.generate_sqlite_files()
+        sqlite_export = SqliteExport(self.opp_id,self.output_sqlite_dir,self.scoring_files_dir,datasets,self.use_different_id_as_gene)
+        sqlite_export.generate_sqlite_files(True)
 
         sqlite_ref_connection = sqlite3.connect(self.ref_sqlite_filepath)
         sqlite_ref_cursor = sqlite_ref_connection.cursor()

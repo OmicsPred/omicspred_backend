@@ -11,10 +11,12 @@ insert_block_max = 100
 
 gtex_prefix_study = 'GTExV8'
 
-if 'use_opgs_id_as_gene' in sqlite_default_values.keys():
-    use_opgs_id_as_gene = sqlite_default_values['use_opgs_id_as_gene']
+if 'use_different_id_as_gene' in sqlite_default_values.keys():
+    use_different_id_as_gene = sqlite_default_values['use_different_id_as_gene']
 else:
-    use_opgs_id_as_gene = True
+    use_different_id_as_gene = None
+
+
 
 # default_values = {
 #     'opp_id': 'OPP000003',
@@ -105,6 +107,6 @@ def run(*args):
     # Fetch dataset(s)
     datasets = Dataset.objects.filter(publication__id=opp_id).order_by('id')
     # Create SqliteExport object
-    sqlite_export = SqliteExport(opp_id,output_sqlite_dir,scoring_files_dir,datasets,use_opgs_id_as_gene)
+    sqlite_export = SqliteExport(opp_id,output_sqlite_dir,scoring_files_dir,datasets,use_different_id_as_gene)
     # Generate SQLite export file(s)
     sqlite_export.generate_sqlite_files()
