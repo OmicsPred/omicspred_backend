@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import Throttled
 from rest_framework.serializers import ValidationError
-from django.db.models import Prefetch, Q, FloatField, Count, Case, When
+from django.db.models import Prefetch, Q, FloatField, Count
 from django.db.models.functions import Cast, Lower
 from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings

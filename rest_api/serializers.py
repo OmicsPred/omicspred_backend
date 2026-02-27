@@ -627,7 +627,7 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Score
-        meta_fields = ('id','variants_number','dataset_id','dataset_name','platform_version','publication','tissue','ancestry')
+        meta_fields = ('id','name','variants_number','dataset_id','dataset_name','platform_version','publication','tissue','ancestry')
         # meta_fields = ('id','variants_number','performance_range')
         fields = meta_fields
         read_only_fields = meta_fields
