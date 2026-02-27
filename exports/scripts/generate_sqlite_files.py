@@ -1,7 +1,3 @@
-import os
-import gzip
-import csv
-import sqlite3
 from omicspred.models import *
 from exports.sqlite_export import SqliteExport
 from exports.config import sqlite_default_values
