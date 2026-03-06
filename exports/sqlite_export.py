@@ -82,7 +82,7 @@ class SqliteExport:
         self.insert_block_max = insert_block_max
 
 
-    def read_scoring_file(self, dataset_dir:str, score_id:str, dataset_name:str, reported_trait_id:str, molecular_traits:dict, genome_build:str) -> list:
+    def read_scoring_file(self, dataset_dir:str, score_id:str, reported_trait_id:str, genome_build:str) -> list:
         ''' Read content of the scoring file '''
 
         data = []
@@ -109,7 +109,7 @@ class SqliteExport:
                 # Ignore lines starting with '#'
                 reader = csv.DictReader(filter(lambda row: row[0]!='#', sc_file), delimiter='\t')
                 for row in reader:
-                    variant_info = self.get_variant_info(row,score_id,dataset_name,reported_trait_id,molecular_traits,genome_build)
+                    variant_info = self.get_variant_info(row,score_id,reported_trait_id,genome_build)
                     data.append(variant_info)
         # Case of a zipped file
         elif os.path.isfile(scoring_file_gz):
@@ -117,14 +117,15 @@ class SqliteExport:
                 # Ignore lines starting with '#'
                 reader = csv.DictReader(filter(lambda row: row[0]!='#', sc_file), delimiter='\t')
                 for row in reader:
-                    variant_info = self.get_variant_info(row,score_id,dataset_name,reported_trait_id,molecular_traits,genome_build)
+                    variant_info = self.get_variant_info(row,score_id,reported_trait_id,genome_build)
                     data.append(variant_info)
         else:
             print(f">>> ERROR: file not found ({scoring_file} nor {scoring_file_gz}")
         return data
 
 
-    def get_variant_info(self, row:dict, score_id:str, dataset_name:str, reported_trait_id:str, molecular_traits:dict, genome_build:str) -> tuple:
+    # def get_variant_info(self, row:dict, score_id:str, dataset_name:str, reported_trait_id:str, genome_build:str) -> tuple:
+    def get_variant_info(self, row:dict, score_id:str, reported_trait_id:str, genome_build:str) -> tuple:
         ''' Fetch variant information of a row in the scoring file '''
         rsid = None
         if 'rsID' in row.keys():
@@ -142,20 +143,14 @@ class SqliteExport:
         elif 'variant_description' in row.keys():
             if row['variant_description'].startswith('variant_id=chr'):
                 varid = row['variant_description'].split('=')[1]
-        gene_id = molecular_traits['gene_id']
-        if (self.gtex_prefix_study in dataset_name) or self.use_different_id_as_gene == 'name':
+        if self.use_different_id_as_gene == 'opgs_id':
             variant_info_list = [
-                score_id,             # omicspred_id
-                reported_trait_id,    # gene
+                score_id,         # omicspred_id as 'gene'
             ]
         else:
-            variant_info_list = [
-                score_id,             # omicspred_id
-                gene_id,              # gene
+           variant_info_list = [
+                reported_trait_id, # gene
             ]
-        if 'protein_id' in molecular_traits.keys():
-            variant_info_list.append(molecular_traits['protein_id']) # protein    
-        
         variant_info_list.extend([
             rsid,                 # rsid
             varid,                # var_id
@@ -166,26 +161,26 @@ class SqliteExport:
         return tuple(variant_info_list)
     
 
-    def create_table_extra(self, cur:sqlite3.Cursor, is_proteomics:bool) -> list:
+    def create_table_extra(self, cur:sqlite3.Cursor, omics_type:str) -> list:
         if self.use_different_id_as_gene == 'opgs_id':
-            cols_extra = ['gene', 'gene_id', 'genename', 'gene_type']
+            cols_extra = ['gene', 'genename', 'gene_type']
         else:
             cols_extra = ['omicspred_id', 'gene', 'genename', 'gene_type']
-        if is_proteomics:
+        if omics_type == 'Proteomics':
             cols_extra.append('protein')
+        elif omics_type == 'Metabolomics':
+             cols_extra.append('metabolite')
         cols_extra.extend(['"n.snps.in.model"', 'cv_R2_avg', '"pred.perf.R2"', 'nested_cv_fisher_pval', 'rho_avg', '"pred.perf.pval"', '"pred.perf.qval"'])
         cur.execute("DROP TABLE IF EXISTS extra;")
         cur.execute(f"CREATE TABLE extra({', '.join(cols_extra)})")
         return cols_extra
 
 
-    def create_table_weights(self, cur:sqlite3.Cursor, is_proteomics:bool) -> None:
+    def create_table_weights(self, cur:sqlite3.Cursor) -> None:
         if self.use_different_id_as_gene == 'opgs_id':
-            cols_weights = ['gene', 'gene_id']
+            cols_weights = ['gene']
         else:
             cols_weights = ['omicspred_id', 'gene']
-        if is_proteomics:
-            cols_weights.append('protein')
         cols_weights.extend(['rsid', 'varID', 'ref_allele', 'eff_allele','weight'])
         cur.execute("DROP TABLE IF EXISTS weights;")
         cur.execute(f"CREATE TABLE weights({', '.join(cols_weights)})") 
@@ -223,9 +218,9 @@ class SqliteExport:
         return metrics
 
 
-    def get_score_data(self, dataset_name:str, score:Score, gene:Gene, reported_trait_id:str, gene_id:str, is_proteomics:bool, metrics:dict) -> dict:
+    def get_score_data(self, dataset_name:str, score:Score, gene:Gene, reported_trait_id:str, gene_id:str, omics_type:str, metrics:dict) -> dict:
         score_id = score.id
-        if self.gtex_prefix_study in dataset_name:
+        if dataset_name and self.gtex_prefix_study in dataset_name:
             score_data = {
                 'omicspred_id': score_id,
                 'gene': reported_trait_id,
@@ -238,8 +233,8 @@ class SqliteExport:
                     score_data = {
                         'gene': score_id,
                         'gene_id': gene_id,
-                        'genename': gene.name,
-                        'gene_type': gene.biotype
+                        'genename': gene.name if gene else None,
+                        'gene_type': gene.biotype if gene else None
                     }
                 case 'name':
                     score_data = {
@@ -255,10 +250,14 @@ class SqliteExport:
                         'genename': gene.name,
                         'gene_type': gene.biotype
                     }
-        if is_proteomics:
+        if omics_type == 'Proteomics':
             proteins = score.proteins.all()
             protein = proteins[0]
             score_data['protein'] = protein.external_id
+        elif omics_type == 'Metabolomics':
+            metabolites = score.metabolites.all()
+            metabolite = metabolites[0]
+            score_data['metabolite'] = metabolite.name if metabolite.name else metabolite.external_id
         metrics_keys = metrics
         score_data['"n.snps.in.model"'] = score.variants_number
         score_data['cv_R2_avg'] = metrics['R2'] if 'R2' in metrics_keys else None
@@ -278,10 +277,9 @@ class SqliteExport:
             genome_build = ''
             ds_count += 1
             dataset_name = dataset.name
-            dataset_type = dataset.platform.platform_master.type
-            is_proteomics = True if dataset_type == 'Proteomics' else False
-            dataset_label = dataset_name
-            if self.gtex_prefix_study in dataset_name:
+            omics_type = dataset.platform.platform_master.type
+            dataset_label = dataset_name if dataset_name else dataset.platform.name
+            if dataset_name and self.gtex_prefix_study in dataset_name:
                 ds_components = dataset_name.split(' - ')
                 dataset_label = f'{ds_components[0]}_{ds_components[3]}_{ds_components[1]}_{ds_components[2]}'
                 method_name = self.methods_mapping[ds_components[2]]
@@ -302,10 +300,10 @@ class SqliteExport:
 
             ## Create tables
             # Table 'extra'
-            cols_extra = self.create_table_extra(cur,is_proteomics)
+            cols_extra = self.create_table_extra(cur,omics_type)
 
             # Table 'weights'
-            self.create_table_weights(cur,is_proteomics)
+            self.create_table_weights(cur)
 
             # Table 'sample_info' and 'genome_build'
             self.create_other_tables(cur)
@@ -330,11 +328,14 @@ class SqliteExport:
             scores = Score.objects.filter(dataset=dataset).order_by('num')
             for score in scores:
                 score_id = score.id
+                gene = None
+                gene_id = None
                 genes = score.genes.all()
-                gene = genes[0]
-                gene_id = gene.external_id
+                if genes:
+                    gene = genes[0]
+                    gene_id = gene.external_id
                 reported_trait_id = score.trait_reported_id
-                if self.gtex_prefix_study in dataset_name and score.name.startswith('intron_'):
+                if dataset_name and self.gtex_prefix_study in dataset_name and score.name.startswith('intron_'):
                     intron_name = score.name.split('_')
                     reported_trait_id = f'{intron_name[0]}_{intron_name[1]}_{intron_name[2]}_{intron_name[3]}'
                 elif self.use_different_id_as_gene == 'name':
@@ -347,7 +348,7 @@ class SqliteExport:
                     genome_build = score.variants_genomebuild
 
                 # 1 - Extract metadata data from DB + insert data in SQLite
-                score_data = self.get_score_data(dataset_name,score,gene,reported_trait_id,gene_id, is_proteomics, metrics)
+                score_data = self.get_score_data(dataset_name,score,gene,reported_trait_id,gene_id, omics_type, metrics)
                 data_list = []
                 for col in cols_extra:
                     data_list.append(score_data[col])
@@ -360,12 +361,8 @@ class SqliteExport:
                     insert_extra_block = []
 
                 # 2 - Extract data from scoring file + insert data in SQLite
-                molecular_traits = {'gene_id': gene_id}
-                weights_values = '?, ?, ?, ?, ?, ?, ?'
-                if is_proteomics:
-                    molecular_traits['protein_id'] = score_data['protein']
-                    weights_values += ', ?'
-                insert_weights_block = self.read_scoring_file(dataset_dir,score_id,dataset_name,reported_trait_id,molecular_traits,genome_build)
+                weights_values = '?, ?, ?, ?, ?, ?'
+                insert_weights_block = self.read_scoring_file(dataset_dir,score_id,reported_trait_id,genome_build)
             
                 cur.executemany(f"INSERT INTO weights VALUES({weights_values})", insert_weights_block)
                 con.commit()
@@ -389,11 +386,5 @@ class SqliteExport:
                         shutil.copyfileobj(f_in, f_out)
                 os.remove(sqlite_filepath)
                 print(f"\t-> File zipped")
-
-
-            ## FOR test - begin ##
-            # con.close()
-            # exit()
-            ## FOR test - end ####
 
         con.close()
