@@ -1,7 +1,3 @@
-import os
-import gzip
-import csv
-import sqlite3
 from omicspred.models import *
 from exports.sqlite_export import SqliteExport
 from exports.config import sqlite_default_values
@@ -15,21 +11,6 @@ if 'use_different_id_as_gene' in sqlite_default_values.keys():
     use_different_id_as_gene = sqlite_default_values['use_different_id_as_gene']
 else:
     use_different_id_as_gene = None
-
-
-
-# default_values = {
-#     'opp_id': 'OPP000003',
-#     'sqlite_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/sqlite_exports',
-#     'scoring_files_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/GTEx_V8/scoring_files/genetic_scores_mashr_splicing',
-#     'method_name': 'MASHR',
-#     'platform_name': 'RNAseq - Splicing'
-# }
-# # default_values = {
-# #     'opp_id': 'OPP000002',
-# #     'sqlite_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/PredictDB_exports',
-# #     'scoring_files_dir': '/Users/lg10/Workspace/datafiles/OmicsPred/Scores'
-# # }
 
 tissues_mapping = {
     "subcutaneous adipose tissue": "Adipose_Subcutaneous",
@@ -94,19 +75,23 @@ platforms_mapping = {
 
 
 def run(*args):
+    skip_zip = False
 
     if args:
         opp_id = args[0]
         output_sqlite_dir = args[1]
         scoring_files_dir = args[2]
+        skip_zip = args[3]
     else:
         opp_id = sqlite_default_values['opp_id']
         output_sqlite_dir = sqlite_default_values['sqlite_dir']
         scoring_files_dir = sqlite_default_values['scoring_files_dir']
+        if 'skip_zip' in sqlite_default_values.keys():
+            skip_zip = sqlite_default_values['skip_zip']
 
     # Fetch dataset(s)
     datasets = Dataset.objects.filter(publication__id=opp_id).order_by('id')
     # Create SqliteExport object
     sqlite_export = SqliteExport(opp_id,output_sqlite_dir,scoring_files_dir,datasets,use_different_id_as_gene)
     # Generate SQLite export file(s)
-    sqlite_export.generate_sqlite_files()
+    sqlite_export.generate_sqlite_files(skip_zip)

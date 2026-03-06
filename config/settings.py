@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.postgres', # For Django 6.0.x
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders' # <= Added for test

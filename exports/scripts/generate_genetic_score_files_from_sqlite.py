@@ -6,7 +6,7 @@ import pathlib
 import zipfile
 import datetime
 from omicspred.models import *
-from exports.config import scoring_file_config
+from exports.config import scoring_file_from_sqlite_config
 
 # OPGS018874.txt
 
@@ -59,13 +59,13 @@ from exports.config import scoring_file_config
 # sqlite_file_suffix = ''
 # ds_name = '- eQTL - MASHR -'
 
-pmid = scoring_file_config['pmid']
-variant_coords_sqlite_db_file = scoring_file_config['variant_coords_sqlite_db_file']
-dbs_location = scoring_file_config['dbs_location']
-scores_root_dir = scoring_file_config['scores_root_dir']
-sqlite_file_prefix = scoring_file_config['sqlite_file_prefix']
-sqlite_file_suffix = scoring_file_config['sqlite_file_suffix']
-ds_name = scoring_file_config['ds_name']
+pmid = scoring_file_from_sqlite_config['pmid']
+variant_coords_sqlite_db_file = scoring_file_from_sqlite_config['variant_coords_sqlite_db_file']
+dbs_location = scoring_file_from_sqlite_config['dbs_location']
+scores_root_dir = scoring_file_from_sqlite_config['scores_root_dir']
+sqlite_file_prefix = scoring_file_from_sqlite_config['sqlite_file_prefix']
+sqlite_file_suffix = scoring_file_from_sqlite_config['sqlite_file_suffix']
+ds_name = scoring_file_from_sqlite_config['ds_name']
 
 
 datasets_info_test = {
