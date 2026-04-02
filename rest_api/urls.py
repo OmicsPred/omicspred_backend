@@ -21,6 +21,7 @@ rest_urls = {
     'metabolomics':         'api/metabolomics/',
     'pathway':              'api/pathway/',
     'phenotype':            'api/phenotype/',
+    'phenotype_old':        'api/phenotype_old/',
     'platform':             'api/platform/',
     'plot':                 'api/plot/',
     'performance':          'api/performance/',
@@ -62,6 +63,9 @@ urlpatterns = [
     re_path(r'^'+rest_urls['publication']+'(?P<opp_id>[^/]+)'+slash, RestPublication.as_view(), name="getPublication"),
     # Samples
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
+    # Score PheWAS
+    re_path(r'^'+rest_urls['score']+'phenotype/search'+slash, cache_page(cache_time)(RestScorePheWASSearch.as_view()), name="searchScorePheWAS"),
+    re_path(r'^'+rest_urls['score']+'phenotype/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScorePheWAS.as_view()), name="getScorePheWAS"),
     # Scores
     re_path(r'^'+rest_urls['score']+'all'+slash, cache_page(cache_time)(RestListScores.as_view()), name="getAllScores"),
     re_path(r'^'+rest_urls['score']+'performance/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScoreWithPerformance.as_view()), name="getScoreWithPerformance"),
@@ -78,6 +82,9 @@ urlpatterns = [
     # Tissue
     re_path(r'^'+rest_urls['tissue']+'all'+slash, cache_page(cache_time)(RestListTissues.as_view()), name="getAllTissues"),
     re_path(r'^'+rest_urls['tissue']+'(?P<tissue>[^/]+)'+slash, RestTissue.as_view(), name="getTissue"),
+    # Phenotype
+    re_path(r'^'+rest_urls['phenotype']+'all'+slash, RestListPhenotypes.as_view(), name="getAllPhenotypes"),
+    re_path(r'^'+rest_urls['phenotype']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotype.as_view(), name="getPhenotype"),
     # Plot
     re_path(r'^'+rest_urls['plot']+'search'+slash, cache_page(cache_time)(RestPlotSearch.as_view()), name="searchPlots"),
     # To generate plot data
@@ -85,7 +92,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
     # Applications
-    re_path(r'^'+rest_urls['phenotype']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotype.as_view(), name="getPhenotype"),
+    re_path(r'^'+rest_urls['phenotype_old']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotypeOld.as_view(), name="getPhenotypeOld"),
     re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhenotypeScore.as_view()), name="getAllPhenotypeScores"),
     re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhenotypeScoreSearch.as_view(), name="searchPhenotypeScores"),
     re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhenotypeScore.as_view(), name="getPhenotypeScore"),
