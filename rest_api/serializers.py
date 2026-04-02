@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from omicspred.models import *
-from applications.models import *
+from applications.models import Phenotype as PhenotypeOld
+from applications.models import ScoreApplications,SampleApplications,SampleApplicationsLegacy,PlatformApplications,CohortApplications,MolecularTraitApplications,GeneApplications,ProteinApplications,MetaboliteApplications
 from plot.models import *
 
 
@@ -41,9 +42,10 @@ class SampleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sample
-        meta_fields = ('sample_number', 'sample_age', 'sample_age_sd', 'sample_percent_male',
-                    'ancestry_broad', 'ancestry_free', 'ancestry_country', 'ancestry_additional',
-                    'source_gwas_catalog', 'source_pmid','source_doi','cohorts','cohorts_additional')#,'tissue_name')
+        meta_fields = ('sample_number', 'sample_cases', 'sample_controls',
+                       'sample_age', 'sample_age_sd', 'sample_percent_male',
+                       'ancestry_broad', 'ancestry_free', 'ancestry_country', 'ancestry_additional',
+                       'source_gwas_catalog', 'source_pmid','source_doi','cohorts','cohorts_additional')#,'tissue_name')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -51,7 +53,7 @@ class SampleSerializer(serializers.ModelSerializer):
 #### Tissue ####
 class TissueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EFO
+        model = Tissue
         meta_fields = ('id', 'label', 'description', 'url', 'type')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -124,7 +126,7 @@ class DatasetLightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'omics_type', 'method_name',
+        meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'phenotypes_count', 'omics_type', 'method_name',
                        'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -477,14 +479,14 @@ class ScoreLightSerializer(serializers.ModelSerializer):
     transcripts = TranscriptSerializer(many=True, read_only=True)
     proteins = ProteinSerializer(many=True, read_only=True)
     metabolites = MetaboliteSerializer(many=True, read_only=True)
-    # efos = TissueSerializer(many=True, read_only=True)
-    # date_release = serializers.SerializerMethodField('get_date_released')
 
     class Meta:
         model = Score
         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
-                       'dataset_id', 'dataset_name', 'publication', 'platform', 'tissue', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-                       'variants_number', 'variants_interactions', 'variants_genomebuild', 'comment', 'license')#, 'date_release')
+                       'dataset_id', 'dataset_name', 'publication', 'platform', 'tissue',
+                       'genes', 'transcripts', 'proteins', 'metabolites',
+                       'variants_number', 'variants_interactions', 'variants_genomebuild',
+                       'comment', 'license')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -590,7 +592,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
         return PlatformSerializer(platform, many=False, read_only=True).data
 
     def get_tissue(self, obj):
-        ''' Get EFO (Tissue) model '''
+        ''' Get Tissue model '''
         tissue = obj.dataset.tissue
         return TissueSerializer(tissue, many=False, read_only=True).data
 
@@ -650,7 +652,7 @@ class ScoreMolecularTraitSerializer(serializers.ModelSerializer):
         return PublicationSerializer(publication, many=False, read_only=True).data
 
     def get_tissue(self, obj):
-        ''' Get EFO (Tissue) model '''
+        ''' Get Tissue model '''
         tissue = obj.dataset.tissue
         return TissueSerializer(tissue, many=False, read_only=True).data
 
@@ -720,39 +722,85 @@ class ScorePerformanceTranscriptSerializer(ScorePerformanceMolecularTraitSeriali
         read_only_fields = ScorePerformanceMolecularTraitSerializer.Meta.read_only_fields + meta_fields
 
 
+###################
+#### Phenotype ####
+###################
+
+class PhenotypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phenotype
+        meta_fields = ('id', 'label', 'description', 'category', 'url')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
+class PhenotypeSerializerExtended(PhenotypeSerializer):
+    mapped_phecodes = serializers.SerializerMethodField('get_mapped_phecodes')
+    class Meta(PhenotypeSerializer.Meta):
+        meta_fields = ('mapped_phecodes',)
+        fields = PhenotypeSerializer.Meta.fields + meta_fields
+        read_only_fields = PhenotypeSerializer.Meta.read_only_fields + meta_fields
+
+    def get_mapped_phecodes(self, obj):
+        return obj.mapped_phecodes_list
+
+
+class PhenotypeSerializerScoresCount(PhenotypeSerializerExtended):
+    class Meta(PhenotypeSerializerExtended.Meta):
+        meta_fields = scores_count
+        fields = PhenotypeSerializerExtended.Meta.fields + meta_fields
+        read_only_fields = PhenotypeSerializerExtended.Meta.read_only_fields + meta_fields
+
+
+class ScorePheWASSerializer(serializers.ModelSerializer):
+    score = ScoreLightSerializer(many=False,read_only=True)
+    phenotypes = PhenotypeSerializer(many=True,read_only=True)
+    sample = SampleSerializer(many=False,read_only=True)
+    data_values = serializers.SerializerMethodField('get_data_values')
+
+    class Meta:
+        model = ScorePheWAS
+        meta_fields = ('score', 'phenotypes','sample','trait_reported', 'ancestry',
+                       'data_values','variants_number_used','variants_fraction_found')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+    def get_data_values(self, obj):
+        return obj.values_dict
+
 
 ######################
 #### Applications ####
 ######################
 
-class PhenotypeSerializer(serializers.ModelSerializer):
+class PhenotypeOldSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Phenotype
+        model = PhenotypeOld
         meta_fields = ('id','name','category','source')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
-class PhenotypeSerializerScoresCount(PhenotypeSerializer):
-    class Meta(PhenotypeSerializer.Meta):
+class PhenotypeOldSerializerScoresCount(PhenotypeOldSerializer):
+    class Meta(PhenotypeOldSerializer.Meta):
         meta_fields = scores_count
-        fields = PhenotypeSerializer.Meta.fields + meta_fields
-        read_only_fields = PhenotypeSerializer.Meta.read_only_fields + meta_fields
+        fields = PhenotypeOldSerializer.Meta.fields + meta_fields
+        read_only_fields = PhenotypeOldSerializer.Meta.read_only_fields + meta_fields
 
 
-class PhenotypeSerializerExtended(PhenotypeSerializerScoresCount):
-    # child_phenotype = PhenotypeSerializer(many=True,read_only=True)
+class PhenotypeOldSerializerExtended(PhenotypeOldSerializerScoresCount):
+    # child_phenotype = PhenotypeOldSerializer(many=True,read_only=True)
     child_phenotype = serializers.SerializerMethodField()
 
-    class Meta(PhenotypeSerializerScoresCount.Meta):
+    class Meta(PhenotypeOldSerializerScoresCount.Meta):
         meta_fields = ('child_phenotype',)
-        fields = PhenotypeSerializerScoresCount.Meta.fields + meta_fields
-        read_only_fields = PhenotypeSerializerScoresCount.Meta.read_only_fields + meta_fields
+        fields = PhenotypeOldSerializerScoresCount.Meta.fields + meta_fields
+        read_only_fields = PhenotypeOldSerializerScoresCount.Meta.read_only_fields + meta_fields
 
     def get_child_phenotype(self, obj):
         ''' Sort phenotype child terms by their IDs '''
         children = obj.child_phenotype.prefetch_related('phenotype_score').order_by('id')
-        return PhenotypeSerializerScoresCount(children, many=True).data
+        return PhenotypeOldSerializerScoresCount(children, many=True).data
 
 
 class PlatformApplicationsSerializer(PlatformSerializer):
@@ -808,7 +856,7 @@ class MetaboliteApplicationsSerializer(serializers.ModelSerializer):
 
 
 class ScoreApplicationsSerializer(serializers.ModelSerializer):
-    phenotype = PhenotypeSerializer(many=False,read_only=True)
+    phenotype = PhenotypeOldSerializer(many=False,read_only=True)
     platform = PlatformApplicationsSerializer(many=False,read_only=True)
     sample = SampleApplicationsSerializer(many=False,read_only=True)
     cohort = CohortApplicationsSerializer(many=False,read_only=True)
@@ -830,7 +878,7 @@ class ScoreApplicationsSerializer(serializers.ModelSerializer):
 
 
 class SampleApplicationsLegacySerializer(serializers.ModelSerializer):
-    phenotype = PhenotypeSerializerScoresCount(many=False,read_only=True)
+    phenotype = PhenotypeOldSerializerScoresCount(many=False,read_only=True)
 
     class Meta:
         model = SampleApplicationsLegacy
@@ -862,18 +910,13 @@ class PlotSerializer(serializers.ModelSerializer):
 #     metabolites = MetaboliteSerializer(many=True, read_only=True)
 #     score_performance = PerformanceLightSerializer(many=True, read_only=True)
 
-#     date_release = serializers.SerializerMethodField('get_date_released')
-
 #     class Meta:
 #         model = Score
 #         meta_fields = ('id', 'name', 'trait_reported', 'trait_reported_id', 'method_name', 'method_params',
-#                        'publication', 'platform', 'score_performance', 'genes', 'transcripts', 'proteins', 'metabolites', #'efos',
-#                        'variants_number', 'variants_interactions', 'variants_genomebuild', 'date_release')
+#                        'publication', 'platform', 'score_performance', 'genes', 'transcripts', 'proteins', 'metabolites',
+#                        'variants_number', 'variants_interactions', 'variants_genomebuild',)
 #         fields = meta_fields
 #         read_only_fields = meta_fields
-
-#     def get_date_released(self, obj):
-#         return obj.date_released
 
 
 # class OmicsScoreSerializer(serializers.ModelSerializer):

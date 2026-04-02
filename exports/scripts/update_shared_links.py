@@ -19,9 +19,9 @@ def rest_api(folder_id:int, dev_token:str, offset:int=0) -> dict:
 def run(*args):
     # Update shared links (score.files_ids) using the Box REST API
 
-    # Run example: python manage.py updated_shared_links --script-args 365934779636 metadata 123456 
-    
-    # Generate dev token: 
+    # Run example: python manage.py runscript update_shared_links --script-args 365934779636 metadata 123456
+
+    # Generate dev token:
     # 1 - Go to https://app.box.com/developers/console
     # 2 - Click on App "OmicsPred - stats"
     # 3 - Click on "Configuration" tab
@@ -63,11 +63,16 @@ def run(*args):
                         try:
                             dataset = Dataset.objects.get(id=dataset_id)
                             files_ids = dataset.files_ids
-                            if file_type not in files_ids.keys():
-                                files_ids[file_type] = file_id
-                                print(f"  > {files_ids}")
-                                dataset.files_ids = files_ids
-                                dataset.save()
+                            status = 'new'
+                            if file_type in files_ids.keys():
+                                if files_ids[file_type] == file_id:
+                                    status = 'same'
+                                else:
+                                    status = 'update'
+                            files_ids[file_type] = file_id
+                            dataset.files_ids = files_ids
+                            dataset.save()
+                            print(f"  > {status}: {files_ids}")
                         except Dataset.DoesNotExist:
                             print(f"!!!!! Dataset {dataset_id} doesn't exist in the DB")
                 else:

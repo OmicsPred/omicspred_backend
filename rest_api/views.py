@@ -19,7 +19,6 @@ opd_length = 9
 opp_prefix = 'OPP'
 opp_length = 9
 
-generic_defer = ['curation_notes']
 
 dataset_publication = ['dataset__publication__id','dataset__publication__title','dataset__publication__doi','dataset__publication__journal','dataset__publication__firstauthor','dataset__publication__pmid','dataset__publication__date_publication']
 
@@ -33,16 +32,15 @@ only_dict = {
 }
 
 defer_dict = {
-    'scores_table_defer': [*generic_defer,'method_name','method_params','variants_interactions','variants_genomebuild','date_released','species','license'],
+    'scores_table_defer': ['method_name','method_params','variants_interactions','variants_genomebuild','species','license'],
     'scores_defer': [
-        *generic_defer,'date_released',
         'dataset__files_ids',
         'dataset__scores_count','dataset__omics_count','dataset__omics_type',
         'dataset__publication__curation_notes',
         'dataset__publication__curation_status',
         'dataset__publication__date_released',
         'dataset__publication__authors'],
-    'publication_defer': [*generic_defer,'curation_status'],
+    'publication_defer': ['curation_notes','curation_status'],
     'publication_applications': [f'publication__{x}' for x in ['doi','journal','firstauthor','authors','title','date_publication']]
 }
 
@@ -99,6 +97,12 @@ related_dict = {
     ],
     'score_search_cohort_validation_via_dataset': [
         Prefetch('dataset__samples_validation', queryset=Sample.objects.only('id','cohorts').all())
+    ],
+    'score_phewas_select': ['score','sample'],
+    'score_phewas': [
+        'score__dataset__publication','score__dataset__tissue','score__dataset__platform',
+        'score__genes','score__proteins','score__metabolites','score__transcripts',
+        'phenotypes','sample__cohorts'
     ],
     'tissue_prefetch': [Prefetch('tissue_dataset',queryset=Dataset.objects.only('id','tissue_id','scores_count').all())],
 }
@@ -974,7 +978,7 @@ class RestListTissues(generics.ListAPIView):
     Endpoint: /api/tissue/all
     """
     serializer_class = TissueSerializerScoresCount
-    queryset = EFO.objects.prefetch_related(*related_dict['tissue_prefetch']).all().order_by('label')
+    queryset = Tissue.objects.prefetch_related(*related_dict['tissue_prefetch']).all().order_by('label')
 
 
 class RestTissue(generics.ListAPIView):
@@ -984,8 +988,8 @@ class RestTissue(generics.ListAPIView):
     """
     def get(self, request, tissue):
         try:
-            queryset = EFO.objects.get(Q(label__iexact=tissue) | Q(id__iexact=tissue))
-        except EFO.DoesNotExist:
+            queryset = Tissue.objects.get(Q(label__iexact=tissue) | Q(id__iexact=tissue))
+        except Tissue.DoesNotExist:
             queryset = None
         serializer = TissueSerializerScoresCount(queryset,many=False)
         return Response(serializer.data)
@@ -1112,7 +1116,7 @@ class RestListScores(generics.ListAPIView):
                                        Q(genes__external_id__iexact=filter_term) | Q(genes__name__iexact=filter_term) |
                                        Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
                                        Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
-                                       Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) | 
+                                       Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) |
                                        Q(dataset__publication__id__iexact=filter_term) | Q(dataset__publication__firstauthor__iexact=filter_term))
         table_filter = self.request.query_params.get('table_filter')
         if table_filter and table_filter is not None:
@@ -1243,7 +1247,7 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = queryset.filter(id__in=opgs_ids_list)
             params += 1
 
-        # Search by Publication ( ID and PubMed ID)
+        # Search by Publication (ID and PubMed ID)
         opp_id = self.request.query_params.get('opp_id')
         if opp_id and opp_id is not None:
             if opp_id.upper().startswith(opp_prefix):
@@ -1336,8 +1340,150 @@ class RestScoreSearch(generics.ListAPIView):
             # # Distinct scores
             # queryset = queryset.distinct('num')
 
-        # Avoid duplicated entries when a cohort is used several times for a score (with different ancestries/samples)
         return queryset
+
+
+class RestScorePheWAS(generics.ListAPIView):
+    """
+    Retrieve all the PheWAS entries associated with a Genetic Score
+    Endpoint: /api/score/phenotype/<opgs_id>
+    """
+    serializer_class = ScorePheWASSerializer
+
+    def get_queryset(self):
+        opgs_id = self.kwargs['opgs_id']
+        opgs_id = opgs_id.upper()
+
+        queryset = ScorePheWAS.objects.select_related(*related_dict['score_phewas_select']).filter(score__id=opgs_id).prefetch_related(*related_dict['score_phewas']).order_by('dataset_id')
+
+        return queryset
+
+
+class RestScorePheWASSearch(generics.ListAPIView):
+    """
+    Search the PheWAS entries using parameters as query
+    Endpoint: /api/score/phenotype/search?<parameter(s)>
+    """
+    serializer_class = ScorePheWASSerializer
+
+    def get_queryset(self):
+
+        queryset = ScorePheWAS.objects.select_related(*related_dict['score_phewas_select']).all().prefetch_related(*related_dict['score_phewas']).order_by('score_id')
+        params = 0
+
+        # Search by list of Score IDs
+        opgs_ids = self.request.query_params.get('opgs_ids')
+        if opgs_ids and opgs_ids is not None:
+            opgs_ids = opgs_ids.upper()
+            opgs_ids_list = opgs_ids.split(',')
+            queryset = queryset.filter(score__id__in=opgs_ids_list)
+            params += 1
+
+        # Search by Publication (ID and PubMed ID)
+        opp_id = self.request.query_params.get('opp_id')
+        if opp_id and opp_id is not None:
+            if opp_id.upper().startswith(opp_prefix):
+                publication_num = get_publication_num(opp_id)
+                queryset = queryset.filter(Q(dataset__publication__num=publication_num))
+            # queryset = queryset.filter(Q(dataset__publication__id__iexact=opp_id))
+            params += 1
+        pmid = self.request.query_params.get('pmid')
+        if pmid and pmid.isnumeric():
+            queryset = queryset.filter(dataset__publication__pmid=pmid)
+            params += 1
+
+        # Search by Platform
+        platform = self.request.query_params.get('platform')
+        if platform and platform is not None:
+            queryset = queryset.filter(dataset__platform__name__iexact=platform)
+            params += 1
+
+        # Search by OmicsPred Dataset ID
+        opd_id = self.request.query_params.get('opd_id')
+        if opd_id and opd_id is not None:
+            dataset_num = get_dataset_num(opd_id)
+            queryset = queryset.filter(dataset__num=dataset_num)
+            # queryset = queryset.filter(dataset__id__iexact=opd_id)
+            params += 1
+
+        # Search by Phenotype ID (EFO)
+        phenotype_id = self.request.query_params.get('phenotype_id')
+        if phenotype_id and phenotype_id is not None:
+            queryset = queryset.filter(phenotypes__id=phenotype_id)
+            params += 1
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
+            params += 1
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            query_filter_list = [ Q(score__genes__external_id__iexact=filter_term), Q(score__genes__name__icontains=filter_term),
+                                  Q(score__proteins__external_id__iexact=filter_term), Q(score__proteins__name__iexact=filter_term),
+                                  Q(score__metabolites__external_id__iexact=filter_term), Q(score__metabolites__name__icontains=filter_term),
+                                  Q(sample__cohorts__name_short__iexact=filter_term)]
+            if not opgs_ids or opgs_ids == None:
+                query_filter_list.extend([Q(score__id__iexact=filter_term), Q(score__name__icontains=filter_term)])
+            if not opp_id or opp_id == None:
+                query_filter_list.extend([Q(dataset__id__iexact=filter_term), Q(dataset__name__iexact=filter_term)])
+            if not phenotype_id or phenotype_id == None:
+                query_filter_list.extend([Q(phenotypes__id__iexact=filter_term), Q(phenotypes__label__icontains=filter_term)])
+            if not platform or platform == None:
+                query_filter_list.extend([Q(dataset__platform__name__iexact=filter_term), Q(dataset__platform__platform_master__type__iexact=filter_term)])
+            queryset = queryset.filter(reduce(operator.or_,query_filter_list))
+
+        if params == 0:
+            queryset = []
+        else:
+            # Sort data + distinct score phewas
+            queryset = sort_data_list(self.request,'score_phewas',queryset,'score_id')
+
+        return queryset
+
+
+## Phenotype ##
+
+class RestListPhenotypes (generics.ListAPIView):
+    """
+    Retrieve all the Phenotypes
+    Endpoint: /api/phenotype/all
+    """
+    serializer_class = PhenotypeSerializerScoresCount
+
+    def get_queryset(self):
+        queryset = Phenotype.objects.all().prefetch_related('phenotype_scores').order_by('label')
+
+        # Filter by list of EFO IDs
+        ids_list = get_ids_list(self)
+        if ids_list:
+            queryset = queryset.filter(id__in=ids_list)
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) | Q(label__icontains=filter_term) |
+                                       Q(category__iexact=filter_term) | Q(label__icontains=filter_term))
+
+        queryset = sort_data_list(self.request,'phenotype',queryset,'label')
+
+        return queryset
+
+
+class RestPhenotype(generics.RetrieveAPIView):
+    """
+    Retrieve the Phenotype information
+    Endpoint: /api/phenotype/<phenotype_id>
+    """
+
+    def get(self, request, phenotype_id):
+        try:
+            queryset = Phenotype.objects.get(id=phenotype_id)
+        except Phenotype.DoesNotExist:
+            queryset = None
+        serializer = PhenotypeSerializerScoresCount(queryset,many=False)
+        return Response(serializer.data)
 
 
 ## Plots ##
@@ -1551,10 +1697,10 @@ class RestPlotScoreSearch(generics.ListAPIView):
 ##################
 applications_db = 'applications'
 
-class RestPhenotype(generics.RetrieveAPIView):
+class RestPhenotypeOld(generics.RetrieveAPIView):
     """
     Retrieve the Phenotype information
-    Endpoint: /api/phenotype/<phenotype_id>
+    Endpoint: /api/phenotype_old/<phenotype_id>
     """
 
     def get(self, request, phenotype_id):
@@ -1564,9 +1710,9 @@ class RestPhenotype(generics.RetrieveAPIView):
         except Phenotype.DoesNotExist:
             queryset = None
         if (param_inc_children and str(param_inc_children)=='1'):
-            serializer = PhenotypeSerializerExtended(queryset,many=False)
+            serializer = PhenotypeOldSerializerExtended(queryset,many=False)
         else:
-            serializer = PhenotypeSerializerScoresCount(queryset,many=False)
+            serializer = PhenotypeOldSerializerScoresCount(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -1720,9 +1866,11 @@ class RestInfo(generics.RetrieveAPIView):
                 'publications': Publication.objects.count(),
                 'platforms': PlatformMaster.objects.count(),
                 'pathways': Pathway.objects.count(),
-                'phenotypes': Phenotype.objects.using(applications_db).count(),
-                'phenotype_associations': ScoreApplications.objects.using(applications_db).count(),
-                'tissues': EFO.objects.filter(type='tissue').count()
+                'phenotypes': Phenotype.objects.count(),
+                'phenotype_associations': ScorePheWAS.objects.count(),
+                # 'phenotypes': PhenotypeOld.objects.using(applications_db).count(),
+                # 'phenotype_associations': ScoreApplications.objects.using(applications_db).count(),
+                'tissues': Tissue.objects.filter(type='tissue').count()
             }
         }
 
