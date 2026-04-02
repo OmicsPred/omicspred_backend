@@ -48,6 +48,7 @@ fields_to_export = {
             {'name': 'method_params', 'label': 'Development Details/Relevant Parameters'},
             {'name': 'variants_genomebuild', 'label': 'Original Genome Build'},
             {'name': 'variants_number', 'label': 'Number of Variants'},
+            {'name': 'phi', 'label': 'Phi', 'skip_auto_import': True},
             {'name': 'genes__external_id', 'label': 'Gene ID(s)', 'skip_auto_import': True},
             {'name': 'genes__name', 'label': 'Gene name(s)', 'skip_auto_import': True},
             {'name': 'proteins__external_id', 'label': 'Protein ID(s)', 'skip_auto_import': True},
@@ -89,6 +90,7 @@ fields_to_export = {
 
 dataset_files = [ x['name'] for x in fields_to_export['Dataset'] if x['name'].startswith('file_url_')]
 
+print_prefix = '  > '
 
 #-----------------#
 # Class OPExport #
@@ -174,11 +176,11 @@ class OPExport:
             try:
                 data = self.spreadsheets_conf[spreadsheet_name][1]()
                 self.generate_sheet(data, spreadsheet_label)
-                print("Spreadsheet '"+spreadsheet_label+"' done")
+                print(f"{print_prefix}Spreadsheet '{spreadsheet_label}' done")
                 # self.generate_csv(data, csv_prefix, spreadsheet_name, spreadsheet_label)
                 # print("CSV '"+spreadsheet_label+"' done")
             except Exception as e:
-                print(f'Issue to generate the spreadsheet "{spreadsheet_label}"\n> {e}')
+                print(f"{print_prefix}Issue to generate the spreadsheet '{spreadsheet_label}'\n> {e}")
                 exit()
 
 
@@ -190,9 +192,9 @@ class OPExport:
             # Convert the dataframe to an XlsxWriter Excel object.
             df.to_excel(self.writer, index=False, sheet_name=sheet_label)
         except NameError:
-            print("Spreadsheet generation: At least one of the variables is not defined")
+            print(f"{print_prefix}Spreadsheet generation: At least one of the variables is not defined")
         except Exception as e:
-            print(f'Spreadsheet generation: There is an issue with the data of the spreadsheet "{sheet_label}"\n> {e}')
+            print(f"{print_prefix}Spreadsheet generation: There is an issue with the data of the spreadsheet '{sheet_label}'\n> {e}")
 
 
     def generate_csv(self, data, prefix, sheet_name, sheet_label):

@@ -1,5 +1,6 @@
 
 # Metadata exports
+metadata_exports_publication_id = '<publication_id, e.g. 1>'
 metadata_exports_dir = '<path_to_directory>'
 
 

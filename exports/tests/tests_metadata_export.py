@@ -4,7 +4,7 @@ import pandas as pd
 from django.test import TestCase
 from omicspred.models import *
 from exports.metadata_build_export import MetadataExport
-from exports.tests.config import metadata_exports_dir
+from exports.tests.config import metadata_exports_dir,metadata_exports_publication_id, sqlite_exports_dir
 
 
 class ExportMetadataTest(TestCase):
@@ -19,8 +19,8 @@ class ExportMetadataTest(TestCase):
 
     current_dir = os.getcwd()
     output_export_dir = metadata_exports_dir
-    data_export_dir = current_dir+'/exports/tests/data/'
-    output_filepath = f'{output_export_dir}{filename}'
+    data_export_dir = current_dir+'/exports/tests/data'
+    output_filepath = f'{output_export_dir}/{filename}'
     # Remove output metadata file before creating it again
     if os.path.isdir(output_export_dir):
         if os.path.isfile(output_filepath):
@@ -53,7 +53,7 @@ class ExportMetadataTest(TestCase):
     def check_spreadsheets(self):
         ''' Check file spreadsheets '''
         print(f' - Check content of {self.filename}')
-        ref_filepath = f'{self.data_export_dir}{self.filename}'
+        ref_filepath = f'{self.data_export_dir}/{self.filename}'
         for sp_name in self.spreadsheets:
             print(f'   > Check spreadsheet {sp_name}')
             df_test = pd.read_excel(self.output_filepath, sheet_name=sp_name, index_col=0)
@@ -66,9 +66,9 @@ class ExportMetadataTest(TestCase):
 
     def test_metadata_export(self):
         print("# Test Metadata export")
-        datasets = Dataset.objects.all().order_by('num')
+        datasets = Dataset.objects.filter(publication_id=metadata_exports_publication_id).order_by('num')
         dataset = datasets[0]
-        metadata2export = MetadataExport(self.output_export_dir,dataset)
+        metadata2export = MetadataExport(self.output_export_dir,sqlite_exports_dir, dataset)
         metadata2export.generate_metadata()
 
         self.check_file()

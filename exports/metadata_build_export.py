@@ -1,4 +1,5 @@
-
+import os
+import sqlite3
 from datetime import date
 from omicspred.models import *
 from exports.exports import OPExport, fields_to_export, dataset_files
@@ -9,25 +10,31 @@ class MetadataExport:
     file_url_prefix = 'https://app.box.com/s/'
     nested_attr_sep = '__'
 
-    def __init__(self, exports_dir:str, dataset:Dataset):
+    def __init__(self, exports_dir:str, sqlite_dir:str, dataset:Dataset):
         self.dataset = dataset
         self.dataset_id = dataset.id
-        self.data = { 
+        self.sqlite_dir = sqlite_dir
+        self.data = {
             'dataset': self.get_data_attr(self.dataset,'Dataset'),
             'publication': self.get_data_attr(self.dataset.publication,'Publication'),
             'scores': [],
             'performances': [],
             'cohorts': []
         }
-        
-        self.filename = f'{exports_dir}/{self.dataset_id}_metadata.xlsx'
-        # self.ancestry_categories = ancestry_categories
-        # self.writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+        self.phi_values = {}
+        self.phi_values_keys = []
 
-        # # Order of the spreadsheets
-        # self.spreadsheets_list = [
-        #     'publication', 'dataset', 'scores', 'sample_perf', 'cohorts'
-        # ]
+        # Find corresponding SQLite file
+        self.sqlite_file = None
+        for s_file in os.listdir(sqlite_dir):
+            if s_file.startswith(dataset.id) and s_file.endswith('.db'):
+                self.sqlite_file = (s_file)
+                break
+        if not self.sqlite_file:
+            print(f"ERROR: Can't find a SQLite file for the dataset {dataset.id} in {sqlite_dir}")
+            exit()
+
+        self.filename = f'{exports_dir}/{self.dataset_id}_metadata.xlsx'
 
 
     def get_data_attr(self, model:object, model_type:str)-> dict:
@@ -65,18 +72,23 @@ class MetadataExport:
         for field in mt_dict.keys():
             score_data[f'{mt_type}__{field}'] = ','.join(mt_dict[field])
         return score_data
-    
+
 
     def build_score_metadata(self, score:Score):
         # Prepare score data
         score_data = self.get_data_attr(score,'Score')
+        # Phi value
+        if score.id in self.phi_values_keys:
+            score_data['phi'] = self.phi_values[score.id]
+        else:
+            score_data['phi'] = None
         # Genes
         score_data = self.get_molecular_traits(score.genes.all(),'genes',score_data)
         # Proteins
         score_data = self.get_molecular_traits(score.proteins.all(),'proteins',score_data)
         # Metabolites
         score_data = self.get_molecular_traits(score.metabolites.all(),'metabolites',score_data)
-            
+
         self.data['scores'].append(score_data)
 
 
@@ -117,7 +129,7 @@ class MetadataExport:
                 sample_perf_data[md] = metrics_data[md]
 
             self.data['performances'].append(sample_perf_data)
-    
+
 
     def build_cohort_metadata(self) -> None:
         cohorts_names = set()
@@ -150,7 +162,22 @@ class MetadataExport:
         for dataset_file_key in dataset_files:
             if dataset_file_key not in found_file_export:
                 self.data['dataset'][dataset_file_key] = None
-        
+
+
+    def fetch_phi_values_from_sqlite(self) -> None:
+        print("  > Fetch SQLite 'phi' values")
+        try:
+            con = sqlite3.connect(f'{self.sqlite_dir}/{self.sqlite_file}')
+            cur = con.cursor()
+            cur.execute("SELECT gene, phi FROM extra ORDER BY gene")
+            data_table = cur.fetchall()
+            cur.close()
+            con.close()
+            for row in data_table:
+                self.phi_values[row[0]] = row[1]
+        except:
+            print("  > No 'phi' values in SQLite file!")
+        self.phi_values_keys = self.phi_values.keys()
 
 
     ##############################################################################
@@ -160,9 +187,12 @@ class MetadataExport:
         self.data['dataset'] = self.get_data_attr(self.dataset,'Dataset')
         self.data['publication'] = self.get_data_attr(self.dataset.publication,'Publication')
 
+        # Fetch phi values from the SQLite export
+        self.fetch_phi_values_from_sqlite()
+
         # Add file urls to the dataset
         self.add_dataset_file_urls()
-        
+
         # Build the cohort metadata
         self.build_cohort_metadata()
 
