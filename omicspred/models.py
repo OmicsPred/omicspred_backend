@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.postgres.fields import DecimalRangeField
 from datetime import datetime
 
 
@@ -129,7 +130,7 @@ class Platform(models.Model):
         return total_count
 
 
-class EFO(models.Model):
+class Tissue(models.Model):
     """ Class to store Tissue/Trait Ontology entries """
     id = models.CharField('Ontology ID', max_length=30, primary_key=True)
     label = models.CharField('Ontology Label', max_length=500, db_index=True)
@@ -156,8 +157,8 @@ class Sample(models.Model):
 
     ## Numbers
     sample_number = models.IntegerField('Number of Individuals', null=True)
-    # sample_cases = models.IntegerField('Number of Cases', null=True)
-    # sample_controls = models.IntegerField('Number of Controls', null=True)
+    sample_cases = models.IntegerField('Number of Cases', null=True)
+    sample_controls = models.IntegerField('Number of Controls', null=True)
     sample_percent_male = models.FloatField('Percent of Participants Who are Male', validators=[MinValueValidator(0), MaxValueValidator(100)], null=True)
     sample_age = models.FloatField('Sample Age', null=True)
     sample_age_sd = models.FloatField('Mean standard deviation of Age', null=True)
@@ -176,7 +177,7 @@ class Sample(models.Model):
     cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohorts_sample')
     cohorts_additional = models.TextField('Additional Sample/Cohort Information', null=True)
 
-    curation_notes = models.TextField('Curation Notes', default='')
+    # curation_notes = models.TextField('Curation Notes', default='')
 
     def __str__(self):
         s = 'Sample {}'.format(str(self.pk))
@@ -307,8 +308,9 @@ class Dataset(models.Model):
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
     method_name = models.TextField('Score Development Method')
-    tissue = models.ForeignKey(EFO, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # EFO trait defining the sampled tissue
+    tissue = models.ForeignKey(Tissue, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # Tissue trait defining the sampled tissue
     scores_count = models.IntegerField('Associated Scores count', null=False)
+    phenotypes_count = models.IntegerField('Associated Phenotypes count', default=0)
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
     samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_dataset')
     samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_dataset')
@@ -464,10 +466,6 @@ class Score(models.Model):
     variants_number = models.IntegerField('Number of Variants', validators=[MinValueValidator(1)])
     variants_interactions = models.IntegerField('Number of Interaction Terms', default=0)
     variants_genomebuild = models.CharField('Original Genome Build', max_length=10, default='NR')
-
-    # Curation/release information
-    date_released = models.DateField('OmicsPred Release Date', null=True)
-    curation_notes = models.TextField('Curation Notes', default='')
 
     # Links to related models
     dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_score', verbose_name='Dataset')
@@ -685,3 +683,81 @@ class Metric(models.Model):
         else:
             new_value = round(value, 5)
         return new_value
+
+
+class Phenotype(models.Model):
+    """ Class for individual Phenotype entry """
+    # Phenotype/Trait identifiers
+    id = models.CharField('Phenotype ID', max_length=30, primary_key=True)
+    label = models.CharField('Phenotype Label', max_length=150, null=False)
+    description = models.TextField('Phenotype Description', null=True)
+    category = models.CharField('Phenotype Category', max_length=100, null=False)
+    url = models.CharField('Ontology URL', max_length=500)
+    source = models.CharField('Phenotype Source', max_length=100, null=True)
+    mapped_phecode =  models.TextField('PheCode ID(s) mapped to this Trait', null=True)
+    child_phenotype = models.ManyToManyField('self', verbose_name='Children Phenotype', symmetrical=False, related_name='parent_phenotype')
+
+    @property
+    def scores_count(self):
+        return self.phenotype_scores.count()
+
+    @property
+    def mapped_phecodes_list(self):
+        if self.mapped_phecode:
+            return self.mapped_phecode.split(' | ')
+        else:
+            return []
+
+
+class ScorePheWAS(models.Model):
+    """ Class to hold Score PheWAS values """
+    score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_phewas') # Score that the PheWAS data are associated with
+    sample = models.ForeignKey(Sample, on_delete=models.PROTECT, verbose_name='Performance Sample', related_name='sample_score_phewas') # Sample that is associated with
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_phenotype', verbose_name='Dataset')
+
+    STUDY_TYPE_CHOICES = [
+        ('imputed', "imputed"),
+        ('summary', "summary")
+    ]
+    study_type = models.CharField(max_length=40,
+        choices=STUDY_TYPE_CHOICES,
+        default='imputed',
+        db_index=True
+    )
+
+    # Phenotype information
+    phenotypes = models.ManyToManyField(Phenotype, related_name='phenotype_scores', verbose_name='Phenotype(s)')
+
+    # Trait information
+    trait_reported = models.TextField('Reported Trait', null=True)
+
+    # Ancestry distribution
+    ancestry = models.JSONField('Ancestry distribution', null=True)
+
+    # Values
+    r2 = models.FloatField(verbose_name='R2', null=True)
+    hr = models.FloatField(verbose_name='Hazard Ratio', null=True)
+    hr_ci = DecimalRangeField(verbose_name='Hazard Ratio Confidence Interval', null=True)
+    fdr = models.FloatField(verbose_name='FDR adjusted P-value', null=True)
+    zscore = models.FloatField(verbose_name='Standard score (z-score)', null=True)
+    pvalue = models.FloatField(verbose_name='P-value', null=True)
+    bonferroni = models.FloatField(verbose_name='Bonferroni', null=True)
+    effect_size = models.FloatField(verbose_name='Effect size (gene)', null=True)
+    var_gene_exp = models.FloatField(verbose_name='Gene expression variance', null=True)
+    variants_number_used = models.IntegerField(verbose_name='Number of variants used', null=True)
+    variants_fraction_found = models.FloatField(verbose_name='Fraction of variants found', null=True)
+
+    @property
+    def values_dict(self):
+        return {
+            'R2': self.r2,
+            'HR': self.hr,
+            'HR_lower': float(self.hr_ci.lower) if self.hr_ci != None else None,
+            'HR_upper': float(self.hr_ci.upper) if self.hr_ci != None else None,
+            'FDR': self.fdr,
+            'z-score': self.zscore,
+            'p-value': self.pvalue,
+            'bonferroni': self.bonferroni,
+            'effect_size': self.effect_size,
+            'var_gene_exp': self.var_gene_exp
+        }

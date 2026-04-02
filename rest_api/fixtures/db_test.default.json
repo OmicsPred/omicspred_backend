@@ -162,7 +162,7 @@
         }
     },
     {
-        "model": "omicspred.EFO",
+        "model": "omicspred.Tissue",
         "pk": "UBERON_0001969",
         "fields": {
             "label": "blood plasma",
@@ -172,7 +172,7 @@
         }
     },
     {
-        "model": "omicspred.EFO",
+        "model": "omicspred.Tissue",
         "pk": "BTO_0000133",
         "fields": {
             "label": "blood serum",
@@ -384,7 +384,6 @@
             "variants_number": 8,
             "variants_interactions": 0,
             "variants_genomebuild": "GRCh37",
-            "date_released": "2023-03-29",
             "comment": null,
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "species_id": 9606,
@@ -409,7 +408,6 @@
             "variants_number": 134,
             "variants_interactions": 0,
             "variants_genomebuild": "GRCh37",
-            "date_released": "2023-03-29",
             "comment": "Model extracted as-is from the paper",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "species_id": 9606,
@@ -434,7 +432,6 @@
             "variants_number": 19,
             "variants_interactions": 0,
             "variants_genomebuild": "GRCh37",
-            "date_released": "2023-03-29",
             "comment": "Model extracted as-is from the paper",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "species_id": 9606,
@@ -459,7 +456,6 @@
             "variants_number": 164,
             "variants_interactions": 0,
             "variants_genomebuild": "GRCh37",
-            "date_released": "2023-03-29",
             "comment": null,
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "species_id": 9606,

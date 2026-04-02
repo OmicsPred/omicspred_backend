@@ -1,4 +1,4 @@
-file_loc = '<path_to_metadata_spreadsheet_file'
+file_loc = '<path_to_metadata_spreadsheet_file>'
 
 dataset_prefix = '<dataset_prefix_if_needed>'
 
@@ -14,3 +14,8 @@ platform_types = {
     'RNAseq - Splicing': 'Transcriptomics',
     'Somalogic': 'Proteomics',
 }
+
+# Phenotype imports
+phenotype_publication_id = '<publication_id>' # e.g. 1
+phenotype_csv_dir = '<path_to_phenotype_files_directory>'
+efo_sqlite_filepath = '<path_to_efo_sqlite_db>' # cf. script 'create_efo_db.py'
