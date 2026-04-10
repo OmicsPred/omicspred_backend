@@ -727,22 +727,22 @@ class ScorePerformanceTranscriptSerializer(ScorePerformanceMolecularTraitSeriali
 ###################
 
 class PhenotypeSerializer(serializers.ModelSerializer):
+    category = serializers.SerializerMethodField('get_categories')
     class Meta:
         model = Phenotype
         meta_fields = ('id', 'label', 'description', 'category', 'url')
         fields = meta_fields
         read_only_fields = meta_fields
 
+    def get_categories(self, obj):
+        return obj.categories_list
+
 
 class PhenotypeSerializerExtended(PhenotypeSerializer):
-    mapped_phecodes = serializers.SerializerMethodField('get_mapped_phecodes')
     class Meta(PhenotypeSerializer.Meta):
-        meta_fields = ('mapped_phecodes',)
+        meta_fields = ('traits_reported',)
         fields = PhenotypeSerializer.Meta.fields + meta_fields
         read_only_fields = PhenotypeSerializer.Meta.read_only_fields + meta_fields
-
-    def get_mapped_phecodes(self, obj):
-        return obj.mapped_phecodes_list
 
 
 class PhenotypeSerializerScoresCount(PhenotypeSerializerExtended):
@@ -755,12 +755,13 @@ class PhenotypeSerializerScoresCount(PhenotypeSerializerExtended):
 class ScorePheWASSerializer(serializers.ModelSerializer):
     score = ScoreLightSerializer(many=False,read_only=True)
     phenotypes = PhenotypeSerializer(many=True,read_only=True)
-    sample = SampleSerializer(many=False,read_only=True)
+    # sample = SampleSerializer(many=False,read_only=True)
+    samples = SampleSerializer(many=True,read_only=True)
     data_values = serializers.SerializerMethodField('get_data_values')
 
     class Meta:
         model = ScorePheWAS
-        meta_fields = ('score', 'phenotypes','sample','trait_reported', 'ancestry',
+        meta_fields = ('score','phenotypes','samples','trait_reported','method_name','ancestry',
                        'data_values','variants_number_used','variants_fraction_found')
         fields = meta_fields
         read_only_fields = meta_fields

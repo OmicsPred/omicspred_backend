@@ -98,11 +98,11 @@ related_dict = {
     'score_search_cohort_validation_via_dataset': [
         Prefetch('dataset__samples_validation', queryset=Sample.objects.only('id','cohorts').all())
     ],
-    'score_phewas_select': ['score','sample'],
+    'score_phewas_select': ['score'],
     'score_phewas': [
         'score__dataset__publication','score__dataset__tissue','score__dataset__platform',
         'score__genes','score__proteins','score__metabolites','score__transcripts',
-        'phenotypes','sample__cohorts'
+        'phenotypes','samples','samples__cohorts'
     ],
     'tissue_prefetch': [Prefetch('tissue_dataset',queryset=Dataset.objects.only('id','tissue_id','scores_count').all())],
 }
