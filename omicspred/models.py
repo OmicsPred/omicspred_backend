@@ -694,7 +694,7 @@ class Phenotype(models.Model):
     category = models.CharField('Phenotype Category', max_length=100, null=False)
     url = models.CharField('Ontology URL', max_length=500)
     source = models.CharField('Phenotype Source', max_length=100, null=True)
-    mapped_phecode =  models.TextField('PheCode ID(s) mapped to this Trait', null=True)
+    traits_reported = models.JSONField('Reported/mapped traits', null=True)
     child_phenotype = models.ManyToManyField('self', verbose_name='Children Phenotype', symmetrical=False, related_name='parent_phenotype')
 
     @property
@@ -702,9 +702,9 @@ class Phenotype(models.Model):
         return self.phenotype_scores.count()
 
     @property
-    def mapped_phecodes_list(self):
-        if self.mapped_phecode:
-            return self.mapped_phecode.split(' | ')
+    def categories_list(self):
+        if self.category:
+            return self.category.split(' | ')
         else:
             return []
 
@@ -712,7 +712,6 @@ class Phenotype(models.Model):
 class ScorePheWAS(models.Model):
     """ Class to hold Score PheWAS values """
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_phewas') # Score that the PheWAS data are associated with
-    sample = models.ForeignKey(Sample, on_delete=models.PROTECT, verbose_name='Performance Sample', related_name='sample_score_phewas') # Sample that is associated with
     dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_phenotype', verbose_name='Dataset')
 
     STUDY_TYPE_CHOICES = [
@@ -724,6 +723,12 @@ class ScorePheWAS(models.Model):
         default='imputed',
         db_index=True
     )
+
+    # Method
+    method_name = models.TextField('PheWAS Method', null=True)
+
+    # Sample information
+    samples = models.ManyToManyField(Sample, related_name='sample_scores', verbose_name='Sample(s)')
 
     # Phenotype information
     phenotypes = models.ManyToManyField(Phenotype, related_name='phenotype_scores', verbose_name='Phenotype(s)')
@@ -738,12 +743,12 @@ class ScorePheWAS(models.Model):
     r2 = models.FloatField(verbose_name='R2', null=True)
     hr = models.FloatField(verbose_name='Hazard Ratio', null=True)
     hr_ci = DecimalRangeField(verbose_name='Hazard Ratio Confidence Interval', null=True)
-    fdr = models.FloatField(verbose_name='FDR adjusted P-value', null=True)
+    fdr = models.FloatField(verbose_name='FDR adjusted p-value', null=True)
     zscore = models.FloatField(verbose_name='Standard score (z-score)', null=True)
     pvalue = models.FloatField(verbose_name='P-value', null=True)
-    bonferroni = models.FloatField(verbose_name='Bonferroni', null=True)
+    bonferroni = models.FloatField(verbose_name='Bonferroni adjusted p-value', null=True)
     effect_size = models.FloatField(verbose_name='Effect size (gene)', null=True)
-    var_gene_exp = models.FloatField(verbose_name='Gene expression variance', null=True)
+    var_gene_exp = models.FloatField(verbose_name='Variance of the gene expression', null=True)
     variants_number_used = models.IntegerField(verbose_name='Number of variants used', null=True)
     variants_fraction_found = models.FloatField(verbose_name='Fraction of variants found', null=True)
 

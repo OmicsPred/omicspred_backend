@@ -3,7 +3,7 @@ servers:
   - url: https://rest.omicspred.org/
 info:
   title: 'OmicsPred REST API'
-  version: '1.1.3'
+  version: '1.2.0'
   description: |
     Programmatic access to the OmicsPred metadata.
 
@@ -69,6 +69,11 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
+      * <span class="badge badge-pill">1.2.0</span> - Mai 2026:
+        * Refactor the Phenotype endpoints (`/api/phenotype/`), due to a change in the phenotype data structure.
+        * New PheWAS endpoints (`/api/score/phenotype/`), replacing the Score Applications endpoints (`/api/applications_score/`), due to a change in the phewas data structure.
+
+
       * <span class="badge badge-pill">1.1.3</span> - February 2026:
         * New field **name** in the Omics schemas (`/api/transcriptomics/`, `/api/proteomics/` and /api/metabolomics/` endpoints), containing the score name.
         * New field **datasets** in the Info schemas (`/api/info/` endpoint), containing the number of datasets in OmicsPred.
@@ -123,7 +128,9 @@ tags:
   - name: "Publication endpoints"
     description: Publication metadata (PubMed IDs, doi, authors, associated platforms, ...)
   - name: "Phenotype endpoints"
-    description: Phenotype metadata (Phenotype [ID, label, description, ...],Linked genetic Scores, ...)
+    description: Phenotype ontology information (ID, label, description, ...)
+  - name: "PheWAS endpoints"
+    description: PheWAS data (Genetic Score, Phenotypes, Samples, performance values, ...)
   - name: "Performance Metrics endpoints"
     description: Performance metrics metadata (R2, Rho, p-value, Missing Rate, ...) with linked scores, publications, samples and cohorts
   - name: "Dataset endpoints"
@@ -142,6 +149,8 @@ tags:
     description: "Pathway metadata (Reactome)"
   - name: "Other endpoints"
     description: "Extra endpoints: **/api/info** (REST API version, data counts, ...)"
+  - name: "Phenotype [old] endpoints"
+    description: Old Phenotype metadata (Phenotype [ID, label, description, ...],Linked genetic Scores, ...)
 
 
 components:
@@ -263,7 +272,7 @@ components:
           $ref: '#/components/schemas/Platform'
         scores_count:
           type: integer
-          description: "Number of scores linked with the platform"
+          description: "Number of scores linked to the dataset"
           example: 2384
         omics_type:
           type: string
@@ -271,8 +280,12 @@ components:
           example: "protein"
         omics_count:
           type: integer
-          description: "Number of molecular trait detected by the platform"
+          description: "Number of molecular traits detected in the dataset"
           example: 2384
+        phenotypes_count:
+          type: integer
+          description: "Number of PheWAS entries linked to the Genetic Scores from the dataset."
+          example: 18453
         method_name:
           type: string
           description: "The name or description of the method or computational algorithm used to develop the PGS."
@@ -495,25 +508,6 @@ components:
           example: 2.66e-77
 
 
-    #  Molecular Trait #
-    # MolecularTraitApplications:
-    #   description: "Structure containing information about a molecular trait (gene,transcript,protein,metabolite)."
-    #   type: object
-    #   properties:
-    #     name:
-    #       type: string
-    #       description: "Protein name"
-    #       example: "Serpin A12"
-    #     external_id:
-    #       type: string
-    #       description: "Protein ID"
-    #       example: "Q8IW75"
-    #     type:
-    #       type: string
-    #       description: "Type of molecular trait"
-    #       example: "protein"
-
-
     # Pagination #
     Pagination:
       type: object
@@ -658,40 +652,56 @@ components:
     # Phenotype #
     Phenotype:
       type: object
-      description: "Structure containing information about a Phenotype."
+      description: "Structure containing information about a Phenotype. Mainly extracted from the EMBL-EBI Ontology Lookup Service (OLS)."
       properties:
         id:
           type: string
-          description: "Phenotype ID"
-          example: "250.2"
-        name:
+          description: "Phenotype ID that links to an Ontology (e.g. EFO)"
+          example: "MONDO_0005344"
+        label:
           type: string
-          description: "Phenotype name"
-          example: "Type 2 diabetes"
+          description: "Phenotype name/label"
+          example: "hepatitis B virus infection"
         category:
+          type: array
+          description: "List of phenotype categories (based on GWAS Catalog trait categories)."
+          items:
+            type: string
+            example: "Immune system disorder"
+        url:
           type: string
-          description: "Phenotype category"
-          example: "endocrine/metabolic"
-        source:
-          type: string
-          description: "Phenotype source"
-          example: "PheCode"
-        scores_count:
-          type: integer
-          description: "Number of scores linked with the phenotype."
-          example: 10
+          description: "External link to the Ontology entry"
+          example: "http://purl.obolibrary.org/obo/MONDO_0005344"
 
     Phenotype_extended:
-      description: "Based on the **Phenotype** schema, with the addition of the '**child_phenotype**'."
+      description: "Based on the **Phenotype** schema, with the addition of **source** and '**traits_reported**'."
       allOf:
         - $ref: '#/components/schemas/Phenotype'
         - type: object
           properties:
-            child_phenotype:
+            source:
+              type: string
+              description: "Phenotype source"
+              example: "EFO"
+            traits_reported:
               type: array
-              description: "List of child phenotype(s)."
+              description: "List of reported traits"
               items:
-                $ref: '#/components/schemas/Phenotype'
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "70.2"
+                  label:
+                    type: string
+                    example: "Viral hepatitis B"
+                  source:
+                    type: string
+                    example: "PheCode"
+            scores_count:
+              type: integer
+              description: "Number of scores linked with the Phenotype entry."
+              example: 6
 
     PhenotypeScoresCount:
       description: "Based on the **Phenotype** schema, with the addition of the '**scores_count**'."
@@ -861,6 +871,14 @@ components:
           type: integer
           description: "Number of participants in the sample"
           example: 1043
+        sample_cases:
+          type: integer
+          description: "Number of cases participants in the sample"
+          example: 284
+        sample_controls:
+          type: integer
+          description: "Number of controls participants in the sample"
+          example: 759
         sample_age:
           type: integer
           description: "Mean age in the sample population"
@@ -910,37 +928,6 @@ components:
           type: string
           description: "Any additional description about the samples and what they were used for that is not captured by the structured categories (e.g. sub-cohort information)."
           example: "Phase 1"
-
-
-    # Sample Applications #
-    SampleApplications:
-      type: object
-      description: "Structure containing information about a SampleAppliction."
-      properties:
-        sample_number:
-          type: integer
-          description: "Number of participants in the sample"
-          example: 403874
-        sample_cases:
-          type: integer
-          description: "Number of cases in the sample"
-          example: 723
-        sample_controls:
-          type: integer
-          description: "Number of controls in the sample"
-          example: 403151
-        sample_percent_female:
-          type: number
-          description: "Percentage of female participants"
-          example: 54.0
-        sample_age:
-          type: integer
-          description: "Mean age in the sample population"
-          example: 53.8
-        sample_age_sd:
-          type: integer
-          description: "Standard deviation of the mean age in the sample population"
-          example: 8.01
 
 
     # Score #
@@ -1107,23 +1094,31 @@ components:
               items:
                 $ref: '#/components/schemas/Metabolite_extended'
 
-    # Score Applications #
-    ScoreApplications:
+    # Score PheWAS #
+    ScorePheWAS:
       type: object
-      description: "Structure containing ScoreApplications information (Score + Phenotype)."
+      description: "Structure containing PheWAS information (Score + Phenotype)."
       properties:
-        score_id:
+        score:
+          $ref: '#/components/schemas/Score'
+        phenotypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Phenotype'
+        samples:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+        trait_reported:
           type: string
-          description: "OmicsPred Score ID"
-          example: "OPGS002402"
-        phenotype:
-          $ref: '#/components/schemas/Phenotype'
-        platform:
-          $ref: '#/components/schemas/Platform'
-        sample:
-          $ref: '#/components/schemas/SampleApplications'
-        cohort:
-          $ref: '#/components/schemas/Cohort'
+          description: "The reported phenotype linked to the genetic score"
+          example: "Cardiomyopathy (PheCode 425)"
+        method_name:
+          type: string
+          description: "Method used to generate the PheWAS"
+          example: "S-PrediXcan"
+        ancestry:
+          $ref: '#/components/schemas/Ancestry'
         data_values:
           type: object
           description: "Measurements of the association between the Score and Phenotype."
@@ -1146,24 +1141,36 @@ components:
               example: 1.19,
             FDR:
               type: number
-              description: "False Discovery Rate adjusted P-value"
+              description: "False Discovery Rate adjusted p-value"
               example: 0.0404
-        genes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Gene_basic'
-        proteins:
-          type: array
-          items:
-            $ref: '#/components/schemas/Protein_basic'
-        metabolites:
-          type: array
-          items:
-            $ref: '#/components/schemas/Metabolite_basic'
-        # molecular_traits:
-        #   type: array
-        #   items:
-        #     $ref: '#/components/schemas/MolecularTraitApplications'
+            z-score:
+              type: number
+              description: "z-score (or standard score)"
+              example: 4.406
+            p-value:
+              type: number
+              description: "p-value"
+              example: 1.05e-05
+            bonferroni:
+              type: number
+              description: "Bonferroni adjusted p-value"
+              example: 0.0236
+            effect_size:
+              type: number
+              description: "Effect Size"
+              example: 0.0409
+            var_gene_exp:
+              type: number
+              description: "Represents the estimated variance of the genetically predicted gene expression (or splicing)"
+              example: 0.162
+        variants_number_used:
+          type: number
+          description: "Number of variants from the Genetic Score used/retained to calculated the phenotype association"
+          example: 164
+        variants_fraction_found:
+          type: number
+          description: "Fraction of the variants from the Genetic Score used/retained to calculated the phenotype association"
+          example: 164
 
 
     # Score - Molecular Trait #
@@ -1230,27 +1237,7 @@ components:
           type: string
           description: "Source of the Pathway ID"
           example: "Reactome"
-        # synonyms:
-        #   type: array
-        #   description: "Pathway synonym(s)"
-        #   items:
-        #     type: object
-        #     properties:
-        #       name:
-        #         type: string
-        #         example: "disease"
-        # xrefs:
-        #   type: array
-        #   description: "Pathway external reference(s)"
-        #   items:
-        #     type: object
-        #     properties:
-        #       name:
-        #         type: string
-        #         example: "DOID:4"
-        #       source:
-        #         type: string
-        #         example: "Human Disease Ontology"
+
 
     # Tissue #
     Tissue:
@@ -1307,6 +1294,148 @@ components:
           type: string
           description: "Source of the Transcript ID"
           example: "Ensembl"
+
+
+
+    ####### DEPRECATED ########
+    # Phenotype old #
+    PhenotypeOld:
+      type: object
+      description: "Structure containing information about a Phenotype."
+      properties:
+        id:
+          type: string
+          description: "Phenotype ID"
+          example: "250.2"
+        name:
+          type: string
+          description: "Phenotype name"
+          example: "Type 2 diabetes"
+        category:
+          type: string
+          description: "Phenotype category"
+          example: "endocrine/metabolic"
+        source:
+          type: string
+          description: "Phenotype source"
+          example: "PheCode"
+        scores_count:
+          type: integer
+          description: "Number of scores linked with the phenotype."
+          example: 10
+
+    PhenotypeOld_extended:
+      description: "Based on the **Phenotype** schema, with the addition of the '**child_phenotype**'."
+      allOf:
+        - $ref: '#/components/schemas/Phenotype'
+        - type: object
+          properties:
+            child_phenotype:
+              type: array
+              description: "List of child phenotype(s)."
+              items:
+                $ref: '#/components/schemas/Phenotype'
+
+    PhenotypeScoresCountOld:
+      description: "Based on the **Phenotype** schema, with the addition of the '**scores_count**'."
+      allOf:
+        - $ref: '#/components/schemas/Phenotype'
+        - type: object
+          properties:
+            scores_count:
+              type: integer
+              description: "Number of scores linked with the Phenotype entry."
+              example: 6
+
+
+    # Sample Applications #
+    SampleApplications:
+      type: object
+      description: "Structure containing information about a SampleAppliction."
+      properties:
+        sample_number:
+          type: integer
+          description: "Number of participants in the sample"
+          example: 403874
+        sample_cases:
+          type: integer
+          description: "Number of cases in the sample"
+          example: 723
+        sample_controls:
+          type: integer
+          description: "Number of controls in the sample"
+          example: 403151
+        sample_percent_female:
+          type: number
+          description: "Percentage of female participants"
+          example: 54.0
+        sample_age:
+          type: integer
+          description: "Mean age in the sample population"
+          example: 53.8
+        sample_age_sd:
+          type: integer
+          description: "Standard deviation of the mean age in the sample population"
+          example: 8.01
+
+
+    # Score Applications #
+    ScoreApplications:
+      type: object
+      description: "Structure containing ScoreApplications information (Score + Phenotype)."
+      properties:
+        score_id:
+          type: string
+          description: "OmicsPred Score ID"
+          example: "OPGS002402"
+        phenotype:
+          $ref: '#/components/schemas/Phenotype'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        sample:
+          $ref: '#/components/schemas/SampleApplications'
+        cohort:
+          $ref: '#/components/schemas/Cohort'
+        data_values:
+          type: object
+          description: "Measurements of the association between the Score and Phenotype."
+          properties:
+            # R2:
+            #    type: number
+            #    description: "Coefficient of determination"
+            #    example: 0.269
+            HR:
+              type: number
+              description: "Hazard Ratio"
+              example: 1.13,
+            HR_lower:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Lower"
+              example: 1.07,
+            HR_upper:
+              type: number
+              description: "Hazard Ratio - Confidence interval - Upper"
+              example: 1.19,
+            FDR:
+              type: number
+              description: "False Discovery Rate adjusted P-value"
+              example: 0.0404
+        genes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gene_basic'
+        proteins:
+          type: array
+          items:
+            $ref: '#/components/schemas/Protein_basic'
+        metabolites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metabolite_basic'
+        # molecular_traits:
+        #   type: array
+        #   items:
+        #     $ref: '#/components/schemas/MolecularTraitApplications'
 
 
 
@@ -3423,72 +3552,277 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
-  ## Plot ##
-  # /api/plot/search:
-  #   get:
-  #     operationId: retrieveScorePlot
-  #     description: Retrieve performance metrics for a given platform.
-  #     parameters: []
-  #     responses:
-  #       '200':
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ScorePlot'
-  #         description: ''
-  #     tags:
-  #     - rest
-  #
-  # /api/plot/score/search:
-  #   get:
-  #     operationId: listScorePlots
-  #     description: Search the Genetic Score(s) using query
-  #     parameters:
-  #     - name: limit
-  #       required: false
-  #       in: query
-  #       description: Number of results to return per page.
-  #       schema:
-  #         type: integer
-  #     - name: offset
-  #       required: false
-  #       in: query
-  #       description: The initial index from which to return the results.
-  #       schema:
-  #         type: integer
-  #     responses:
-  #       '200':
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               properties:
-  #                 count:
-  #                   type: integer
-  #                   example: 123
-  #                 next:
-  #                   type: string
-  #                   nullable: true
-  #                   format: uri
-  #                   example: http://api.example.org/accounts/?offset=400&limit=100
-  #                 previous:
-  #                   type: string
-  #                   nullable: true
-  #                   format: uri
-  #                   example: http://api.example.org/accounts/?offset=200&limit=100
-  #                 results:
-  #                   type: array
-  #                   items:
-  #                     $ref: '#/components/schemas/ScorePlot'
-  #         description: ''
-  #     tags:
-  #     - rest
 
   ## Phenotype endpoints ##
+  /api/phenotype/all:
+    get:
+      tags:
+        - "Phenotype endpoints"
+      operationId: getAllPhenotypes
+      description: |
+        Retrieve all the Phenotypes, including for each of them:
+          * Phenotype ontology ID and name
+          * Trait categories
+          * URL to the phenotype ontology entry
+          * List of reported traits linked to the phenotype
+          * Number of linked genetic Scores
+
+        Examples of request:
+        ```
+        - https://rest.omicspred.org/api/phenotype/all
+        ```
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List all the Platforms'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Phenotype_extended'
+          description: |
+            List all the Phenotypes
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
   /api/phenotype/{phenotype_id}:
     get:
       tags:
         - "Phenotype endpoints"
+      operationId: getPhenotype
+      description: |
+        Retrieve the Phenotype information, including:
+          * Phenotype ontology ID and name
+          * Trait categories
+          * URL to the phenotype ontology entry
+          * List of reported traits linked to the phenotype
+          * Number of linked genetic Scores
+
+        Examples of request:
+        ```
+        - https://rest.omicspred.org/api/phenotype/MONDO_0004994
+        ```
+      parameters:
+        - name: phenotype_id
+          in: path
+          required: true
+          description: 'Phenotype ID'
+          examples:
+            "MONDO_0005148 (type 2 diabetes mellitus)":
+              value: 'MONDO_0005148'
+            "MONDO_0004994 (cardiomyopathy)":
+              value: 'MONDO_0004994'
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Phenotype_extended'
+          description: 'Phenotype information'
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  ## Score PheWAS endpoints ##
+  /api/score/phenotype/{opgs_id}:
+    get:
+      tags:
+        - "PheWAS endpoints"
+      operationId: getScorePheWAS
+      description: |
+        Retrieve all the PheWAS associations for a given OmicsPred Score ID, including for each of them:
+          * OmicsPred Genetic Score
+          * Associated phenotypes
+          * Linked samples
+          * Reported trait
+          * Method used to compute the PheWAS
+          * Associated performances
+          * Number and proportion of variants from the Genetic Score used
+
+        Example of request:
+        ```
+        https://rest.omicspred.org/api/score/phenotype/OPGS002402
+        ```
+      parameters:
+      - name: opgs_id
+        in: path
+        required: true
+        description: 'OmicsPred Score ID'
+        schema:
+          type: string
+        examples:
+          OPGS002402:
+            value: 'OPGS002402'
+          OPGS003423:
+            value: 'OPGS003423'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScorePheWAS'
+          description: |
+            All the PheWAS associations for a given OmicsPred Score ID
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+  /api/score/phenotype/search:
+    get:
+      tags:
+        - "PheWAS endpoints"
+      operationId: searchScorePheWAS
+      description: |
+        Search PheWAS associations by OmicsPred Score ID, Phenotype ID, Dataset ID, ...
+
+        Each result includes:
+          * OmicsPred Genetic Score
+          * Associated phenotypes
+          * Linked samples
+          * Reported trait
+          * Method used to compute the PheWAS
+          * Associated performances
+          * Number and proportion of variants from the Genetic Score used
+
+        Examples of request:
+        ```
+        - https://rest.omicspred.org/api/score/phenotype/search?phenotype_id=MONDO_0005344
+        - https://rest.omicspred.org/api/score/phenotype/search?pmid=36991119
+        - https://rest.omicspred.org/api/score/phenotype/search?pmid=36991119&opd_id=OPD000001
+        ```
+      parameters:
+        - name: opgs_id
+          required: false
+          in: query
+          description: OmicsPred Score ID - *optional*
+          schema:
+            type: string
+          examples:
+            op_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            OPGS002402:
+              value: 'OPGS002402'
+            OPGS003423:
+              value: 'OPGS003423'
+        - name: phenotype_id
+          required: false
+          in: query
+          description: Phenotype ID - *optional*
+          schema:
+            type: string
+          examples:
+            op_sel:
+              summary: Select an example or type an ID - click on 'Try it out' first
+            pc_1:
+              summary: "MONDO_0005148 (type 2 diabetes mellitus)"
+              value: "MONDO_0005148"
+            pc_2:
+              summary: "MONDO_0004994 (cardiomyopathy)"
+              value: "MONDO_0004994"
+        - name: opd_id
+          in: query
+          required: false
+          description: OmicsPred Dataset ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: "OPD000001"
+        - name: pmid
+          required: false
+          in: query
+          description: PubMed ID (without the prefix "PMID:") - *optional*
+          schema:
+            type: integer
+          examples:
+              pmid_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              pmid_1:
+                summary: "PMID: 36991119"
+                value: 36991119
+        - name: opp_id
+          in: query
+          required: false
+          description: OmicsPred Publication ID - *optional*
+          schema:
+            type: integer
+          examples:
+              opp_sel:
+                summary: Select an example or type an ID - click on 'Try it out' first
+              OPP000001:
+                value: "OPP000001"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScorePheWAS'
+          description: |
+           PheWAS entries related to the request
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
+
+
+
+  #### OLD PHENOTYPE ####
+
+  ## Phenotype endpoints ##
+  /api/phenotype_old/{phenotype_id}:
+    get:
+      tags:
+        - "Phenotype [old] endpoints"
       operationId: getPhenotype
       description: |
         Retrieve the Phenotype information, including:
@@ -3499,8 +3833,8 @@ paths:
 
         Examples of request:
         ```
-        - https://rest.omicspred.org/api/phenotype/250.2
-        - https://rest.omicspred.org/api/phenotype/250?include_children=1
+        - https://rest.omicspred.org/api/phenotype_old/250.2
+        - https://rest.omicspred.org/api/phenotype_old/250?include_children=1
         ```
       parameters:
         - name: phenotype_id
@@ -3533,8 +3867,8 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Phenotype_extended'
-                  - $ref: '#/components/schemas/PhenotypeScoresCount'
+                  - $ref: '#/components/schemas/PhenotypeOld_extended'
+                  - $ref: '#/components/schemas/PhenotypeScoresCountOld'
           description: 'Phenotype information'
         '4XX':
           content:
@@ -3548,7 +3882,7 @@ paths:
   /api/applications_score/all:
     get:
       tags:
-        - "Phenotype endpoints"
+        - "Phenotype [old] endpoints"
       operationId: getAllPhenotypeScores
       description: |
         Retrieve all the Phenotype Score associations, including for each of them:
@@ -3617,7 +3951,7 @@ paths:
   /api/applications_score/{opgs_id}:
     get:
       tags:
-        - "Phenotype endpoints"
+        - "Phenotype [old] endpoints"
       operationId: getPhenotypeScore
       description: |
         Retrieve all the Phenotype Score associations for a given Score ID, including for each of them:
@@ -3673,7 +4007,7 @@ paths:
   /api/applications_score/search:
     get:
       tags:
-        - "Phenotype endpoints"
+        - "Phenotype [old] endpoints"
       operationId: searchPhenotypeScores
       description: |
         Search Phenotype Score associations by OmicsPred Score ID or Phenotype ID.
