@@ -3,7 +3,7 @@ import re
 import requests
 from django.db import IntegrityError, transaction
 from imports.generic_model import GenericData
-from omicspred.models import EFO
+from omicspred.models import Tissue
 
 
 logger = logging.getLogger(__name__)
@@ -52,31 +52,31 @@ class TissueData(GenericData):
 
     def check_model_exist(self):
         '''
-        Check if an EFO model already exists.
+        Check if an Tissue model already exists.
         '''
         try:
-            tissue = EFO.objects.get(id=self.id)
+            tissue = Tissue.objects.get(id=self.id)
             self.model = tissue
-        except EFO.DoesNotExist:
+        except Tissue.DoesNotExist:
             self.model = None
 
 
     @transaction.atomic
     def create_model(self):
         '''
-        Retrieve/Create an instance of the EFO model.
-        Return type: EFO model
+        Retrieve/Create an instance of the Tissue model.
+        Return type: Tissue model
         '''
         try:
             with transaction.atomic():
                 self.check_model_exist()
                 if not self.model:
-                    self.model = EFO()
+                    self.model = Tissue()
                     for field, val in self.data.items():
                         setattr(self.model, field, val)
                     self.model.save()
         except IntegrityError as e:
             self.model = None
-            logger.error(f'Error with the creation of the Tissue (EFO): {e}')
+            logger.error(f'Error with the creation of the Tissue: {e}')
 
         return self.model
