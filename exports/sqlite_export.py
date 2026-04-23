@@ -183,7 +183,7 @@ class SqliteExport:
             cols_weights = ['omicspred_id', 'gene']
         cols_weights.extend(['rsid', 'varID', 'ref_allele', 'eff_allele','weight'])
         cur.execute("DROP TABLE IF EXISTS weights;")
-        cur.execute(f"CREATE TABLE weights({', '.join(cols_weights)})") 
+        cur.execute(f"CREATE TABLE weights({', '.join(cols_weights)})")
 
 
     def create_other_tables(self, cur:sqlite3.Cursor) -> None:
@@ -287,7 +287,7 @@ class SqliteExport:
                 if method_name != sqlite_default_values['method_name'] or platform_name != sqlite_default_values['platform_name']:
                     print('\t> Skipped')
                     continue
-            dataset_label = dataset_label.replace(' ','_').replace("'",'_')
+            dataset_label = dataset_label.replace(' ','_').replace("'",'_').replace('-','_')
             sql_file = f'{dataset.id}_{dataset_label}.db'
             # print(f'dataset_name: {dataset_name}')
             # print(f'label: {dataset_label}')
@@ -363,7 +363,6 @@ class SqliteExport:
                 # 2 - Extract data from scoring file + insert data in SQLite
                 weights_values = '?, ?, ?, ?, ?, ?'
                 insert_weights_block = self.read_scoring_file(dataset_dir,score_id,reported_trait_id,genome_build)
-            
                 cur.executemany(f"INSERT INTO weights VALUES({weights_values})", insert_weights_block)
                 con.commit()
 

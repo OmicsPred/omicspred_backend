@@ -75,6 +75,14 @@ platforms_mapping = {
 
 
 def run(*args):
+    # Generate PredictDB SQLite exports
+
+    # Run examples:
+    # Using config file:
+    #   python manage.py runscript generate_sqlite_files
+    # Using command line parameters:
+    #   python manage.py runscript generate_sqlite_files --script-args <OPP_ID> <output_sqlite_dir> <scoring_files_dir> <skip_zip>
+
     skip_zip = False
 
     if args:

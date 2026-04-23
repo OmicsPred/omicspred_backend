@@ -18,6 +18,7 @@ fields_to_export = {
             {'name': 'omics_type', 'label': 'Omics Type' },
             {'name': 'method_name', 'label': 'Development Method'},
             {'name': 'scores_count', 'label': 'Scores Count'},
+            {'name': 'phewas_count', 'label': 'PheWAS Count'},
             {'name': 'platform__name', 'label': 'Platform Name'},
             {'name': 'platform__version', 'label': 'Platform Version'},
             {'name': 'tissue__id', 'label': 'Tissue ID'},
@@ -29,6 +30,7 @@ fields_to_export = {
             {'name': 'file_url_scoring_files', 'label': 'Scoring files', 'skip_auto_import': True},
             {'name': 'file_url_predictdb', 'label': 'PredictDB', 'skip_auto_import': True},
             {'name': 'file_url_covariance', 'label': 'Covariance', 'skip_auto_import': True},
+            {'name': 'file_url_phewas', 'label': 'PheWAS', 'skip_auto_import': True},
             {'name': 'file_url_validation_results', 'label': 'Validation data file', 'skip_auto_import': True},
             {'name': 'file_url_score_variant_info', 'label': 'Score variant info file', 'skip_auto_import': True},
             {'name': 'file_url_gwas_sumstats', 'label': 'GWAS summary stats files', 'skip_auto_import': True}
@@ -106,20 +108,6 @@ class OPExport:
     fields_to_include = fields_to_export
 
     extra_fields_to_include = [] # Need to be removed if not used
-    # extra_fields_to_include = [
-    #     'associated_score',
-    #     'cohorts_list',
-    #     'pub_doi_label',
-    #     'pub_id',
-    #     'pub_pmid_label',
-    #     'sampleset_id',
-    #     'study_stage',
-    #     'trait_id',
-    #     'trait_label',
-    #     'ancestry_gwas',
-    #     'ancestry_dev',
-    #     'ancestry_eval'
-    # ]
 
     # Data separator
     separator = '|'

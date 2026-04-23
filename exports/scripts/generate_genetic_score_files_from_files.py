@@ -35,7 +35,6 @@ def generate_scoring_file_header(score:Score, dataset:Dataset):
 def write_scoring_file(header:str, content:str, filepath:str) -> None:
     ''' Write new scoring file with header '''
     with open(filepath, 'w') as output_file:
-        output_file.write('\n'.join(header))
         output_file.write(f'{header}\n')
         output_file.write(content)
 
