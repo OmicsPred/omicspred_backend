@@ -34,6 +34,9 @@ def get_search(query:str, exclude_pathways:str=None):
             if 'scores_count' in hit_data.keys():
                 if hit_data['scores_count'] == 0:
                     use_hit = False
+            if 'phewas_count' in hit_data.keys():
+                if hit_data['phewas_count'] == 0:
+                    use_hit = False
 
             if use_hit:
                 new_entry = {
