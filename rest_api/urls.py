@@ -44,6 +44,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['pathway']+'all'+slash, RestListPathways.as_view(), name="getAllPathways"),
     re_path(r'^'+rest_urls['pathway']+'(?P<pathway_id>[^/]+)'+slash, RestPathway.as_view(), name="getPathway"),
     # Molecular trait
+    re_path(r'^'+rest_urls['metabolite']+'search'+slash, RestSearchMetabolite.as_view(), name="searchMetabolites"),
     re_path(r'^'+rest_urls['metabolite']+'(?P<metabolite_id>[^/]+)'+slash, RestMetabolite.as_view(), name="getMetabolite"),
     re_path(r'^'+rest_urls['protein']+'search'+slash, RestSearchProtein.as_view(), name="searchProteins"),
     re_path(r'^'+rest_urls['protein']+'(?P<protein_id>[^/]+)'+slash, RestProtein.as_view(), name="getProtein"),
@@ -64,8 +65,9 @@ urlpatterns = [
     # Samples
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
     # Score PheWAS
-    re_path(r'^'+rest_urls['score']+'phenotype/search'+slash, cache_page(cache_time)(RestScorePheWASSearch.as_view()), name="searchScorePheWAS"),
-    re_path(r'^'+rest_urls['score']+'phenotype/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScorePheWAS.as_view()), name="getScorePheWAS"),
+    re_path(r'^'+rest_urls['score']+'phewas/all'+slash, cache_page(cache_time)(RestListScorePheWAS.as_view()), name="getAllScorePheWAS"),
+    re_path(r'^'+rest_urls['score']+'phewas/search'+slash, RestScorePheWASSearch.as_view(), name="searchScorePheWAS"),
+    re_path(r'^'+rest_urls['score']+'phewas/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScorePheWAS.as_view()), name="getScorePheWAS"),
     # Scores
     re_path(r'^'+rest_urls['score']+'all'+slash, cache_page(cache_time)(RestListScores.as_view()), name="getAllScores"),
     re_path(r'^'+rest_urls['score']+'performance/(?P<opgs_id>[^/]+)'+slash, cache_page(cache_time)(RestScoreWithPerformance.as_view()), name="getScoreWithPerformance"),

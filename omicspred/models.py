@@ -36,6 +36,17 @@ class Publication(models.Model):
 
     date_released = models.DateField('OmicsPred Release Date', null=True, db_index=True)
 
+    PUBLICATION_TYPE_CHOICES = [
+        ('Genetic Score', 'Genetic Score'),
+        ('PheWAS', 'PheWAS'),
+        ('Genetic Score and PheWAS', 'Genetic Score and PheWAS')
+    ]
+    publication_type = models.CharField(max_length=40,
+        choices=PUBLICATION_TYPE_CHOICES,
+        default='Genetic Score',
+        db_index=True
+    )
+
     # Curation information
     CURATION_STATUS_CHOICES = [
         ('C',  'Curated'),
@@ -73,6 +84,11 @@ class Publication(models.Model):
         if type(pub_date) == str:
             pub_date = datetime.strptime(pub_date, '%Y-%m-%d')
         return pub_date.strftime('%Y')
+
+    @property
+    def phewas_count(self):
+        return self.score_phewas_publication.count()
+        # return self.score_phewas_publication.only('id','publication_id').count()
 
 
 class Cohort(models.Model):
@@ -310,7 +326,7 @@ class Dataset(models.Model):
     method_name = models.TextField('Score Development Method')
     tissue = models.ForeignKey(Tissue, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # Tissue trait defining the sampled tissue
     scores_count = models.IntegerField('Associated Scores count', null=False)
-    phenotypes_count = models.IntegerField('Associated Phenotypes count', default=0)
+    phewas_count = models.IntegerField('Associated PheWAS data count', default=0)
     # cohorts = models.ManyToManyField(Cohort, verbose_name='Cohort(s)', related_name='cohort_platform')
     samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_dataset')
     samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_dataset')
@@ -698,7 +714,7 @@ class Phenotype(models.Model):
     child_phenotype = models.ManyToManyField('self', verbose_name='Children Phenotype', symmetrical=False, related_name='parent_phenotype')
 
     @property
-    def scores_count(self):
+    def phewas_count(self):
         return self.phenotype_scores.count()
 
     @property
@@ -712,20 +728,21 @@ class Phenotype(models.Model):
 class ScorePheWAS(models.Model):
     """ Class to hold Score PheWAS values """
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_phewas') # Score that the PheWAS data are associated with
-    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name='dataset_phenotype', verbose_name='Dataset')
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name='Dataset', related_name='dataset_phenotype')
+    publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='PheWAS Publication', related_name='score_phewas_publication')
 
-    STUDY_TYPE_CHOICES = [
-        ('imputed', "imputed"),
-        ('summary', "summary")
-    ]
-    study_type = models.CharField(max_length=40,
-        choices=STUDY_TYPE_CHOICES,
-        default='imputed',
-        db_index=True
-    )
+    # STUDY_TYPE_CHOICES = [
+    #     ('imputed', "imputed"),
+    #     ('summary', "summary")
+    # ]
+    # study_type = models.CharField(max_length=40,
+    #     choices=STUDY_TYPE_CHOICES,
+    #     default='imputed',
+    #     db_index=True
+    # )
 
     # Method
-    method_name = models.TextField('PheWAS Method', null=True)
+    method_description= models.TextField('PheWAS Method Description', null=True)
 
     # Sample information
     samples = models.ManyToManyField(Sample, related_name='sample_scores', verbose_name='Sample(s)')
@@ -740,13 +757,13 @@ class ScorePheWAS(models.Model):
     ancestry = models.JSONField('Ancestry distribution', null=True)
 
     # Values
-    r2 = models.FloatField(verbose_name='R2', null=True)
+    # r2 = models.FloatField(verbose_name='R2', null=True)
     hr = models.FloatField(verbose_name='Hazard Ratio', null=True)
     hr_ci = DecimalRangeField(verbose_name='Hazard Ratio Confidence Interval', null=True)
-    fdr = models.FloatField(verbose_name='FDR adjusted p-value', null=True)
-    zscore = models.FloatField(verbose_name='Standard score (z-score)', null=True)
+    fdr = models.FloatField(verbose_name='Adjusted P-value', null=True)
+    zscore = models.FloatField(verbose_name='Standard score (Z-score)', null=True)
     pvalue = models.FloatField(verbose_name='P-value', null=True)
-    bonferroni = models.FloatField(verbose_name='Bonferroni adjusted p-value', null=True)
+    bonferroni = models.FloatField(verbose_name='Bonferroni adjusted P-value', null=True)
     effect_size = models.FloatField(verbose_name='Effect size (gene)', null=True)
     var_gene_exp = models.FloatField(verbose_name='Variance of the gene expression', null=True)
     variants_number_used = models.IntegerField(verbose_name='Number of variants used', null=True)
@@ -755,7 +772,7 @@ class ScorePheWAS(models.Model):
     @property
     def values_dict(self):
         return {
-            'R2': self.r2,
+            # 'R2': self.r2,
             'HR': self.hr,
             'HR_lower': float(self.hr_ci.lower) if self.hr_ci != None else None,
             'HR_upper': float(self.hr_ci.upper) if self.hr_ci != None else None,

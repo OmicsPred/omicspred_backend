@@ -25,7 +25,7 @@ dataset_publication = ['dataset__publication__id','dataset__publication__title',
 only_dict = {
     'scores_table': ['id','variants_number','trait_reported_id','trait_reported','dataset__id','dataset__name','dataset__platform__id','dataset__platform__name','dataset__publication__id','dataset__publication__pmid','dataset__publication__doi'],
     'scores_pp_table': [
-        'id','variants_number','trait_reported_id','trait_reported','ancestry',
+        'id','name','variants_number','trait_reported_id','trait_reported','ancestry',
         'dataset__id','dataset__name',
         'dataset__platform__id','dataset__platform__version', *dataset_publication, 'dataset__tissue'],
     'metabolite': ['id','name','external_id','pathway_group_id','pathway_subgroup_id','pathway_group__id','pathway_group__name','pathway_subgroup__id','pathway_subgroup__name']
@@ -57,16 +57,17 @@ related_dict = {
         Prefetch('metabolites', queryset=Metabolite.objects.defer('description','pathway_group_id','pathway_subgroup_id').all())
     ],
     'pathways': ['pathways', Prefetch('pathways__superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all())],
-    'pathway_prefetch_with_counts': [
+    'pathway_prefetch_with_genes': [
         Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
-        'pathway_genes',
-        Prefetch('pathway_genes__gene_score', queryset=Score.objects.only('id').all()),
-        'pathway_proteins',
-        Prefetch('pathway_proteins__protein_score', queryset=Score.objects.only('id').all()),
-        'pathway_metabolites',
-        Prefetch('pathway_metabolites__metabolite_score', queryset=Score.objects.only('id').all())
+        Prefetch('pathway_genes', queryset=Gene.objects.only('id','name', 'external_id','description').all()),
+        Prefetch('pathway_genes__gene_score', queryset=Score.objects.only('num').all()),
     ],
-    'pathway_prefetch_no_counts': [
+    'pathway_prefetch_with_proteinss': [
+        Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
+        Prefetch('pathway_proteins', queryset=Protein.objects.only('id','name', 'external_id','description').all()),
+        Prefetch('pathway_proteins__protein_score', queryset=Score.objects.only('num').all()),
+    ],
+    'pathway_prefetch_with_counts': [
         Prefetch('superpathways', queryset=SuperPathway.objects.only('id','name','external_id','external_id_source').all()),
         Prefetch('pathway_genes', queryset=Gene.objects.only('id').all()),
         Prefetch('pathway_proteins', queryset=Protein.objects.only('id').all()),
@@ -78,7 +79,7 @@ related_dict = {
     'dataset_select': ['platform','platform__platform_master','publication','tissue'],
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
-    'publication_datasets': [Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts').order_by('num'))],
+    'publication_datasets': Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts').order_by('num')),
     'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
     'score_applications_prefetch': ['genes','proteins','metabolites'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform', 'dataset__tissue'],
@@ -88,19 +89,16 @@ related_dict = {
         'dataset__platform',
         'dataset__platform__platform_master',
         'dataset__tissue'],
-    # 'score_search_cohort': [
-    #     Prefetch('score_performance', queryset=Performance.objects.only('id','score_id','sample_id').all()),
-    #     Prefetch('score_performance__sample', queryset=Sample.objects.only('id','cohorts').all())
-    # ],
     'score_search_cohort_training_via_dataset': [
         Prefetch('dataset__samples_training', queryset=Sample.objects.only('id','cohorts').all())
     ],
     'score_search_cohort_validation_via_dataset': [
         Prefetch('dataset__samples_validation', queryset=Sample.objects.only('id','cohorts').all())
     ],
-    'score_phewas_select': ['score'],
+    'score_phewas_select': ['score','publication'],
     'score_phewas': [
-        'score__dataset__publication','score__dataset__tissue','score__dataset__platform',
+        'score__dataset__publication','score__dataset__tissue',
+        'score__dataset__platform','score__dataset__platform__platform_master',
         'score__genes','score__proteins','score__metabolites','score__transcripts',
         'phenotypes','samples','samples__cohorts'
     ],
@@ -210,6 +208,25 @@ def filter_data(queryset, filter_params):
     if 'dataset' in filters_types:
         query_filter_list.append(Q(dataset__id__exact=filters_data['dataset']))
 
+    # PheWAS
+    if 'phewas_score_id' in filters_types:
+        filter_score_id = filters_data['phewas_score_id']
+        if filter_score_id.startswith('OPGS'):
+            score_num = get_score_num(filter_score_id)
+            query_filter_list.append(Q(score__id__exact=filter_score_id))
+    if 'phenotype' in filters_types:
+        query_filter_list.append(Q(phenotypes__id__iexact=filters_data['phenotype'])| Q(phenotypes__label__iexact=filters_data['phenotype']))
+    if 'phewas_publication' in filters_types:
+        query_filter_list.append(Q(publication__id__iexact=filters_data['phewas_publication']))
+    if 'phewas_mt_id' in filters_types:
+        mt_id = filters_data['phewas_mt_id']
+        mt_type = filters_data['phewas_mt_type']
+        if mt_type == 'Gene':
+            query_filter_list.append(Q(score__genes__external_id__iexact=mt_id) | Q(score__genes__name__icontains=mt_id))
+        elif mt_type == 'Protein':
+            query_filter_list.append(Q(score__proteins__external_id__iexact=mt_id) | Q(score__proteins__name__icontains=mt_id))
+        elif mt_type == 'Metabolite':
+            query_filter_list.append(Q(score__metabolites__external_id__iexact=mt_id) | Q(score__metabolites__name__icontains=mt_id))
     return queryset.filter(reduce(operator.and_,query_filter_list))
 
 
@@ -344,39 +361,17 @@ class RestListPathways(generics.ListAPIView):
     Retrieve all the Pathways
     Endpoint: /api/pathway/all
     """
-    serializer_class = PathwaySerializerExtended
+    serializer_class = PathwaySerializerExtendedCount
 
     def get_queryset(self):
         # Fetch all the Pathways
-
-        pathway_prefetch_list = related_dict['pathway_prefetch_with_counts']
-
-        # # Exclude score counts - FOR PRIVATE USE CASE
-        # include_counts = self.request.query_params.get('include_counts')
-        # if include_counts and str(include_counts)=='0':
-        #     pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
-        #     self.serializer_class = PathwaySerializerExtended2
-
-        # Only counts - FOR PRIVATE USE CASE
-        only_counts = self.request.query_params.get('only_counts')
-        if only_counts and str(only_counts)=='1':
-            pathway_prefetch_list = related_dict['pathway_prefetch_no_counts']
-            self.serializer_class = PathwaySerializerExtendedCount
-
-        queryset = Pathway.objects.all().prefetch_related(*pathway_prefetch_list).order_by(Lower('name'))
+        queryset = Pathway.objects.all().prefetch_related(*related_dict['pathway_prefetch_with_counts']).order_by(Lower('name'))
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
         if filter_term and filter_term is not None:
-            if only_counts and str(only_counts)=='1':
-                queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) |
-                                           Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__icontains=filter_term))
-            else:
-                queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) |
-                                           Q(pathway_genes__external_id__iexact=filter_term) | Q(pathway_genes__name__icontains=filter_term) |
-                                           Q(pathway_proteins__external_id__iexact=filter_term) | Q(pathway_proteins__name__iexact=filter_term) |
-                                           Q(pathway_metabolites__external_id__iexact=filter_term) | Q(pathway_metabolites__name__icontains=filter_term) |
-                                           Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__iexact=filter_term))
+            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) |
+                                       Q(superpathways__external_id__iexact=filter_term) | Q(superpathways__name__icontains=filter_term))
         # Sort data
         queryset = sort_data_list(self.request,'pathway',queryset,'name')
         return queryset
@@ -389,25 +384,12 @@ class RestPathway(generics.RetrieveAPIView):
     """
 
     def get(self, request, pathway_id):
-        include_molecular_traits = self.request.query_params.get('include_molecular_traits')
-
-        exclude_mt = True if include_molecular_traits and str(include_molecular_traits) == '0' else False
-
-        if exclude_mt:
-            pathway_prefetch_related = ['superpathways']
-        else:
-            pathway_prefetch_related = related_dict['pathway_prefetch_with_counts']
-
         try:
-            queryset = Pathway.objects.prefetch_related(*pathway_prefetch_related).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
+            queryset = Pathway.objects.prefetch_related(*related_dict['pathway_prefetch_with_counts']).get(Q(name__iexact=pathway_id) | Q(external_id__iexact=pathway_id))
         except Pathway.DoesNotExist:
             queryset = None
 
-        if exclude_mt:
-            serializer = PathwaySerializer(queryset,many=False)
-        else:
-            serializer = PathwaySerializerExtended(queryset,many=False)
-
+        serializer = PathwaySerializerExtendedCount(queryset,many=False)
         return Response(serializer.data)
 
 
@@ -423,8 +405,9 @@ class RestMetabolite(generics.RetrieveAPIView):
             queryset = Metabolite.objects.prefetch_related(*related_dict['pathways'],'pathway_group').get(Q(name__iexact=metabolite_id) | Q(external_id__iexact=metabolite_id))
         except Metabolite.DoesNotExist:
             queryset = None
-        include_scores_count = self.request.query_params.get('include_scores_count')
+
         # Include scores count - FOR PRIVATE USE CASE
+        include_scores_count = self.request.query_params.get('include_scores_count')
         if include_scores_count and str(include_scores_count)=='1':
             serializer = MetaboliteSerializerExtendedScoresCount(queryset,many=False)
         else:
@@ -452,8 +435,9 @@ class RestProtein(generics.RetrieveAPIView):
                 queryset = Protein.objects.filter(Q(name__iexact=protein_id) & Q(external_id__isnull=True)).prefetch_related(*related_dict['pathways']).first()
             except Protein.DoesNotExist:
                 queryset = None
-        include_scores_count = self.request.query_params.get('include_scores_count')
+
         # Include scores count - FOR PRIVATE USE CASE
+        include_scores_count = self.request.query_params.get('include_scores_count')
         if include_scores_count and str(include_scores_count)=='1':
             serializer = ProteinSerializerExtendedScoresCount(queryset,many=False)
         else:
@@ -472,8 +456,9 @@ class RestGene(generics.RetrieveAPIView):
             queryset = Gene.objects.prefetch_related(*related_dict['pathways']).get(external_id__iexact=gene_id)
         except Gene.DoesNotExist:
             queryset = None
+
+        # Include scores count - FOR PRIVATE USE CASE
         include_scores_count = self.request.query_params.get('include_scores_count')
-         # Include scores count - FOR PRIVATE USE CASE
         if include_scores_count and str(include_scores_count)=='1':
             serializer = GeneSerializerExtendedScoresCount(queryset,many=False)
         else:
@@ -483,35 +468,121 @@ class RestGene(generics.RetrieveAPIView):
 
 class RestSearchGene(generics.ListAPIView):
     """
-    Search Genes by name (or external ID)
-    Endpoint: /api/gene/search?gene=<gene_id>
+    Search Genes
+    Endpoint: /api/gene/search?
     """
-    serializer_class = GeneSerializerExtended
 
     def get_queryset(self):
-        queryset = []
+
+        queryset = Gene.objects.all().prefetch_related(*related_dict['pathways']).order_by('external_id')
+        params = 0
 
         # Search by Gene name or external ID
         gene = self.request.query_params.get('gene')
         if gene and gene is not None:
-            queryset = Gene.objects.prefetch_related(*related_dict['pathways']).filter(Q(name__iexact=gene) | Q(external_id__iexact=gene))
+            queryset = queryset.filter(Q(name__iexact=gene) | Q(external_id__iexact=gene))
+        params += 1
+        # Search by Pathway
+        pathway = self.request.query_params.get('pathway')
+        if pathway and pathway is not None:
+            queryset = queryset.filter(pathways__external_id=pathway)
+            params += 1
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) | Q(description__icontains=filter_term))
+
+        # Include scores count - FOR PRIVATE USE CASE
+        include_scores_count = self.request.query_params.get('include_scores_count')
+        if include_scores_count and str(include_scores_count)=='1':
+            self.serializer_class = GeneSerializerExtendedScoresCount
+            queryset = queryset.prefetch_related('gene_score')
+        else:
+            self.serializer_class = GeneSerializerExtended
+
+        if params == 0:
+            queryset = []
+
         return queryset
 
 
 class RestSearchProtein(generics.ListAPIView):
     """
     Search Proteins
-    Endpoint: /api/protein/search?gene=<gene_id>
+    Endpoint: /api/protein/search?
     """
-    serializer_class = ProteinSerializer
 
     def get_queryset(self):
-        queryset = []
+        queryset = Protein.objects.select_related('gene').all().prefetch_related(*related_dict['pathways']).order_by('external_id')
+        params = 0
 
         # Search by Gene
         gene = self.request.query_params.get('gene')
         if gene and gene is not None:
-            queryset = Protein.objects.select_related('gene').filter(Q(gene__name__iexact=gene) | Q(gene__external_id__iexact=gene)).prefetch_related(*related_dict['pathways']).order_by('id')
+            queryset = queryset.filter(Q(gene__name__iexact=gene) | Q(gene__external_id__iexact=gene))
+            params += 1
+        # Search by Pathway
+        pathway = self.request.query_params.get('pathway')
+        if pathway and pathway is not None:
+            queryset = queryset.filter(pathways__external_id=pathway)
+            params += 1
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term) | Q(description__icontains=filter_term))
+
+        # Include scores count - FOR PRIVATE USE CASE
+        include_scores_count = self.request.query_params.get('include_scores_count')
+        if include_scores_count and str(include_scores_count)=='1':
+            self.serializer_class = ProteinSerializerExtendedScoresCount
+            queryset = queryset.prefetch_related('protein_score')
+        else:
+            self.serializer_class = ProteinSerializerExtended
+
+        if params == 0:
+            queryset = []
+
+        return queryset
+
+
+class RestSearchMetabolite(generics.ListAPIView):
+    """
+    Search Metabolites
+    Endpoint: /api/metabolite/search?
+    """
+
+    def get_queryset(self):
+        queryset = Metabolite.objects.all().prefetch_related(*related_dict['pathways']).order_by('external_id')
+        params = 0
+
+        # Search by Gene
+        metabolite = self.request.query_params.get('metabolite')
+        if metabolite and metabolite is not None:
+            queryset = queryset.filter(Q(name__iexact=metabolite) | Q(external_id__iexact=metabolite))
+            params += 1
+        # Search by Pathway
+        pathway = self.request.query_params.get('pathway')
+        if pathway and pathway is not None:
+            queryset = queryset.filter(pathways__external_id=pathway)
+            params += 1
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(external_id__iexact=filter_term) | Q(name__icontains=filter_term))
+
+        # Include scores count - FOR PRIVATE USE CASE
+        include_scores_count = self.request.query_params.get('include_scores_count')
+        if include_scores_count and str(include_scores_count)=='1':
+            self.serializer_class = MetaboliteSerializerExtendedScoresCount
+            queryset = queryset.prefetch_related('metabolite_score')
+        else:
+            self.serializer_class = MetaboliteSerializerExtended
+
+        if params == 0:
+            queryset = []
 
         return queryset
 
@@ -917,7 +988,14 @@ class RestListDatasets(generics.ListAPIView):
     Endpoint: /api/dataset/all
     """
     serializer_class = DatasetSerializer
-    queryset = Dataset.objects.select_related(*related_dict['dataset_select']).all().prefetch_related(*related_dict['dataset_prefetch']).order_by('num')
+
+    def get_queryset(self):
+        queryset = Dataset.objects.select_related(*related_dict['dataset_select']).all().prefetch_related(*related_dict['dataset_prefetch']).order_by('num')
+        # Filter by list of Publications IDs
+        only_phewas = self.request.query_params.get('only_phewas')
+        if only_phewas and only_phewas is not None:
+            queryset = queryset.filter(phewas_count__gt=0)
+        return queryset
 
 
 class RestDataset(generics.RetrieveAPIView):
@@ -999,14 +1077,14 @@ class RestTissue(generics.ListAPIView):
 
 class RestListPublications(generics.ListAPIView):
     """
-    Retrieve the PGS Publications
+    Retrieve the OmicsPred Publications
     Endpoint: /api/publication/all
     """
     serializer_class = PublicationExtendedSerializer
 
     def get_queryset(self):
         # Fetch all the Publications
-        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
+        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(related_dict['publication_datasets']).order_by('id')
         # Filter by list of Publications IDs
         opp_ids_list = get_ids_list(self)
         if opp_ids_list:
@@ -1025,9 +1103,9 @@ class RestPublication(generics.RetrieveAPIView):
         opp_id = opp_id.upper()
         try:
             if re.match(r'^\d+$',opp_id):
-                queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related(*related_dict['publication_datasets']).get(pmid=opp_id)
+                queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related(related_dict['publication_datasets']).get(pmid=opp_id)
             else:
-                queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related(*related_dict['publication_datasets']).get(id=opp_id)
+                queryset = Publication.objects.defer(*defer_dict['publication_defer']).prefetch_related(related_dict['publication_datasets']).get(id=opp_id)
         except Publication.DoesNotExist:
             queryset = None
         serializer = PublicationExtendedSerializer(queryset,many=False)
@@ -1043,7 +1121,7 @@ class RestPublicationSearch(generics.ListAPIView):
 
     def get_queryset(self):
         # queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().order_by('id')
-        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(*related_dict['publication_datasets']).order_by('id')
+        queryset = Publication.objects.defer(*defer_dict['publication_defer']).all().prefetch_related(related_dict['publication_datasets']).order_by('id')
 
         params = 0
 
@@ -1343,10 +1421,39 @@ class RestScoreSearch(generics.ListAPIView):
         return queryset
 
 
+class RestListScorePheWAS(generics.ListAPIView):
+    """
+    Retrieve all the PheWAS entries
+    Endpoint: /api/score/phewas/all
+    """
+    serializer_class = ScorePheWASSerializer
+
+    def get_queryset(self):
+        queryset = ScorePheWAS.objects.select_related(*related_dict['score_phewas_select']).all().prefetch_related(*related_dict['score_phewas']).order_by('score__id','trait_reported')
+
+        table_filter = self.request.query_params.get('table_filter')
+        if table_filter and table_filter is not None:
+            queryset = filter_data(queryset, table_filter)
+
+        # Filter data - FOR PRIVATE USE CASE
+        filter_term = self.request.query_params.get('filter')
+        if filter_term and filter_term is not None:
+            queryset = queryset.filter(Q(id__iexact=filter_term) |
+                                       Q(phenotypes__id__iexact=filter_term) | Q(phenotypes__label__iexact=filter_term) |
+                                       Q(publication__id__iexact=filter_term) | Q(publication__firstauthor__iexact=filter_term) |
+                                       Q(phenotypes__id__iexact=filter_term) | Q(phenotypes__label__iexact=filter_term) |
+                                       Q(method_description__icontains=filter_term) | Q(trait_reported__icontains=filter_term))
+
+        # Sort data
+        queryset = sort_data_list(self.request,'score_phewas',queryset,'score_id')
+
+        return queryset
+
+
 class RestScorePheWAS(generics.ListAPIView):
     """
     Retrieve all the PheWAS entries associated with a Genetic Score
-    Endpoint: /api/score/phenotype/<opgs_id>
+    Endpoint: /api/score/phewas/<opgs_id>
     """
     serializer_class = ScorePheWASSerializer
 
@@ -1362,7 +1469,7 @@ class RestScorePheWAS(generics.ListAPIView):
 class RestScorePheWASSearch(generics.ListAPIView):
     """
     Search the PheWAS entries using parameters as query
-    Endpoint: /api/score/phenotype/search?<parameter(s)>
+    Endpoint: /api/score/phewas/search?<parameter(s)>
     """
     serializer_class = ScorePheWASSerializer
 
@@ -1412,10 +1519,10 @@ class RestScorePheWASSearch(generics.ListAPIView):
             queryset = queryset.filter(phenotypes__id=phenotype_id)
             params += 1
 
-        table_filter = self.request.query_params.get('table_filter')
-        if table_filter and table_filter is not None:
-            queryset = filter_data(queryset, table_filter)
-            params += 1
+        # table_filter = self.request.query_params.get('table_filter')
+        # if table_filter and table_filter is not None:
+        #     queryset = filter_data(queryset, table_filter)
+        #     params += 1
 
         # Filter data - FOR PRIVATE USE CASE
         filter_term = self.request.query_params.get('filter')
@@ -1423,7 +1530,7 @@ class RestScorePheWASSearch(generics.ListAPIView):
             query_filter_list = [ Q(score__genes__external_id__iexact=filter_term), Q(score__genes__name__icontains=filter_term),
                                   Q(score__proteins__external_id__iexact=filter_term), Q(score__proteins__name__iexact=filter_term),
                                   Q(score__metabolites__external_id__iexact=filter_term), Q(score__metabolites__name__icontains=filter_term),
-                                  Q(sample__cohorts__name_short__iexact=filter_term)]
+                                  Q(samples__cohorts__name_short__iexact=filter_term)]
             if not opgs_ids or opgs_ids == None:
                 query_filter_list.extend([Q(score__id__iexact=filter_term), Q(score__name__icontains=filter_term)])
             if not opp_id or opp_id == None:
@@ -1867,7 +1974,7 @@ class RestInfo(generics.RetrieveAPIView):
                 'platforms': PlatformMaster.objects.count(),
                 'pathways': Pathway.objects.count(),
                 'phenotypes': Phenotype.objects.count(),
-                'phenotype_associations': ScorePheWAS.objects.count(),
+                'phewas': ScorePheWAS.objects.count(),
                 # 'phenotypes': PhenotypeOld.objects.using(applications_db).count(),
                 # 'phenotype_associations': ScoreApplications.objects.using(applications_db).count(),
                 'tissues': Tissue.objects.filter(type='tissue').count()

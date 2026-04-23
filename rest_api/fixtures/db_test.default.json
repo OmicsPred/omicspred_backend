@@ -129,6 +129,16 @@
         }
     },
     {
+        "model": "omicspred.Cohort",
+        "pk": 3,
+        "fields": {
+            "name_short": "MVP",
+            "name_full": "Million Veteran Program",
+            "name_others": null,
+            "url": "https://www.mvp.va.gov/pwa/"
+        }
+    },
+    {
         "model": "omicspred.Sample",
         "pk": 1,
         "fields": {
@@ -150,6 +160,58 @@
             "sample_age_sd": 8.1,
             "ancestry_broad": "European",
             "cohorts": [ 2 ]
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 490,
+        "fields": {
+            "sample_number": 426570,
+            "sample_cases": 335948,
+            "sample_controls": 90622,
+            "source_gwas_catalog": "GCST90475715",
+            "source_pmid": 39024449,
+            "ancestry_broad": "European",
+            "cohorts": [ 3 ]
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 499,
+        "fields": {
+            "sample_number": 441953,
+            "sample_cases": 41607,
+            "sample_controls": 400346,
+            "source_gwas_catalog": "GCST90475799",
+            "source_pmid": 39024449,
+            "ancestry_broad": "European",
+            "cohorts": [ 3 ]
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 643,
+        "fields": {
+            "sample_number": 439106,
+            "sample_cases": 25234,
+            "sample_controls": 413872,
+            "source_gwas_catalog": "GCST90475670",
+            "source_pmid": 39024449,
+            "ancestry_broad": "European",
+            "cohorts": [ 3 ]
+        }
+    },
+    {
+        "model": "omicspred.Sample",
+        "pk": 673,
+        "fields": {
+            "sample_number": 450439,
+            "sample_cases": 2852,
+            "sample_controls": 447587,
+            "source_gwas_catalog": "GCST90475569",
+            "source_pmid": 39024449,
+            "ancestry_broad": "European",
+            "cohorts": [ 3 ]
         }
     },
     {
@@ -190,6 +252,7 @@
             "omics_count": 2384,
             "omics_type": "protein",
             "scores_count": 2384,
+            "phewas_count": 31481,
             "files_ids": {
                 "gwas_sumstats": "u3fl",
                 "scoring_files": "z86f",
@@ -216,6 +279,7 @@
             "omics_count": 308,
             "omics_type": "protein",
             "scores_count": 308,
+            "phewas_count": 4695,
             "files_ids": {
                 "gwas_sumstats": "u3fl1",
                 "scoring_files": "z86f1",
@@ -241,6 +305,7 @@
             "omics_count": 726,
             "omics_type": "metabolite",
             "scores_count": 726,
+            "phewas_count": 14155,
             "files_ids": {
                 "gwas_sumstats": "u3fl2",
                 "scoring_files": "z86f2",
@@ -267,6 +332,7 @@
             "omics_count": 13668,
             "omics_type": "transcript",
             "scores_count": 13668,
+            "phewas_count": 47226,
             "files_ids": {
                 "gwas_sumstats": "u3fl4",
                 "scoring_files": "z86f4",
@@ -412,7 +478,7 @@
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
             "species_id": 9606,
             "dataset_id": 2,
-            "genes": [ 5],
+            "genes": [ 5 ],
             "proteins": [ 5 ],
             "transcripts": [],
             "metabolites": [],
@@ -809,6 +875,139 @@
             "estimate": 0.804,
             "performance": 17201,
             "type": "Spearman's rank correlation"
+        }
+    },
+    {
+        "model": "omicspred.Phenotype",
+        "pk": "MONDO_0005148",
+        "fields": {
+            "label": "type 2 diabetes mellitus",
+            "description": "A type of diabetes mellitus that is characterized by insulin resistance or desensitization and increased blood glucose levels. This is a chronic disease that can develop gradually over the life of a patient and can be linked to both environmental factors and heredity.",
+            "category": "Metabolic disorder",
+            "url": "http://purl.obolibrary.org/obo/MONDO_0005148",
+            "source": "EFO",
+            "traits_reported": [
+                {
+                    "id": "250.2",
+                    "label": "Type 2 diabetes",
+                    "source": "PheCode"
+                }
+            ]
+        }
+    },
+    {
+        "model": "omicspred.Phenotype",
+        "pk": "MONDO_0005066",
+        "fields": {
+            "label": "metabolic disease",
+            "description": "A congenital disorder (due to inherited enzyme abnormality) or acquired (due to failure of a metabolically important organ) disorder resulting from an abnormal metabolic process.",
+            "category": "Metabolic disorder",
+            "url": "http://purl.obolibrary.org/obo/MONDO_0005066",
+            "source": "EFO",
+            "traits_reported": [
+                {
+                    "id": "272",
+                    "label": "Disorders of lipid metabolism",
+                    "source": "PheCode"
+                },
+                {
+                    "id": "277",
+                    "label": "Other disorders of metabolism",
+                    "source": "PheCode"
+                }
+            ]
+        }
+    },
+    {
+        "model": "omicspred.ScorePheWAS",
+        "pk": 18496,
+        "fields": {
+            "score_id": 5,
+            "publication_id": 1,
+            "samples": [ 499 ],
+            "phenotypes": [ "MONDO_0005148" ],
+            "dataset_id": 1,
+            "method_description": "S-PrediXcan",
+            "trait_reported": "Type 2 diabetes (PheCode 250.2)",
+            "hr": 0.92,
+            "hr_ci": [0.89,0.95],
+            "fdr": 0.00812,
+            "zscore": -3.495,
+            "pvalue": 0.000473,
+            "bonferroni": 1,
+            "effect_size": -0.0238,
+            "var_gene_exp": 0.575,
+            "variants_number_used": 297,
+            "variants_fraction_found": 0.91
+        }
+    },
+    {
+        "model": "omicspred.ScorePheWAS",
+        "pk": 44386,
+        "fields": {
+            "score_id": 2385,
+            "publication_id": 1,
+            "samples": [ 490 ],
+            "phenotypes": [ "MONDO_0005148" ],
+            "dataset_id": 1,
+            "method_description": "S-PrediXcan",
+            "trait_reported": "Disorders of lipid metabolism (PheCode 272)",
+            "hr": 0.9,
+            "hr_ci": [0.87,0.93],
+            "fdr": 0.00341,
+            "zscore": -3.515,
+            "pvalue": 0.000438,
+            "bonferroni": 0.129,
+            "effect_size": -0.0188,
+            "var_gene_exp": 0.524,
+            "variants_number_used": 331,
+            "variants_fraction_found": 0.91
+        }
+    },
+    {
+        "model": "omicspred.ScorePheWAS",
+        "pk": 66017,
+        "fields": {
+            "score_id": 3006,
+            "publication_id": 1,
+            "samples": [ 673 ],
+            "phenotypes": [ "MONDO_0005148" ],
+            "dataset_id": 3,
+            "method_description": "S-PrediXcan",
+            "trait_reported": "Disorders of lipid metabolism (PheCode 272)",
+            "hr": 1.02,
+            "hr_ci": [1.01,1.03],
+            "fdr": 0.0354,
+            "zscore": -3.717,
+            "pvalue": 0.0002,
+            "bonferroni": 0.141,
+            "effect_size": -0.402,
+            "var_gene_exp": 0.0284,
+            "variants_number_used": 19,
+            "variants_fraction_found": 1
+        }
+    },
+    {
+        "model": "omicspred.ScorePheWAS",
+        "pk": 66021,
+        "fields": {
+            "score_id": 3006,
+            "publication_id": 1,
+            "samples": [ 643 ],
+            "phenotypes": [ "MONDO_0005148" ],
+            "dataset_id": 3,
+            "method_description": "S-PrediXcan",
+            "trait_reported": "Type 2 diabetes (PheCode 250.2)",
+            "hr": 0.97,
+            "hr_ci": [0.96,0.99],
+            "fdr": 0.00126,
+            "zscore": -4.775,
+            "pvalue": 1.79e-06,
+            "bonferroni": 0.00126,
+            "effect_size": -0.182,
+            "var_gene_exp": 0.0284,
+            "variants_number_used": 19,
+            "variants_fraction_found": 1
         }
     }
 ]

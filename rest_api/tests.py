@@ -11,7 +11,8 @@ class BrowseEndpointTest(APITestCase):
 
     # Load data in DB - Must live in the rest_api/fixtures/ directory
     fixtures = ['db_test']
-    databases = {'default', 'applications'}
+    # databases = {'default', 'applications'}
+    databases = {'default'}
 
     # Change throttle rates for the tests
     rate4test = '300/min'
@@ -39,7 +40,7 @@ class BrowseEndpointTest(APITestCase):
     proteins_list = ['P31994']
     metabolites_list = ['CHEBI_16113']
     pathways_list = ['R-HSA-191273', 'R-HSA-198933']
-    phenotypes_list = ['555.2','250', '278.1']
+    phenotypes_list = ['MONDO_0005148','MONDO_0005066']
     tissue_ids_list = ['UBERON_0001969', 'BTO_0000133']
     tissue_labels_list = ['blood plasma', 'blood serum']
     dataset_ids_list = ['OPD000001', 'OPD000002']
@@ -54,10 +55,14 @@ class BrowseEndpointTest(APITestCase):
     search_cohort = f'cohort={cohorts_list[1]}'
     search_author = f'author=Xu'
     search_opgs_id = f'opgs_id={scores_list[0]}'
+    search_opgs_ids = f'opgs_ids={','.join(scores_list)}'
+    search_opgs_ids_2 = f'opgs_ids={scores_list[0]}'
     search_phenotype = f'phenotype_id={phenotypes_list[0]}'
     search_gene = f'gene={gene_names_list[0]}'
+    search_metabolite =  f'metabolite={metabolites_list[0]}'
     seach_mt = f'molecular_trait={proteins_list[0]}'
     search_combined = f'{search_opgs_id}&{search_pmid}'
+    search_combined_2 = f'{search_opgs_ids}&{search_pmid}'
 
     omics_common_columns = ['id', 'trait_reported_id', 'trait_reported', 'variants_number', 'dataset__publication', 'dataset__platform__version', 'dataset__name']
 
@@ -68,13 +73,14 @@ class BrowseEndpointTest(APITestCase):
         ('Cohort/SYMBOL', 'cohort', 0, {'path': cohorts_list}),
         # Pathways
         ('Pathways', 'pathway/all', 1),
-        ('Pathways/Name', 'pathway', 0, {'path': pathways_list, 'extra_query': 'include_molecular_traits=0'}),
+        ('Pathways/Name', 'pathway', 0, {'path': pathways_list}),
         # Molecular trait endpoints
         ('Gene/ID', 'gene', 0, {'path': gene_ids_list}),
         ('Gene/Search', 'gene/search', 1, {'query': [search_gene]}),
         ('Protein/Name', 'protein', 0, {'path': proteins_list}),
         ('Protein/Search', 'protein/search', 1, {'query': [search_gene]}),
         ('Metabolite/Name', 'metabolite', 0, {'path': metabolites_list}),
+        ('Metabolite/Search', 'metabolite/search', 1, {'query': [search_metabolite]}),
         # Omics by platform endpoints
         ('Proteomics/Name', 'proteomics',1, {'path': platforms_list_proteomics}),
         ('Metabolomics/Name', 'metabolomics',1, {'path': platforms_list_metabolomics}),
@@ -93,7 +99,7 @@ class BrowseEndpointTest(APITestCase):
         # Score endpoints
         ('Scores', 'score/all', 1),
         ('Score/ID', 'score', 0, {'path': scores_list}),
-        ('Scores Search', 'score/search', 1, {'query': ['opgs_ids='+','.join(scores_list),search_pmid,search_opp_id,search_opd_id,search_platform,search_cohort]}),
+        ('Scores Search', 'score/search', 1, {'query': [search_opgs_ids,search_opgs_ids_2,search_pmid,search_opp_id,search_opd_id,search_platform,search_cohort,search_combined_2]}),
         ('Scores Search Type', 'score/search/protein', 1, {'path': [proteins_list[0]],'extra_query': 'include_performance_metrics=1'}),
         ('Scores Search Type', 'score/search/gene', 1, {'path': [gene_names_list[0]], 'extra_query': 'include_performance_data=1'}),
         ('Scores Search Type', 'score/search/metabolite', 1, {'path': [metabolites_list[0]]}),
@@ -111,11 +117,11 @@ class BrowseEndpointTest(APITestCase):
         ('Tissue/label', 'tissue', 0, {'path': tissue_labels_list}),
 
         # Applications
+        ('Phenotypes', 'phenotype/all', 1),
         ('Phenotype', 'phenotype', 0, {'path': phenotypes_list}),
-        ('Applications - Score', 'applications_score/all', 1),
-        ('Applications - Score', 'applications_score', 1, {'path': scores_list}),
-        ('Applications - Score Search', 'applications_score/search', 1, {'query': [search_phenotype,search_opgs_id,search_opp_id,search_pmid,seach_mt,search_combined]}),
-        ('Applications - Sample', 'applications_sample/all', 1),
+        ('Score PheWAS - all', 'score/phewas/all', 1),
+        ('Score PheWAS', 'score/phewas', 1, {'path': scores_list}),
+        ('Score PheWAS Search', 'score/phewas/search', 1, {'query': [search_phenotype,search_opgs_ids,search_opgs_ids_2,search_opp_id,search_combined_2]}),
         # Other endpoints
         ('Info', 'info', 0)
     ]
@@ -179,19 +185,27 @@ class BrowseEndpointTest(APITestCase):
             }
         ),
         (
-            'Pathway / molecular_trait_counts', 'pathway/all', 0,
+            'Gene Search / scores_count', f'gene/search?{search_gene}', 1,
             {
                 'response_path':[],
-                'query': ['only_counts'],
-                'response': ['metabolites_count']
+                'query': ['include_scores_count'],
+                'response': ['scores_count']
             }
         ),
         (
-            'Phenotype / children', f'phenotype/{phenotypes_list[1]}', 0,
+            'Protein Search / scores_count', f'protein/search?{search_gene}', 1,
             {
-                'response_path': [],
-                'query': ['include_children'],
-                'response': ['child_phenotype']
+                'response_path':[],
+                'query': ['include_scores_count'],
+                'response': ['scores_count']
+            }
+        ),
+        (
+            'Metabolite Search / scores_count', f'metabolite/search?{search_metabolite}', 1,
+            {
+                'response_path':[],
+                'query': ['include_scores_count'],
+                'response': ['scores_count']
             }
         )
     ]
@@ -200,8 +214,8 @@ class BrowseEndpointTest(APITestCase):
     endpoints_with_filter_ids = (
         ('Scores / filter_ids', 'score/all' , scores_list[1:]), # Exclude 1st element
         ('Publications / filter_ids', 'publication/all' , publication_ids_list[1:]), # Exclude 1st element
-        ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
-        ('Applications - Sample', 'applications_sample/all', phenotypes_list[1:]) # Exclude 1st element
+        # ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
+        # ('Applications - Sample', 'applications_sample/all', phenotypes_list[1:]) # Exclude 1st element
     )
 
 
@@ -223,13 +237,9 @@ class BrowseEndpointTest(APITestCase):
             ['id', 'genes__name', 'proteins__external_id', 'metabolites__external_id', 'dataset__platform__platform_master__type', 'dataset__platform__platform_master__name', 'dataset__publication__firstauthor']
         ),
         (
-            'ScoreApplications', f'applications_score/all',
-            ['phenotype_id', 'phenotype_name', 'phenotype__category', 'score_id', 'cohort', 'platform__platform_master__type', 'platform__name', 'genes__name', 'proteins__name', 'metabolites__name', 'hr', 'fdr']
-        ),
-        (
-            'SampleApplications', f'applications_sample/all',
-            ['phenotype_id', 'phenotype_name', 'phenotype__category', 'sample_age', 'sample_cases', 'sample_percent_female']
-        ),
+            'Score PheWAS', f'score/phewas/all',
+            ['phenotypes__id', 'phenotypes__label', 'phenotypes__category', 'score_id', 'score__genes__name', 'score__proteins__name', 'score__metabolites__name', 'hr', 'fdr']
+        )
     )
 
 
@@ -398,7 +408,10 @@ class BrowseEndpointTest(APITestCase):
             query_list = endpoint[self.index_example]['query']
             # Loop over the queries
             for idx, example in enumerate(query_list):
-                url = url_endpoint+'?'+example
+                if '?' in url_endpoint:
+                    url = url_endpoint+'&'+example
+                else:
+                    url = url_endpoint+'?'+example
                 response_path = endpoint[self.index_example]['response_path']
                 included_key = endpoint[self.index_example]['response'][idx]
                 # Test include

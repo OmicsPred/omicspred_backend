@@ -71,8 +71,16 @@ info:
 
       * <span class="badge badge-pill">1.2.0</span> - Mai 2026:
         * Refactor the Phenotype endpoints (`/api/phenotype/`), due to a change in the phenotype data structure.
-        * New PheWAS endpoints (`/api/score/phenotype/`), replacing the Score Applications endpoints (`/api/applications_score/`), due to a change in the phewas data structure.
-
+        * New PheWAS endpoints (`/api/score/phewas/`), replacing the Score Applications endpoints (`/api/applications_score/`), due to a change in the phewas data structure.
+        * New field **phewas_count** in the Dataset schemas (`/api/dataset/` endpoints), containing the number of PheWAS associations linked to the Genetic Scores of the dataset.
+        * New field **phewas_count** in the Publication schemas (`/api/publication/` endpoints), containing the number of PheWAS associations developed in the publication.
+        * Rename field **phenotype_associations** by **phewas** in the Info endpoint (`/api/info/`).
+        * New field **publication_type** in the Publication schemas (`/api/publication/` endpoints), to indicate if the publication contains Genetic Scores, PheWAS or both.
+        * Update Pathway endpoints (`/api/pathways`) by removing the details of the linked Genes, Proteins and Metabolites (was breaking the REST API for some pathways).
+        * New Metabolite endpoint (`/api/metabolite/search`) allowing to search by metabolite name, metabolite ID or by pathway ID.
+        * Update Protein search endpoint (`/api/protein/search`) allowing now to search by pathway ID.
+        * Update Gene search endpoint (`/api/gene/search`) allowing now to search by pathway ID.
+        * Remove the Score Applications endpoints (`/api/applications_score`), superseded by the PheWAS endpoints (`/api/score/phewas/`).
 
       * <span class="badge badge-pill">1.1.3</span> - February 2026:
         * New field **name** in the Omics schemas (`/api/transcriptomics/`, `/api/proteomics/` and /api/metabolomics/` endpoints), containing the score name.
@@ -282,7 +290,7 @@ components:
           type: integer
           description: "Number of molecular traits detected in the dataset"
           example: 2384
-        phenotypes_count:
+        phewas_count:
           type: integer
           description: "Number of PheWAS entries linked to the Genetic Scores from the dataset."
           example: 18453
@@ -319,6 +327,10 @@ components:
               type: string
               description: "Metadata Excel spreadsheet"
               example: "https://app.box.com/shared/static/anwpkxcpaixbfj67vd6odzqbsb7rk8a8"
+            phewas:
+              type: string
+              description: "PheWAS data file (only FDR adjusted P-value<0.05)"
+              example: "https://app.box.com/shared/static/u4gq3qypwley3m0wfduuisrou3ij0iso"
             predictdb:
               type: string
               description: "PredictDB prediction weigths - SQLite database"
@@ -698,9 +710,9 @@ components:
                   source:
                     type: string
                     example: "PheCode"
-            scores_count:
+            phewas_count:
               type: integer
-              description: "Number of scores linked with the Phenotype entry."
+              description: "Number of PheWAS data linked to the Phenotype entry."
               example: 6
 
     PhenotypeScoresCount:
@@ -846,6 +858,10 @@ components:
         - $ref: '#/components/schemas/Publication'
         - type: object
           properties:
+            publication_type:
+              type: string
+              description: "Indicate whether the publication contains Genetic Scores, PheWAS or both"
+              example: "Genetic Score"
             date_release:
               type: string
               description: "Release date in OmicsPred (format YYYY-MM-DD)"
@@ -860,6 +876,10 @@ components:
               description: "List of datasets (including platforms)"
               items:
                 $ref: '#/components/schemas/Dataset'
+            phewas_count:
+              type: integer
+              description: "Number of PheWAS entries developed in the publication."
+              example: 18453
 
 
     # Sample #
@@ -1109,11 +1129,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sample'
+        publication:
+          $ref: '#/components/schemas/Publication'
         trait_reported:
           type: string
           description: "The reported phenotype linked to the genetic score"
           example: "Cardiomyopathy (PheCode 425)"
-        method_name:
+        method_description:
           type: string
           description: "Method used to generate the PheWAS"
           example: "S-PrediXcan"
@@ -1725,6 +1747,76 @@ paths:
                   $ref: '#/components/schemas/Error_4XX'
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
+  /api/metabolite/search:
+    get:
+      tags:
+        - "Molecular trait endpoints"
+      operationId: searchMetabolites
+      description: | 
+        Search metabolite by name, by ID or by pathway ID, including for each of the results:
+          * Metabolite name
+          * Metabolite external ID
+          * Metabolite source (e.g. ChEBI)
+          * Metabolite synonyms
+          * Metabolite external references
+          * Metabolite description(s)
+          * Linked pathways
+
+        Example of request:
+        ```
+        - https://rest.omicspred.org/api/metabolite/search?metabolite=CHEBI_25017
+        - https://rest.omicspred.org/api/metabolite/search?pathway=R-HSA-191273
+        ```
+      parameters:
+      - name: metabolite
+        required: true
+        in: query
+        description: Metabolite name or ID.
+        examples:
+          CHEBI_25017:
+            value: "CHEBI_25017"
+          CHEBI_16113:
+            value: "CHEBI_16113"
+        schema:
+          type: string
+      - name: pathway
+        required: true
+        in: query
+        description: Pathway ID
+        examples:
+          R-HSA-191273:
+            value: "R-HSA-191273"
+          R-HSA-192105:
+            value: "R-HSA-192105"
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: 'List of metabolites'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Metabolite_extended'
+          description: |
+            List of metabolites matching the metabolite name, ID  or pathway ID provided
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
+        '4XX':
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error_4XX'
+          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+
   /api/protein/{protein_id}:
     get:
       tags:
@@ -1777,7 +1869,7 @@ paths:
         - "Molecular trait endpoints"
       operationId: searchProteins
       description: | 
-        Search proteins by gene name/symbol or ID, including for each of the results:
+        Search proteins by gene name/symbol, gene ID or by pathway ID, including for each of the results:
           * Protein name
           * Protein external ID
           * Protein source (e.g. UniProt)
@@ -1788,7 +1880,8 @@ paths:
 
         Example of request:
         ```
-        https://rest.omicspred.org/api/protein/search?gene=COL1A1
+        - https://rest.omicspred.org/api/protein/search?gene=COL1A1
+        - https://rest.omicspred.org/api/protein/search?pathway=R-HSA-191273
         ```
       parameters:
       - name: gene
@@ -1800,6 +1893,17 @@ paths:
             value: "COL1A1"
           ENSG00000165953:
             value: "ENSG00000165953"
+        schema:
+          type: string
+      - name: pathway
+        required: true
+        in: query
+        description: Pathway ID
+        examples:
+          R-HSA-191273:
+            value: "R-HSA-191273"
+          R-HSA-9733458:
+            value: "R-HSA-9733458"
         schema:
           type: string
       responses:
@@ -1817,7 +1921,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Protein_extended'
           description: |
-            List of proteins linked to the gene name/symbol or ID provided
+            List of proteins linked to the gene name/symbol, gene ID or pathway ID provided
         
             ---
 
@@ -1876,9 +1980,9 @@ paths:
     get:
       tags:
         - "Molecular trait endpoints"
-      operationId: searchFenes
+      operationId: searchGenes
       description: | 
-        Search search genes by name (several genes can have the same name but different external IDs), including for each of the results:
+        Search genes by name (several genes can have the same name but different external IDs) or by pathway ID, including for each of the results:
           * Gene name
           * Gene external ID
           * Gene source (e.g. Ensembl)
@@ -1891,6 +1995,7 @@ paths:
         ```
         - https://rest.omicspred.org/api/gene/search?gene=COL1A1
         - https://rest.omicspred.org/api/gene/search?gene=ENSG00000165953
+        - https://rest.omicspred.org/api/gene/search?pathway=R-HSA-191273
         ```
       parameters:
       - name: gene
@@ -1902,6 +2007,17 @@ paths:
             value: "COL1A1"
           ENSG00000165953:
             value: "ENSG00000165953"
+        schema:
+          type: string
+      - name: pathway
+        required: true
+        in: query
+        description: Pathway ID
+        examples:
+          R-HSA-191273:
+            value: "R-HSA-191273"
+          R-HSA-9733458:
+            value: "R-HSA-9733458"
         schema:
           type: string
       responses:
@@ -1919,7 +2035,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Gene_extended'
           description: |
-            List of genes matching the name/symbol or ID provided
+            List of genes matching the gene name/symbol, the gene ID or the pathway ID provided
         
             ---
 
@@ -3643,7 +3759,7 @@ paths:
 
 
   ## Score PheWAS endpoints ##
-  /api/score/phenotype/{opgs_id}:
+  /api/score/phewas/{opgs_id}:
     get:
       tags:
         - "PheWAS endpoints"
@@ -3660,20 +3776,24 @@ paths:
 
         Example of request:
         ```
-        https://rest.omicspred.org/api/score/phenotype/OPGS002402
+        https://rest.omicspred.org/api/score/phewas/OPGS002402
         ```
       parameters:
-      - name: opgs_id
-        in: path
-        required: true
-        description: 'OmicsPred Score ID'
+      - name: opgs_ids
+        in: query
+        required: false
+        description: Comma-separated list of OmicsPred Score IDs - *optional*
         schema:
           type: string
         examples:
-          OPGS002402:
+          opgs_ids_sel:
+            summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+          opgs_ids_1:
+            summary: 'OPGS002402, OPGS003423'
+            value: 'OPGS002402,OPGS003423'
+          opgs_ids_2:
+            summary: 'OPGS002402'
             value: 'OPGS002402'
-          OPGS003423:
-            value: 'OPGS003423'
       responses:
         '200':
           content:
@@ -3701,7 +3821,7 @@ paths:
           description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
 
-  /api/score/phenotype/search:
+  /api/score/phewas/search:
     get:
       tags:
         - "PheWAS endpoints"
@@ -3720,9 +3840,9 @@ paths:
 
         Examples of request:
         ```
-        - https://rest.omicspred.org/api/score/phenotype/search?phenotype_id=MONDO_0005344
-        - https://rest.omicspred.org/api/score/phenotype/search?pmid=36991119
-        - https://rest.omicspred.org/api/score/phenotype/search?pmid=36991119&opd_id=OPD000001
+        - https://rest.omicspred.org/api/score/phewas/search?phenotype_id=MONDO_0005344
+        - https://rest.omicspred.org/api/score/phewas/search?pmid=36991119
+        - https://rest.omicspred.org/api/score/phewas/search?pmid=36991119&opd_id=OPD000001
         ```
       parameters:
         - name: opgs_id
@@ -4188,7 +4308,7 @@ paths:
       description: |
         Return diverse information related to the REST API and OmicsPred, including:
         * REST API version
-        * Data count (scores, phenotype associations, ...)
+        * Data count (scores, phenotypes, phewas, pathways, ...)
 
         Example of request:
         ```
@@ -4210,7 +4330,7 @@ paths:
                       version:
                         type: string
                         description: "REST API version"
-                        example: "1.0"
+                        example: "1.2.0"
                   data_count:
                     type: object
                     description: "Counts of the different type of data in OmicsPred"
@@ -4222,7 +4342,7 @@ paths:
                       scores:
                         type: number
                         description: "Number of Genetic Scores in OmicsPred"
-                        example: 20805
+                        example: 3339469
                       publications:
                         type: number
                         description: "Number of Publications/Studies in OmicsPred"
@@ -4234,19 +4354,19 @@ paths:
                       pathways:
                         type: number
                         description: "Number of Pathways (Reactome) in OmicsPred"
-                        example: 202
+                        example: 2748
                       phenotypes:
                         type: number
                         description: "Number of Phenotypes in OmicsPred"
-                        example: 18404
-                      phenotype_associations:
+                        example: 934
+                      phewas:
                         type: number
-                        description: "Number of Phenotype associations in OmicsPred"
-                        example: 20342
+                        description: "Number of PheWAS associations in OmicsPred"
+                        example: 361280
                       tissues:
                         type: number
                         description: "Number of Tissues in OmicsPred"
-                        example: 4
+                        example: 52
             description: 'Diverse information about the project, such as REST API version, data counts, ...'
         '4XX':
           content:
