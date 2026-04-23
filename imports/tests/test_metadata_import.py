@@ -257,8 +257,8 @@ class ImportMetadataTest(TestCase):
 
         # Tissue
         self.print_test_header('Tissue', test_type)
-        tissue_model = EFO.objects.get(id=tissue_data['id'])
-        self.assertIsInstance(tissue_model, EFO)
+        tissue_model = Tissue.objects.get(id=tissue_data['id'])
+        self.assertIsInstance(tissue_model, Tissue)
         self.import_data_check(tissue_model, tissue_data)
 
         # Datasets
