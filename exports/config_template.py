@@ -3,6 +3,9 @@
 metadata_exports_publication_id = '<publication_id, e.g. 1>'
 metadata_exports_dir = '<path_to_directory>'
 
+# PheWAS exports
+phewas_exports_dir = '<path_to_directory>'
+
 
 # SQLite exports
 sqlite_default_values = {
@@ -24,4 +27,11 @@ scoring_file_config = {
     'sqlite_file_prefix': '<sqlite_file_prefix>', # e.g. 'mashr_'
     'sqlite_file_suffix': '<sqlite_file_suffix>', # e.g. '_model'
     'ds_name': '<dataset_name_or_part_of_its_name>' # e.g. '- sQTL - MASHR -'
+}
+
+# Scoring files exports - from text files
+scoring_file_from_file_config = {
+    'pmid': '<pubmed ID>', # e.g. 35501419
+    'input_dir_root': '<path_to_dir_containing_raw_scoring_files>',
+    'output_dir_root': '<path_to_omicspred_scoring_files_output_dir>'
 }

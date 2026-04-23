@@ -31,7 +31,7 @@ class ProteinParser():
             self.sep = '|'
 
 
-    def parse_performance_metric(self,score,efo,data_values,cohort_data,in_olink_neur):
+    def parse_performance_metric(self,score,tissue,data_values,cohort_data,in_olink_neur):
         ''' Parse performance and metric data '''
         sample = None
         extra = None
@@ -65,7 +65,7 @@ class ProteinParser():
                             gwas_info = gwas_data[platform_name][cohort_name]
                             break
 
-            performance_data = PerformanceData(score,self.dataset,sample,efo,type,gwas_info,extra)
+            performance_data = PerformanceData(score,self.dataset,sample,tissue,type,gwas_info,extra)
             performance_data.add_metric(data_values)
             performance_model = performance_data.create_model()
 
@@ -144,10 +144,7 @@ class ProteinParser():
                 protein_model = protein_data.create_model()
                 protein_models.append(protein_model)
 
-            # # EFO model
-            # efo_data = EFOData(self.study_info['tissue'])
-            # efo_model = efo_data.create_model()
-            efo_model = self.tissue
+            tissue_model = self.tissue
 
             # Score model
             method_name = self.study_info['method_name']
@@ -172,7 +169,6 @@ class ProteinParser():
                 score_model.genes.add(gene_model)
             for protein_model in protein_models:
                 score_model.proteins.add(protein_model)
-            # score_model.efos.add(efo_model)
             score_model.save()
 
             # Performance & Metric models
@@ -193,7 +189,7 @@ class ProteinParser():
                 training_values['Rho_pvalue'] = row[rho_pval_col]
 
             cohort_entry = self.study_info['sample_cohort_info'][cohort_internal]
-            self.parse_performance_metric(score_model,efo_model,training_values,cohort_entry,in_olink_neur)
+            self.parse_performance_metric(score_model,tissue_model,training_values,cohort_entry,in_olink_neur)
 
             # - Validations
             for cohort in self.study_info['sample_cohort_info'].keys():
@@ -217,4 +213,4 @@ class ProteinParser():
                     if missing_rate_col in df.columns:
                         validation_values['MissingRate'] = row[missing_rate_col]
                     cohort_entry = self.study_info['sample_cohort_info'][cohort]
-                    self.parse_performance_metric(score_model,efo_model,validation_values,cohort_entry,in_olink_neur)
+                    self.parse_performance_metric(score_model,tissue_model,validation_values,cohort_entry,in_olink_neur)

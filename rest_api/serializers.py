@@ -126,7 +126,7 @@ class DatasetLightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'phenotypes_count', 'omics_type', 'method_name',
+        meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'phewas_count', 'omics_type', 'method_name',
                        'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
@@ -147,7 +147,7 @@ class PublicationExtendedSerializer(PublicationSerializer):
     datasets = DatasetLightSerializer(many=True, read_only=True)
 
     class Meta(PublicationSerializer.Meta):
-        meta_fields = ('date_release', 'authors', 'datasets')
+        meta_fields = ('publication_type', 'date_release', 'authors', 'datasets', 'phewas_count')
         fields = PublicationSerializer.Meta.fields + meta_fields
         read_only_fields = PublicationSerializer.Meta.read_only_fields + meta_fields
 
@@ -235,11 +235,11 @@ class GeneSerializerExtended(GeneSerializer):
         read_only_fields = GeneSerializer.Meta.read_only_fields + meta_fields
 
 
-class GeneSerializerScoresCount(GeneSerializer):
-    class Meta(GeneSerializer.Meta):
+class GeneSerializerScoresCount(GeneSerializerMinimal):
+    class Meta(GeneSerializerMinimal.Meta):
         meta_fields = scores_count
-        fields = GeneSerializer.Meta.fields + meta_fields
-        read_only_fields = GeneSerializer.Meta.read_only_fields + meta_fields
+        fields = GeneSerializerMinimal.Meta.fields + meta_fields
+        read_only_fields = GeneSerializerMinimal.Meta.read_only_fields + meta_fields
 
 
 class GeneSerializerExtendedScoresCount(GeneSerializerExtended):
@@ -305,11 +305,18 @@ class ProteinSerializerExtended(ProteinSerializer):
         read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
 
 
-class ProteinSerializerScoresCount(ProteinSerializer):
-    class Meta(ProteinSerializer.Meta):
-        meta_fields = scores_count
-        fields = ProteinSerializer.Meta.fields + meta_fields
-        read_only_fields = ProteinSerializer.Meta.read_only_fields + meta_fields
+class ProteinSerializerScoresCount(ProteinBaseSerializer):
+    descriptions = serializers.SerializerMethodField()
+
+    class Meta(ProteinBaseSerializer.Meta):
+        meta_fields = ('descriptions','scores_count')
+        fields = ProteinBaseSerializer.Meta.fields + meta_fields
+        read_only_fields = ProteinBaseSerializer.Meta.read_only_fields + meta_fields
+
+    def get_descriptions(self, obj):
+        if (obj.description):
+            return obj.description_list
+        return []
 
 
 class ProteinSerializerExtendedScoresCount(ProteinSerializerExtended):
@@ -383,12 +390,17 @@ class MetaboliteSerializerExtended(MetaboliteSerializer):
         return []
 
 
-class MetaboliteSerializerScoresCount(MetaboliteSerializer):
-    class Meta(MetaboliteSerializer.Meta):
-        meta_fields = scores_count
-        fields = MetaboliteSerializer.Meta.fields + meta_fields
-        read_only_fields = MetaboliteSerializer.Meta.read_only_fields + meta_fields
+class MetaboliteSerializerScoresCount(MetaboliteBaseSerializer):
+    descriptions = serializers.SerializerMethodField()
+    class Meta(MetaboliteBaseSerializer.Meta):
+        meta_fields = ('descriptions', 'scores_count')
+        fields = MetaboliteBaseSerializer.Meta.fields + meta_fields
+        read_only_fields = MetaboliteBaseSerializer.Meta.read_only_fields + meta_fields
 
+    def get_descriptions(self, obj):
+        if (obj.description):
+            return obj.description_list
+        return []
 
 class MetaboliteSerializerExtendedScoresCount(MetaboliteSerializerExtended):
     class Meta(MetaboliteSerializerExtended.Meta):
@@ -747,7 +759,7 @@ class PhenotypeSerializerExtended(PhenotypeSerializer):
 
 class PhenotypeSerializerScoresCount(PhenotypeSerializerExtended):
     class Meta(PhenotypeSerializerExtended.Meta):
-        meta_fields = scores_count
+        meta_fields = ('phewas_count',)
         fields = PhenotypeSerializerExtended.Meta.fields + meta_fields
         read_only_fields = PhenotypeSerializerExtended.Meta.read_only_fields + meta_fields
 
@@ -755,13 +767,13 @@ class PhenotypeSerializerScoresCount(PhenotypeSerializerExtended):
 class ScorePheWASSerializer(serializers.ModelSerializer):
     score = ScoreLightSerializer(many=False,read_only=True)
     phenotypes = PhenotypeSerializer(many=True,read_only=True)
-    # sample = SampleSerializer(many=False,read_only=True)
     samples = SampleSerializer(many=True,read_only=True)
+    publication = PublicationSerializer(many=False,read_only=True)
     data_values = serializers.SerializerMethodField('get_data_values')
 
     class Meta:
         model = ScorePheWAS
-        meta_fields = ('score','phenotypes','samples','trait_reported','method_name','ancestry',
+        meta_fields = ('score','phenotypes','samples','publication','trait_reported','method_description','ancestry',
                        'data_values','variants_number_used','variants_fraction_found')
         fields = meta_fields
         read_only_fields = meta_fields
