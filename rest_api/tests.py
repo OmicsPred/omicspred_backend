@@ -238,7 +238,7 @@ class BrowseEndpointTest(APITestCase):
         ),
         (
             'Score PheWAS', f'score/phewas/all',
-            ['phenotypes__id', 'phenotypes__label', 'phenotypes__category', 'score_id', 'score__genes__name', 'score__proteins__name', 'score__metabolites__name', 'hr', 'fdr']
+            ['phenotypes__id', 'phenotypes__label', 'phenotypes__category', 'score_id', 'score__genes__name', 'score__proteins__name', 'score__metabolites__name', 'hr', 'adjusted_pvalue']
         )
     )
 
