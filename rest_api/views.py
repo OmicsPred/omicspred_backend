@@ -152,10 +152,10 @@ def sort_data_list(request,type,queryset,default_col='num',distinct_col=None):
     ## Set sorting field
     if sort_field in ['genes_count','proteins_count','metabolites_count'] and type == 'pathway':
         mt_type = sort_field.split('_')[0]
+        ordering = 'mt_count'
         if is_desc == True:
-            queryset = queryset.annotate(mt_count=Count('pathway_'+mt_type)).order_by('-mt_count')
-        else:
-            queryset = queryset.annotate(mt_count=Count('pathway_'+mt_type)).order_by('mt_count')
+            ordering = '-mt_count'
+        queryset = queryset.annotate(mt_count=Count('pathway_'+mt_type)).order_by(ordering)
     # Order by name
     elif sort_field.endswith('name') and not request_url.startswith('/api/score/all'): # This is to slightly speed up the huge Browse Scores table sorting
         if is_desc == True:
@@ -1461,7 +1461,7 @@ class RestScorePheWAS(generics.ListAPIView):
         opgs_id = self.kwargs['opgs_id']
         opgs_id = opgs_id.upper()
 
-        queryset = ScorePheWAS.objects.select_related(*related_dict['score_phewas_select']).filter(score__id=opgs_id).prefetch_related(*related_dict['score_phewas']).order_by('dataset_id')
+        queryset = ScorePheWAS.objects.select_related(*related_dict['score_phewas_select']).filter(score__id=opgs_id).prefetch_related(*related_dict['score_phewas']).order_by('pvalue')
 
         return queryset
 
@@ -1560,7 +1560,7 @@ class RestListPhenotypes (generics.ListAPIView):
     serializer_class = PhenotypeSerializerScoresCount
 
     def get_queryset(self):
-        queryset = Phenotype.objects.all().prefetch_related('phenotype_scores').order_by('label')
+        queryset = Phenotype.objects.all()
 
         # Filter by list of EFO IDs
         ids_list = get_ids_list(self)
