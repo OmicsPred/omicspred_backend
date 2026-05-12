@@ -1,5 +1,5 @@
 from datetime import date
-from omicspred.models import *
+from omicspred.models import Dataset
 from exports.metadata_build_export import MetadataExport
 from exports.config import metadata_exports_dir, metadata_exports_publication_id, sqlite_exports_dir
 from django.db.models import Q
@@ -10,7 +10,7 @@ def run():
     # datasets = Dataset.objects.filter(Q(publication_id=metadata_exports_publication_id) & Q(num__lte=56)).order_by('num')
     datasets = Dataset.objects.filter(publication_id=metadata_exports_publication_id).order_by('num')
     # datasets = Dataset.objects.all().order_by('num')
-    # datasets = Dataset.objects.filter(num=1).order_by('num')
+    # datasets = Dataset.objects.filter(num=6).order_by('num')
     print("## Start metadata exports, dataset by dataset")
     datasets_total = len(datasets)
     count_dataset = 0

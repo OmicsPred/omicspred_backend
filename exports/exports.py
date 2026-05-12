@@ -31,6 +31,7 @@ fields_to_export = {
             {'name': 'file_url_predictdb', 'label': 'PredictDB', 'skip_auto_import': True},
             {'name': 'file_url_covariance', 'label': 'Covariance', 'skip_auto_import': True},
             {'name': 'file_url_phewas', 'label': 'PheWAS', 'skip_auto_import': True},
+            {'name': 'file_url_phewas_full', 'label': 'PheWAS Full', 'skip_auto_import': True},
             {'name': 'file_url_validation_results', 'label': 'Validation data file', 'skip_auto_import': True},
             {'name': 'file_url_score_variant_info', 'label': 'Score variant info file', 'skip_auto_import': True},
             {'name': 'file_url_gwas_sumstats', 'label': 'GWAS summary stats files', 'skip_auto_import': True}
