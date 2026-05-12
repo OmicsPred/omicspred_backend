@@ -2,7 +2,7 @@ from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from search_es.analyzers import id_analyzer, name_delimiter_analyzer, word_delimiter_analyzer
-from omicspred.models import EFO
+from omicspred.models import Tissue
 
 
 # PGS index analyzer
@@ -42,7 +42,7 @@ class TissueDocument(Document):
     class Django:
         """Inner nested class Django."""
 
-        model = EFO # The model associated with this Document
+        model = Tissue # The model associated with this Document
         # queryset_pagination = settings.ELASTICSEARCH_DSL_QUERYSET_PAGINATION_SMALL # Index pagination
         # Extra fields to store and return
         # fields = []
