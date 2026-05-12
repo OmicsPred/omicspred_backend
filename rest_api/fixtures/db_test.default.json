@@ -892,7 +892,8 @@
                     "label": "Type 2 diabetes",
                     "source": "PheCode"
                 }
-            ]
+            ],
+            "phewas_count": 4
         }
     },
     {
@@ -915,7 +916,8 @@
                     "label": "Other disorders of metabolism",
                     "source": "PheCode"
                 }
-            ]
+            ],
+            "phewas_count": 0
         }
     },
     {
@@ -931,7 +933,8 @@
             "trait_reported": "Type 2 diabetes (PheCode 250.2)",
             "hr": 0.92,
             "hr_ci": [0.89,0.95],
-            "fdr": 0.00812,
+            "adjusted_pvalue": 0.00812,
+            "adjusted_pvalue_method": "False Discovery Rate (FDR)",
             "zscore": -3.495,
             "pvalue": 0.000473,
             "bonferroni": 1,
@@ -954,7 +957,8 @@
             "trait_reported": "Disorders of lipid metabolism (PheCode 272)",
             "hr": 0.9,
             "hr_ci": [0.87,0.93],
-            "fdr": 0.00341,
+            "adjusted_pvalue": 0.00341,
+            "adjusted_pvalue_method": "False Discovery Rate (FDR)",
             "zscore": -3.515,
             "pvalue": 0.000438,
             "bonferroni": 0.129,
@@ -977,7 +981,8 @@
             "trait_reported": "Disorders of lipid metabolism (PheCode 272)",
             "hr": 1.02,
             "hr_ci": [1.01,1.03],
-            "fdr": 0.0354,
+            "adjusted_pvalue": 0.0354,
+            "adjusted_pvalue_method": "False Discovery Rate (FDR)",
             "zscore": -3.717,
             "pvalue": 0.0002,
             "bonferroni": 0.141,
@@ -1000,7 +1005,8 @@
             "trait_reported": "Type 2 diabetes (PheCode 250.2)",
             "hr": 0.97,
             "hr_ci": [0.96,0.99],
-            "fdr": 0.00126,
+            "adjusted_pvalue": 0.00126,
+            "adjusted_pvalue_method": "False Discovery Rate (FDR)",
             "zscore": -4.775,
             "pvalue": 1.79e-06,
             "bonferroni": 0.00126,

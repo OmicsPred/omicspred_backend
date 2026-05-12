@@ -712,10 +712,7 @@ class Phenotype(models.Model):
     source = models.CharField('Phenotype Source', max_length=100, null=True)
     traits_reported = models.JSONField('Reported/mapped traits', null=True)
     child_phenotype = models.ManyToManyField('self', verbose_name='Children Phenotype', symmetrical=False, related_name='parent_phenotype')
-
-    @property
-    def phewas_count(self):
-        return self.phenotype_scores.count()
+    phewas_count = models.IntegerField('Associated PheWAS data count', default=0)
 
     @property
     def categories_list(self):
@@ -730,16 +727,6 @@ class ScorePheWAS(models.Model):
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_phewas') # Score that the PheWAS data are associated with
     dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name='Dataset', related_name='dataset_phenotype')
     publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='PheWAS Publication', related_name='score_phewas_publication')
-
-    # STUDY_TYPE_CHOICES = [
-    #     ('imputed', "imputed"),
-    #     ('summary', "summary")
-    # ]
-    # study_type = models.CharField(max_length=40,
-    #     choices=STUDY_TYPE_CHOICES,
-    #     default='imputed',
-    #     db_index=True
-    # )
 
     # Method
     method_description= models.TextField('PheWAS Method Description', null=True)
@@ -760,7 +747,8 @@ class ScorePheWAS(models.Model):
     # r2 = models.FloatField(verbose_name='R2', null=True)
     hr = models.FloatField(verbose_name='Hazard Ratio', null=True)
     hr_ci = DecimalRangeField(verbose_name='Hazard Ratio Confidence Interval', null=True)
-    fdr = models.FloatField(verbose_name='Adjusted P-value', null=True)
+    adjusted_pvalue = models.FloatField(verbose_name='Adjusted P-value', null=True)
+    adjusted_pvalue_method = models.CharField(verbose_name='Adjusted P-value Method', max_length=100, null=True)
     zscore = models.FloatField(verbose_name='Standard score (Z-score)', null=True)
     pvalue = models.FloatField(verbose_name='P-value', null=True)
     bonferroni = models.FloatField(verbose_name='Bonferroni adjusted P-value', null=True)
@@ -776,7 +764,7 @@ class ScorePheWAS(models.Model):
             'HR': self.hr,
             'HR_lower': float(self.hr_ci.lower) if self.hr_ci != None else None,
             'HR_upper': float(self.hr_ci.upper) if self.hr_ci != None else None,
-            'FDR': self.fdr,
+            'adjusted_p-value': self.adjusted_pvalue,
             'z-score': self.zscore,
             'p-value': self.pvalue,
             'bonferroni': self.bonferroni,

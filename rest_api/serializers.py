@@ -774,7 +774,7 @@ class ScorePheWASSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScorePheWAS
         meta_fields = ('score','phenotypes','samples','publication','trait_reported','method_description','ancestry',
-                       'data_values','variants_number_used','variants_fraction_found')
+                       'data_values','adjusted_pvalue_method','variants_number_used','variants_fraction_found')
         fields = meta_fields
         read_only_fields = meta_fields
 
