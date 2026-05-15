@@ -721,6 +721,13 @@ class Phenotype(models.Model):
         else:
             return []
 
+    @property
+    def traits_reported_list(self):
+        if self.traits_reported:
+            return sorted([x['id'] for x in self.traits_reported])
+        else:
+            return []
+
 
 class ScorePheWAS(models.Model):
     """ Class to hold Score PheWAS values """

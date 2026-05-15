@@ -9,8 +9,8 @@ from elasticsearch_dsl import Search
 result_size = 50
 
 def query_fields():
-    return ['id^5','id_colon^5','label^6','name^4','category','synonyms_list^3','description^3',
-            'trait_reported', 'trait_reported_id',
+    return ['id^5','id_colon^5','label^6','name^4','categories_list','synonyms_list^3','description^3',
+            'trait_reported', 'trait_reported_id', 'traits_reported_list^2',
             'genes.external_id^2','genes.name^2','genes.synonyms_list^2','genes.description',
             'proteins.external_id^2','proteins.names^2','proteins.synonyms_list^2','proteins.description',
             'metabolites.external_id^2','metabolites.name^2','metabolites.synonyms_list^2','metabolites.description',
