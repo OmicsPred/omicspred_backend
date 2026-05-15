@@ -15,7 +15,8 @@ platform_types = {
     'Somalogic': 'Proteomics',
 }
 
-# Phenotype imports
-phenotype_publication_id = '<publication_id>' # e.g. 1
-phenotype_csv_dir = '<path_to_phenotype_files_directory>'
+# PhWAS imports
+phewas_publication_id = '<publication_id>' # e.g. 1
+phewas_method = '<method_description>' # e.g. S-PrediXcan
+phewas_csv_dir = '<path_to_phewas_files_directory>'
 efo_sqlite_filepath = '<path_to_efo_sqlite_db>' # cf. script 'create_efo_db.py'

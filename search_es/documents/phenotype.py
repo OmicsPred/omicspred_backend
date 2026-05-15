@@ -18,12 +18,20 @@ class PhenotypeDocument(Document):
     label = fields.TextField(
         analyzer=name_delimiter#,
     )
-    category = fields.TextField(
+    categories_list = fields.TextField(
         analyzer=name_delimiter,
         fields={
             'raw': fields.KeywordField()
         }
     )
+
+    traits_reported_list = fields.TextField(
+        analyzer=word_delimiter,
+        fields={
+            'raw': fields.KeywordField()
+        }
+    )
+
     phewas_count = fields.IntegerField(index=False)
 
     class Index:

@@ -125,7 +125,7 @@ def get_publication_num(publication_id:str) -> int:
     return get_num_from_id(publication_id, opp_prefix)
 
 
-def sort_data_list(request,type,queryset,default_col='num',distinct_col=None):
+def sort_data_list(request,type,queryset,default_col='num',distinct_col:list=[]):
     request_url = request.get_full_path()
     # Sort data
     sort_field = request.query_params.get('sort_field')
@@ -139,7 +139,7 @@ def sort_data_list(request,type,queryset,default_col='num',distinct_col=None):
         queryset = queryset.distinct()
     # Distinct data
     elif distinct_col:
-        queryset = queryset.distinct(distinct_col)
+        queryset = queryset.distinct(*distinct_col)
 
     sort = request.query_params.get('sort')
     if not sort_field or sort_field is None:
@@ -207,6 +207,8 @@ def filter_data(queryset, filter_params):
         query_filter_list.append(Q(dataset__tissue__id__iexact=filters_data['tissue']))
     if 'dataset' in filters_types:
         query_filter_list.append(Q(dataset__id__exact=filters_data['dataset']))
+    if 'gwas' in filters_types:
+        query_filter_list.append(Q(samples__source_gwas_catalog__iexact=filters_data['gwas']))
 
     # PheWAS
     if 'phewas_score_id' in filters_types:
@@ -662,7 +664,7 @@ class RestMetabolomics(generics.ListAPIView):
             queryset = filter_data(queryset, table_filter)
 
         # Sort data + distinct scores
-        queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
+        queryset = sort_data_list(self.request,'score',queryset,distinct_col=['num'])
         # # Distinct scores
         # queryset = queryset.distinct('num')
 
@@ -750,7 +752,7 @@ class RestProteomics(generics.ListAPIView):
 
         # Sort data + distinct scores
         # queryset = sort_data_list(self.request,'score',queryset)
-        queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
+        queryset = sort_data_list(self.request,'score',queryset,distinct_col=['num'])
         # # Distinct scores
         # queryset = queryset.distinct('num')
 
@@ -821,7 +823,7 @@ class RestTranscriptomics(generics.ListAPIView):
             queryset = filter_data(queryset, table_filter)
 
         # Sort data + distinct scores
-        queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
+        queryset = sort_data_list(self.request,'score',queryset,distinct_col=['num'])
         # # Distinct scores
         # queryset = queryset.distinct('num')
 
@@ -1201,11 +1203,6 @@ class RestListScores(generics.ListAPIView):
             queryset = filter_data(queryset, table_filter)
         # Sort data
         queryset = sort_data_list(self.request,'score',queryset)
-        # if filter_count:
-        #     # queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
-        #     queryset = sort_data_list(self.request,'score',queryset)
-        # else:
-        #     queryset = sort_data_list(self.request,'score',queryset)
         return queryset
 
 
@@ -1294,7 +1291,7 @@ class RestScoreSearchByMolecularTrait(generics.ListAPIView):
                                            Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term) |
                                            Q(dataset__publication__id__iexact=filter_term) | Q(dataset__publication__firstauthor__iexact=filter_term))
         # Sort data + distinct scores
-        queryset = sort_data_list(self.request,'score',queryset, distinct_col='num')
+        queryset = sort_data_list(self.request,'score',queryset, distinct_col=['num'])
         # # Distinct scores
         # queryset = queryset.distinct('num')
 
@@ -1399,11 +1396,6 @@ class RestScoreSearch(generics.ListAPIView):
             query_filter_list.extend([Q(metabolites__external_id__iexact=filter_term), Q(metabolites__name__icontains=filter_term)])
 
             queryset = queryset.filter(reduce(operator.or_,query_filter_list))
-            # queryset = queryset.filter(Q(id__iexact=filter_term) |
-            #                            Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
-            #                            Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
-            #                            Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
-            #                            Q(dataset__platform__name__iexact=filter_term) | Q(dataset__platform__platform_master__type__iexact=filter_term))
 
         table_filter = self.request.query_params.get('table_filter')
         if table_filter and table_filter is not None:
@@ -1414,7 +1406,7 @@ class RestScoreSearch(generics.ListAPIView):
             queryset = []
         else:
             # Sort data + distinct scores
-            queryset = sort_data_list(self.request,'score',queryset,distinct_col='num')
+            queryset = sort_data_list(self.request,'score',queryset,distinct_col=['num'])
             # # Distinct scores
             # queryset = queryset.distinct('num')
 
@@ -1530,7 +1522,7 @@ class RestScorePheWASSearch(generics.ListAPIView):
             query_filter_list = [ Q(score__genes__external_id__iexact=filter_term), Q(score__genes__name__icontains=filter_term),
                                   Q(score__proteins__external_id__iexact=filter_term), Q(score__proteins__name__iexact=filter_term),
                                   Q(score__metabolites__external_id__iexact=filter_term), Q(score__metabolites__name__icontains=filter_term),
-                                  Q(samples__cohorts__name_short__iexact=filter_term)]
+                                  Q(samples__cohorts__name_short__iexact=filter_term), Q(samples__source_gwas_catalog__icontains=filter_term)]
             if not opgs_ids or opgs_ids == None:
                 query_filter_list.extend([Q(score__id__iexact=filter_term), Q(score__name__icontains=filter_term)])
             if not opp_id or opp_id == None:
@@ -1545,9 +1537,10 @@ class RestScorePheWASSearch(generics.ListAPIView):
             queryset = []
         else:
             # Sort data + distinct score phewas
-            queryset = sort_data_list(self.request,'score_phewas',queryset,'score_id')
+            queryset = sort_data_list(self.request,'score_phewas',queryset,'score_id',distinct_col=['score_id','pvalue','adjusted_pvalue'])
 
         return queryset
+        # return queryset
 
 
 ## Phenotype ##

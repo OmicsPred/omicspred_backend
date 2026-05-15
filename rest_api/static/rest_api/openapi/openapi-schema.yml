@@ -69,7 +69,7 @@ info:
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
 
-      * <span class="badge badge-pill">1.2.0</span> - Mai 2026:
+      * <span class="badge badge-pill">1.2.0</span> - May 2026:
         * Refactor the Phenotype endpoints (`/api/phenotype/`), due to a change in the phenotype data structure.
         * New PheWAS endpoints (`/api/score/phewas/`), replacing the Score Applications endpoints (`/api/applications_score/`), due to a change in the phewas data structure.
         * New field **phewas_count** in the Dataset schemas (`/api/dataset/` endpoints), containing the number of PheWAS associations linked to the Genetic Scores of the dataset.
