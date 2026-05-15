@@ -3,6 +3,7 @@ import os
 current_dir = os.getcwd()
 metadata_exports_publication_id = 1
 metadata_exports_dir = current_dir+'/exports/tests/output'
+phewas_exports_dir = current_dir+'/exports/tests/output'
 sqlite_exports_dir = current_dir+'/exports/tests/data/'
 
 

@@ -1,5 +1,4 @@
 import os
-import shutil
 import pandas as pd
 from django.test import TestCase
 from omicspred.models import *
