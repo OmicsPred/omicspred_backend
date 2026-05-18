@@ -1,5 +1,6 @@
 from omicspred.models import *
 from exports.sqlite_export import SqliteExport
+from exports.datasets import DatasetsSelection
 from exports.config import sqlite_default_values
 
 
@@ -98,7 +99,8 @@ def run(*args):
             skip_zip = sqlite_default_values['skip_zip']
 
     # Fetch dataset(s)
-    datasets = Dataset.objects.filter(publication__id=opp_id).order_by('id')
+    ds_selection = DatasetsSelection()
+    datasets = ds_selection.get_datasets()
     # Create SqliteExport object
     sqlite_export = SqliteExport(opp_id,output_sqlite_dir,scoring_files_dir,datasets,use_different_id_as_gene)
     # Generate SQLite export file(s)
