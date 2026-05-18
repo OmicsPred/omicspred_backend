@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import json
 import requests
@@ -10,23 +11,30 @@ efo_file = 'efo.json'
 efo_filepath = f'{phewas_dir}/metadata/{efo_file}'
 
 def create_table():
-    sqlite_create_table = """
-        CREATE TABLE IF NOT EXISTS efo (
-            id TEXT,
-            label TEXT,
-            alt_label TEXT,
-            description TEXT,
-            url TEXT,
-            replacement_id TEXT,
-            PRIMARY KEY(id)
-        );
-        """
-    con = sqlite3.connect(efo_sqlite_filepath)
-    cur = con.cursor()
-    cur.execute(sqlite_create_table)
-    con.commit()
-    cur.close()
-    con.close()
+    # Remove existing database (cleaner)
+    if efo_sqlite_filepath.endswith('.db'):
+        os.remove(efo_sqlite_filepath)
+        # Create database
+        sqlite_create_table = """
+            CREATE TABLE IF NOT EXISTS efo (
+                id TEXT,
+                label TEXT,
+                alt_label TEXT,
+                description TEXT,
+                url TEXT,
+                replacement_id TEXT,
+                PRIMARY KEY(id)
+            );
+            """
+        con = sqlite3.connect(efo_sqlite_filepath)
+        cur = con.cursor()
+        cur.execute(sqlite_create_table)
+        con.commit()
+        cur.close()
+        con.close()
+    else:
+        print(f"- Wrong SQLite file extension for {efo_sqlite_filepath}")
+        exit(0)
 
 
 def insert_phenotype(efo_data:tuple):
