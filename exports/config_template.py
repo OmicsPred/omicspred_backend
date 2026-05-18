@@ -1,3 +1,10 @@
+## Dataset selection
+dataset_selection = { '<dataset_column>': '<dataset_value(s)>' }
+# e.g.:
+# 'publication_id': 1
+# 'num': 208
+# 'id__in': ['OPD000056','OPD000105','OPD000154','OPD000203']
+# 'num__in': ['56','105','154','203']
 
 # Metadata exports
 metadata_exports_publication_id = '<publication_id, e.g. 1>'
@@ -5,7 +12,6 @@ metadata_exports_dir = '<path_to_directory>'
 
 # PheWAS exports
 phewas_exports_dir = '<path_to_directory>'
-
 
 # SQLite exports
 sqlite_default_values = {
@@ -16,7 +22,6 @@ sqlite_default_values = {
     'platform_name': '<platform_name>',      # Only needed for GTEx exports
     'use_different_id_as_gene': '<opgs_id_OR_name>' # Use the OmicsPred ID, the score name in the 'gene' column or not. None if the key is missing
 }
-
 
 # Scoring files exports - only for PredictDB studies
 scoring_file_config = {
