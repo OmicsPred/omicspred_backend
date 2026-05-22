@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 servers:
-  - url: https://rest.omicspred.org/
+  - url: https://rest.omicspred.org
 info:
   title: 'OmicsPred REST API'
   version: '1.2.0'
@@ -125,6 +125,7 @@ info:
     ---
   license:
     name: 'Apache 2.0'
+    identifier: 'Apache-2.0'
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   contact:
     email: omicspred@gmail.com
@@ -161,7 +162,6 @@ tags:
 
 components:
   schemas:
-
     # Ancestry #
     Ancestry:
       type: object
@@ -179,17 +179,12 @@ components:
                 description: "Ancestry symbol, e.g. EUR"
                 properties:
                   dist:
-                    type: float
+                    type: number
                     description: "Percentage of the samples/participants distribution"
                   count:
                     type: integer
                     description: "Number of samples/participants"
-              example:
-                EUR: { "dist": 80.0, "count": 1600}
-                EAS: {
-                    "dist": 20.0,
-                    "count": 400
-                  }
+              example: { 'EUR': { 'dist': 80.0, 'count': 1600 }, 'EAS': { 'dist': 20.0, 'count': 400 } }
             count:
               type: integer
               description: "Total number of individuals from this stage."
@@ -206,7 +201,7 @@ components:
                 description: "Ancestry symbol, e.g. EUR"
                 properties:
                   dist:
-                    type: float
+                    type: number
                     description: "Percentage of the samples/participants distribution"
                   count:
                     type: integer
@@ -902,11 +897,11 @@ components:
           description: "Number of controls participants in the sample"
           example: 759
         sample_age:
-          type: integer
+          type: number
           description: "Mean age in the sample population"
           example: 53.8
         sample_age_sd:
-          type: integer
+          type: number
           description: "Standard deviation of the mean age in the sample population"
           example: 8.01
         sample_percent_male:
@@ -1082,7 +1077,7 @@ components:
               type: object
               properties:
                 estimate:
-                  type: integer
+                  type: number
                   description: "Numeric value of the performance metrics"
                   example: 0.345
         ancestry:
@@ -1154,15 +1149,15 @@ components:
             HR:
               type: number
               description: "Hazard Ratio"
-              example: 1.13,
+              example: 1.13
             HR_lower:
               type: number
               description: "Hazard Ratio - Confidence interval - Lower"
-              example: 1.07,
+              example: 1.07
             HR_upper:
               type: number
               description: "Hazard Ratio - Confidence interval - Upper"
-              example: 1.19,
+              example: 1.19
             adjusted_p-value:
               type: number
               description: "Adjusted p-value"
@@ -1322,7 +1317,135 @@ components:
           type: string
           description: "Source of the Transcript ID"
           example: "Ensembl"
-
+  parameters:
+    opgs_id:
+      name: opgs_id
+      required: false
+      in: query
+      description: OmicsPred Score ID - *optional*
+      schema:
+        type: string
+      examples:
+        op_sel:
+          summary: Select an example or type an ID - click on 'Try it out' first
+        OPGS002402:
+          value: 'OPGS002402'
+        OPGS003423:
+          value: 'OPGS003423'
+    opgs_id_in_path:
+      name: opgs_id
+      in: path
+      required: true
+      description: 'OmicsPred Score ID'
+      examples:
+        OPGS002402:
+          value: 'OPGS002402'
+        OPGS003423:
+          value: 'OPGS003423'
+      schema:
+        type: string
+    opgs_ids_list:
+      name: opgs_ids
+      in: query
+      required: false
+      description: Comma-separated list of OmicsPred Score IDs - *optional*
+      schema:
+        type: string
+      examples:
+        opgs_ids_sel:
+          summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
+        opgs_ids_1:
+          summary: 'OPGS002402, OPGS003423'
+          value: 'OPGS002402,OPGS003423'
+        opgs_ids_2:
+          summary: 'OPGS002402'
+          value: 'OPGS002402'
+    opd_id:
+      name: opd_id
+      in: query
+      required: false
+      description: An OmicsPred Dataset ID (OPD ID) - *optional*
+      schema:
+        type: string
+      examples:
+        cohort_sel:
+          summary: Select an example or type a dataset ID - click on 'Try it out' first
+        OPD000001:
+          value: 'OPD000001'
+    opp_id:
+      name: 'opp_id'
+      in: query
+      required: false
+      description: OmicsPred Publication ID - *optional*
+      schema:
+        type: string
+      examples:
+          opp_sel:
+            summary: Select an example or type an ID - click on 'Try it out' first
+          OPP000001:
+            value: "OPP000001"
+    molecular_trait: 
+      name: molecular_trait
+      in: path
+      required: true
+      description: 'Molecular Trait name/symbol or ID'
+      schema:
+        type: string
+      examples:
+        Gene COL1A1:
+          value: "COL1A1"
+        Protein Q8IW75:
+          value: "Q8IW75"
+        Metabolite CHEBI_25017:
+          value: "CHEBI_25017"
+    pmid:
+      name: pmid
+      required: false
+      in: query
+      description: PubMed ID (without the prefix "PMID:") - *optional*
+      schema:
+        type: integer
+      examples:
+          pmid_sel:
+            summary: Select an example or type an ID - click on 'Try it out' first
+          pmid_1:
+            summary: 'PMID: 36991119'
+            value: 36991119
+    platform:
+      name: platform
+      required: false
+      in: query
+      description: The platform name - *optional*
+      schema:
+        type: string
+      examples:
+        platform_sel:
+          summary: Select an example or type a platform name - click on 'Try it out' first
+        Olink:
+          value: 'Olink'
+        Nightingale:
+          value: 'Nightingale'
+    tissue_id:
+      name: tissue_id
+      in: query
+      required: false
+      description: A tissue ID - *optional*
+      schema:
+        type: string
+      examples:
+        cohort_sel:
+          summary: Select an example or type a tissue ID - click on 'Try it out' first
+        UBERON_0001969:
+          value: 'UBERON_0001969'
+        BTO_0000133:
+          value: 'BTO_0000133'
+  responses:
+    4XX:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error_4XX'
+      description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
 
 #############################################################
 
@@ -1367,11 +1490,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/cohort/{cohort}:
     get:
@@ -1410,11 +1529,7 @@ paths:
                 $ref: '#/components/schemas/Cohort_extended'
           description: 'Cohort information'
         '4XX':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   /api/sample/all:
@@ -1454,11 +1569,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Pathway endpoints ##
@@ -1498,11 +1609,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/pathway/{pathway_id}:
     get:
@@ -1555,11 +1662,7 @@ paths:
                 $ref: '#/components/schemas/Pathway_extended'
           description: 'Pathway information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Molecular trait endpoints ##
@@ -1604,11 +1707,7 @@ paths:
                 $ref: '#/components/schemas/Metabolite_extended'
           description: 'Metabolite information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/metabolite/search:
     get:
@@ -1674,11 +1773,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/protein/{protein_id}:
     get:
@@ -1720,11 +1815,7 @@ paths:
                 - $ref: '#/components/schemas/Protein_extended'
           description: 'Protein information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/protein/search:
     get:
@@ -1790,11 +1881,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/gene/{gene_id}:
     get:
@@ -1833,11 +1920,7 @@ paths:
                 $ref: '#/components/schemas/Gene_extended'
           description: 'Gene information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/gene/search:
     get:
@@ -1904,11 +1987,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Omics endpoints ##
@@ -1960,29 +2039,8 @@ paths:
           include_perf_sel:
             summary: Include the list of Performance Metrics
             value: 1
-      - name: pmid
-        in: query
-        required: false
-        description: PubMed ID (without the prefix "PMID:") - *optional*
-        schema:
-          type: integer
-        examples:
-            pmid_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
-      - name: opp_id
-        in: query
-        required: false
-        description: OmicsPred Publication ID - *optional*
-        schema:
-          type: integer
-        examples:
-            opp_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPP000001:
-              value: 'OPP000001'
+      - $ref: '#/components/parameters/pmid'
+      - $ref: '#/components/parameters/opp_id'
       - name: version
         in: query
         required: false
@@ -2013,11 +2071,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/proteomics/{platform}:
     get:
@@ -2067,29 +2121,8 @@ paths:
           include_perf_sel:
             summary: Include the list of Performance Metrics
             value: 1
-      - name: pmid
-        in: query
-        required: false
-        description: PubMed ID (without the prefix "PMID:") - *optional*
-        schema:
-          type: integer
-        examples:
-            pmid_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
-      - name: opp_id
-        in: query
-        required: false
-        description: OmicsPred Publication ID - *optional*
-        schema:
-          type: integer
-        examples:
-            opp_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPP000001:
-              value: 'OPP000001'
+      - $ref: '#/components/parameters/pmid'
+      - $ref: '#/components/parameters/opp_id'
       - name: version
         in: query
         required: false
@@ -2126,11 +2159,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/transcriptomics/{platform}:
     get:
@@ -2178,29 +2207,8 @@ paths:
           include_perf_sel:
             summary: Include the list of Performance Metrics
             value: 1
-      - name: pmid
-        in: query
-        required: false
-        description: PubMed ID (without the prefix "PMID:") - *optional*
-        schema:
-          type: integer
-        examples:
-            pmid_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
-      - name: opp_id
-        in: query
-        required: false
-        description: OmicsPred Publication ID - *optional*
-        schema:
-          type: integer
-        examples:
-            opp_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPP000001:
-              value: 'OPP000001'
+      - $ref: '#/components/parameters/pmid'
+      - $ref: '#/components/parameters/opp_id'
       - name: version
         in: query
         required: false
@@ -2231,11 +2239,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   ## Performance metrics endpoints ##
 
@@ -2290,55 +2294,10 @@ paths:
         https://rest.omicspred.org/api/performance/search?opgs_id=OPGS002402
         ```
       parameters:
-        - name: opgs_id
-          required: false
-          in: query
-          description: OmicsPred Score ID - *optional*
-          schema:
-            type: string
-          examples:
-            op_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-            OPGS002402:
-              value: 'OPGS002402'
-            OPGS003423:
-              value: 'OPGS003423'
-        - name: pmid
-          required: false
-          in: query
-          description: PubMed ID (without the prefix "PMID:") - *optional*
-          schema:
-            type: integer
-          examples:
-              pmid_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              pmid_1:
-                summary: 'PMID: 36991119'
-                value: 36991119
-        - name: opp_id
-          in: query
-          required: false
-          description: OmicsPred Publication ID - *optional*
-          schema:
-            type: integer
-          examples:
-              opp_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              OPP000001:
-                value: 'OPP000001'
-        - name: platform
-          required: false
-          in: query
-          description: The platform name - *optional*
-          schema:
-            type: string
-          examples:
-            platform_sel:
-              summary: Select an example or type a platform name - click on 'Try it out' first
-            Olink:
-              value: 'Olink'
-            Nightingale:
-              value: 'Nightingale'
+        - $ref: '#/components/parameters/opgs_id'
+        - $ref: '#/components/parameters/pmid'
+        - $ref: '#/components/parameters/opp_id'
+        - $ref: '#/components/parameters/platform'
       responses:
         '200':
           content:
@@ -2360,11 +2319,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/performance/search/{type}/{molecular_trait}:
     get:
@@ -2401,68 +2356,11 @@ paths:
             type: string
             enum: [gene, protein, metabolite]
             readOnly: true
-        - name: molecular_trait
-          in: path
-          required: true
-          description: 'Molecular Trait name/symbol or ID'
-          examples:
-            Gene COL1A1:
-              value: "COL1A1"
-            Protein Q8IW75:
-              value: "Q8IW75"
-            Metabolite CHEBI_25017:
-              value: "CHEBI_25017"
-          schema:
-            type: string
-        - name: opgs_id
-          required: false
-          in: query
-          description: OmicsPred Score ID - *optional*
-          schema:
-            type: string
-          examples:
-            op_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-            OPGS002402:
-              value: 'OPGS002402'
-            OPGS003423:
-              value: 'OPGS003423'
-        - name: pmid
-          required: false
-          in: query
-          description: PubMed ID (without the prefix "PMID:") - *optional*
-          schema:
-            type: integer
-          examples:
-              pmid_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              pmid_1:
-                summary: 'PMID: 36991119'
-                value: 36991119
-        - name: opp_id
-          in: query
-          required: false
-          description: OmicsPred Publication ID - *optional*
-          schema:
-            type: integer
-          examples:
-              opp_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              OPP000001:
-                value: 'OPP000001'
-        - name: platform
-          required: false
-          in: query
-          description: The platform name.
-          schema:
-            type: string
-          examples:
-            platform_sel:
-              summary: Select an example or type a platform name - click on 'Try it out' first
-            Olink:
-              value: 'Olink'
-            Nightingale:
-              value: 'Nightingale'
+        - $ref: '#/components/parameters/molecular_trait'
+        - $ref: '#/components/parameters/opgs_id'
+        - $ref: '#/components/parameters/pmid'
+        - $ref: '#/components/parameters/opp_id'
+        - $ref: '#/components/parameters/platform'
       responses:
         '200':
           content:
@@ -2484,11 +2382,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Publication endpoints ##
@@ -2558,11 +2452,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/publication/{opp_id}:
     get:
@@ -2591,14 +2481,14 @@ paths:
         in: path
         required: true
         description: 'OmicsPred Publication ID or PubMed ID'
+        schema:
+          type: string
         examples:
           OPP000001:
             value: 'OPP000001'
           pmid_1:
             summary: 'PMID: 36991119'
-            value: 36991119
-        schema:
-          type: integer
+            value: '36991119'
       responses:
         '200':
           content:
@@ -2607,11 +2497,7 @@ paths:
                 $ref: '#/components/schemas/Publication_extended'
           description: 'Publication information'
         '4XX':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/publication/search:
     get:
@@ -2637,31 +2523,8 @@ paths:
         https://rest.omicspred.org/api/publication/search?pmid=36991119
         ```
       parameters:
-        - in: query
-          name: opgs_id
-          schema:
-            type: string
-          required: false
-          description: OmicsPred Score ID - *optional*
-          examples:
-            pgs_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPGS002402:
-              value: 'OPGS002402'
-            OPGS003423:
-              value: 'OPGS003423'
-        - in: query
-          name: pmid
-          schema:
-            type: integer
-          required: false
-          description: PubMed ID (without the prefix "PMID:") - *optional*
-          examples:
-            pmid_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            pmid_1:
-              summary: 'PMID: 36991119'
-              value: 36991119
+        - $ref: '#/components/parameters/opgs_id'
+        - $ref: '#/components/parameters/pmid'
         - in: query
           name: author
           schema:
@@ -2696,11 +2559,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   ## Score endpoints ##
   # /api/score/all:
@@ -2789,11 +2648,7 @@ paths:
 
   #           __Notes:__ This endpoint uses pagination.
   #       '4XX':
-  #         content:
-  #             application/json:
-  #               schema:
-  #                 $ref: '#/components/schemas/Error_4XX'
-  #         description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+  #         $ref: '#/components/responses/4XX'
 
   /api/score/{opgs_id}:
     get:
@@ -2822,17 +2677,7 @@ paths:
         - https://rest.omicspred.org/api/score/OPGS002402?include_pathway=1
         ```
       parameters:
-      - name: opgs_id
-        in: path
-        required: true
-        description: 'OmicsPred Score ID'
-        examples:
-          OPGS002402:
-            value: 'OPGS002402'
-          OPGS003423:
-            value: 'OPGS003423'
-        schema:
-          type: string
+      - $ref: '#/components/parameters/opgs_id_in_path'
       - name: include_pathway
         in: query
         required: false
@@ -2856,11 +2701,7 @@ paths:
                   - $ref: '#/components/schemas/Score_Pathway'
           description: 'OmicsPred Score'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/score/search:
     get:
@@ -2889,78 +2730,12 @@ paths:
         https://rest.omicspred.org/api/score/search?pmid=36991119
         ```
       parameters:
-        - name: opgs_ids
-          in: query
-          required: false
-          description: Comma-separated list of OmicsPred Score IDs - *optional*
-          schema:
-            type: string
-          examples:
-            opgs_ids_sel:
-              summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
-            opgs_ids_1:
-              summary: 'OPGS002402, OPGS003423'
-              value: 'OPGS002402,OPGS003423'
-        - name: pmid
-          in: query
-          required: false
-          description: PubMed ID (without the prefix "PMID:") - *optional*
-          schema:
-            type: integer
-          examples:
-              pmid_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              pmid_1:
-                summary: 'PMID: 36991119'
-                value: 36991119
-        - name: opp_id
-          in: query
-          required: false
-          description: OmicsPred Publication ID - *optional*
-          schema:
-            type: integer
-          examples:
-              opp_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              OPP000001:
-                value: 'OPP000001'
-        - name: platform
-          in: query
-          required: false
-          description: The platform name - *optional*
-          schema:
-            type: string
-          examples:
-            platform_sel:
-              summary: Select an example or type a platform name - click on 'Try it out' first
-            Olink:
-              value: 'Olink'
-            Nightingale:
-              value: 'Nightingale'
-        - name: opd_id
-          in: query
-          required: false
-          description: An OmicsPred Dataset ID (OPD ID) - *optional*
-          schema:
-            type: string
-          examples:
-            cohort_sel:
-              summary: Select an example or type a dataset ID - click on 'Try it out' first
-            OPD000001:
-              value: 'OPD000001'
-        - name: tissue_id
-          in: query
-          required: false
-          description: A tissue ID - *optional*
-          schema:
-            type: string
-          examples:
-            cohort_sel:
-              summary: Select an example or type a tissue ID - click on 'Try it out' first
-            UBERON_0001969:
-              value: 'UBERON_0001969'
-            BTO_0000133:
-              value: 'BTO_0000133'
+        - $ref: '#/components/parameters/opgs_ids_list'
+        - $ref: '#/components/parameters/pmid'
+        - $ref: '#/components/parameters/opp_id'
+        - $ref: '#/components/parameters/platform'
+        - $ref: '#/components/parameters/opd_id'
+        - $ref: '#/components/parameters/tissue_id'
         - name: cohort
           in: query
           required: false
@@ -3008,11 +2783,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/score/search/{type}/{molecular_trait}:
     get:
@@ -3056,19 +2827,7 @@ paths:
             type: string
             enum: [gene, protein, metabolite]
             readOnly: true
-        - name: molecular_trait
-          in: path
-          required: true
-          description: 'Molecular Trait name/symbol or ID'
-          examples:
-            Gene COL1A1:
-              value: "COL1A1"
-            Protein Q8IW75:
-              value: "Q8IW75"
-            Metabolite CHEBI_25017:
-              value: "CHEBI_25017"
-          schema:
-            type: string
+        - $ref: '#/components/parameters/molecular_trait'
         - name: include_performance_metrics
           in: query
           required: false
@@ -3105,11 +2864,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/score/performance/{opgs_id}:
     get:
@@ -3138,17 +2893,7 @@ paths:
         https://rest.omicspred.org/api/score/performance/OPGS002402
         ```
       parameters:
-      - name: opgs_id
-        in: path
-        required: true
-        description: 'OmicsPred Score ID'
-        examples:
-          OPGS002402:
-            value: 'OPGS002402'
-          OPGS003423:
-            value: 'OPGS003423'
-        schema:
-          type: string
+      - $ref: '#/components/parameters/opgs_id_in_path'
       responses:
         '200':
           content:
@@ -3157,11 +2902,7 @@ paths:
                 $ref: '#/components/schemas/Score_Performance'
           description: 'OmicsPred Score with Performance Metrics'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Platform endpoints ##
@@ -3203,11 +2944,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/platform/{platform}:
     get:
@@ -3242,11 +2979,7 @@ paths:
                 $ref: '#/components/schemas/Platform_extended'
           description: 'Information about the platform'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Dataset endpoints ##
@@ -3292,11 +3025,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/dataset/{opd_id}:
     get:
@@ -3335,11 +3064,7 @@ paths:
                 $ref: '#/components/schemas/Dataset_extended'
           description: 'Dataset information'
         '4XX':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/dataset/search:
     get:
@@ -3366,55 +3091,10 @@ paths:
         - https://rest.omicspred.org/api/dataset/search?pmid=36991119
         ```
       parameters:
-      - name: pmid
-        required: false
-        in: query
-        description: PubMed ID (without the prefix "PMID:") - *optional*
-        schema:
-          type: integer
-        examples:
-          pmid_sel:
-            summary: Select an example or type an ID - click on 'Try it out' first
-          pmid_1:
-            summary: 'PMID: 36991119'
-            value: 36991119
-      - name: opp_id
-        in: query
-        required: false
-        description: OmicsPred Publication ID - *optional*
-        schema:
-          type: integer
-        examples:
-            opp_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPP000001:
-              value: 'OPP000001'
-      - name: platform
-        required: false
-        in: query
-        description: "Platform name - *optional*"
-        schema:
-          type: string
-        examples:
-          platform_sel:
-            summary: Select an example or type a platform name - click on 'Try it out' first
-          Olink:
-            value: 'Olink'
-          Nightingale:
-            value: 'Nightingale'
-      - name: tissue_id
-        in: query
-        required: false
-        description: A tissue ID - *optional*
-        schema:
-          type: string
-        examples:
-          cohort_sel:
-            summary: Select an example or type a tissue ID - click on 'Try it out' first
-          UBERON_0001969:
-            value: 'UBERON_0001969'
-          BTO_0000133:
-            value: 'BTO_0000133'
+      - $ref: '#/components/parameters/pmid'
+      - $ref: '#/components/parameters/opp_id'
+      - $ref: '#/components/parameters/platform'
+      - $ref: '#/components/parameters/tissue_id'
       responses:
         '200':
           content:
@@ -3435,11 +3115,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Tissue endpoints ##
@@ -3481,11 +3157,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/tissue/{tissue_id}:
     get:
@@ -3525,11 +3197,7 @@ paths:
                 $ref: '#/components/schemas/TissueScoresCount'
           description: 'Tissue ontology information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Phenotype endpoints ##
@@ -3571,11 +3239,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
   /api/phenotype/{phenotype_id}:
     get:
@@ -3614,11 +3278,7 @@ paths:
                 $ref: '#/components/schemas/Phenotype_extended'
           description: 'Phenotype information'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Score PheWAS endpoints ##
@@ -3642,21 +3302,7 @@ paths:
         https://rest.omicspred.org/api/score/phewas/OPGS002402
         ```
       parameters:
-      - name: opgs_ids
-        in: query
-        required: false
-        description: Comma-separated list of OmicsPred Score IDs - *optional*
-        schema:
-          type: string
-        examples:
-          opgs_ids_sel:
-            summary: Select an example or type OmicsPred Score ID(s) - click on 'Try it out' first
-          opgs_ids_1:
-            summary: 'OPGS002402, OPGS003423'
-            value: 'OPGS002402,OPGS003423'
-          opgs_ids_2:
-            summary: 'OPGS002402'
-            value: 'OPGS002402'
+        - $ref: '#/components/parameters/opgs_id_in_path'
       responses:
         '200':
           content:
@@ -3677,11 +3323,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   /api/score/phewas/search:
@@ -3708,19 +3350,7 @@ paths:
         - https://rest.omicspred.org/api/score/phewas/search?pmid=36991119&opd_id=OPD000001
         ```
       parameters:
-        - name: opgs_id
-          required: false
-          in: query
-          description: OmicsPred Score ID - *optional*
-          schema:
-            type: string
-          examples:
-            op_sel:
-              summary: Select an example or type an ID - click on 'Try it out' first
-            OPGS002402:
-              value: 'OPGS002402'
-            OPGS003423:
-              value: 'OPGS003423'
+        - $ref: '#/components/parameters/opgs_id'
         - name: phenotype_id
           required: false
           in: query
@@ -3736,40 +3366,9 @@ paths:
             pc_2:
               summary: "MONDO_0004994 (cardiomyopathy)"
               value: "MONDO_0004994"
-        - name: opd_id
-          in: query
-          required: false
-          description: OmicsPred Dataset ID - *optional*
-          schema:
-            type: integer
-          examples:
-              opp_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              OPP000001:
-                value: "OPD000001"
-        - name: pmid
-          required: false
-          in: query
-          description: PubMed ID (without the prefix "PMID:") - *optional*
-          schema:
-            type: integer
-          examples:
-              pmid_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              pmid_1:
-                summary: "PMID: 36991119"
-                value: 36991119
-        - name: opp_id
-          in: query
-          required: false
-          description: OmicsPred Publication ID - *optional*
-          schema:
-            type: integer
-          examples:
-              opp_sel:
-                summary: Select an example or type an ID - click on 'Try it out' first
-              OPP000001:
-                value: "OPP000001"
+        - $ref: '#/components/parameters/pmid'
+        - $ref: '#/components/parameters/opp_id'
+        - $ref: '#/components/parameters/opd_id'
       responses:
         '200':
           content:
@@ -3790,11 +3389,7 @@ paths:
 
             __Notes:__ This endpoint uses pagination.
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
 
 
   ## Other ##
@@ -3865,10 +3460,6 @@ paths:
                         type: number
                         description: "Number of Tissues in OmicsPred"
                         example: 52
-            description: 'Diverse information about the project, such as REST API version, data counts, ...'
+          description: 'Diverse information about the project, such as REST API version, data counts, ...'
         '4XX':
-          content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Error_4XX'
-          description: Client error (e.g. 400 - Bad request, 405 - Method not allowed)
+          $ref: '#/components/responses/4XX'
