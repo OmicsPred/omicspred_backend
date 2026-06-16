@@ -141,6 +141,20 @@ class DatasetSerializer(DatasetLightSerializer):
         read_only_fields = DatasetLightSerializer.Meta.fields + meta_fields
 
 
+class DatasetPheWASPublicationSerializer(DatasetSerializer):
+    phewas_publications = PublicationSerializer(many=True, read_only=True)
+
+    class Meta(DatasetSerializer.Meta):
+        meta_fields = ('phewas_publications',)
+        fields = DatasetSerializer.Meta.fields + meta_fields
+        read_only_fields = DatasetSerializer.Meta.fields + meta_fields
+
+    def get_phewas_publications(self, obj):
+        if (obj.phewas_publications):
+            return obj.phewas_publications
+        return []
+
+
 #### Publication - Extended (with Platform) ####
 class PublicationExtendedSerializer(PublicationSerializer):
     date_release = serializers.SerializerMethodField('get_date_released')

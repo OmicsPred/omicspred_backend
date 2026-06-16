@@ -993,10 +993,11 @@ class RestListDatasets(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Dataset.objects.select_related(*related_dict['dataset_select']).all().prefetch_related(*related_dict['dataset_prefetch']).order_by('num')
-        # Filter by list of Publications IDs
+        # Filter PheWAS study only - FOR PRIVATE USE CASE
         only_phewas = self.request.query_params.get('only_phewas')
         if only_phewas and only_phewas is not None:
             queryset = queryset.filter(phewas_count__gt=0)
+            self.serializer_class = DatasetPheWASPublicationSerializer
         return queryset
 
 
