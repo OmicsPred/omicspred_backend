@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from elasticsearch_dsl import Search
+from elasticsearch.dsl import Search
 
 
 # No need to redeclare "custom_exception_handler" as it is already used in rest_api.views
