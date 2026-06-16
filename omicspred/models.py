@@ -369,6 +369,11 @@ class Dataset(models.Model):
                 cohorts.add(cohort.name_short)
         return list(cohorts)
 
+    @property
+    def phewas_publications(self):
+        score_phewas_list = self.dataset_phewas.only('dataset_id','publication_id').select_related('publication').all().distinct('publication_id')
+        return [x.publication for x in score_phewas_list]
+
 
 class MolecularTrait(models.Model):
     """ Generic Class to describe a molecular trait """
@@ -732,7 +737,7 @@ class Phenotype(models.Model):
 class ScorePheWAS(models.Model):
     """ Class to hold Score PheWAS values """
     score = models.ForeignKey(Score, on_delete=models.CASCADE, verbose_name='Score', related_name='score_phewas') # Score that the PheWAS data are associated with
-    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name='Dataset', related_name='dataset_phenotype')
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name='Dataset', related_name='dataset_phewas')
     publication = models.ForeignKey(Publication, on_delete=models.PROTECT, verbose_name='PheWAS Publication', related_name='score_phewas_publication')
 
     # Method

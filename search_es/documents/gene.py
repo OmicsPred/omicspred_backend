@@ -2,7 +2,7 @@ from django.conf import settings
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from search_es.analyzers import id_analyzer, name_delimiter_analyzer, word_delimiter_analyzer
-from omicspred.models import Gene, Dataset
+from omicspred.models import Gene
 
 
 # PGS index analyzer

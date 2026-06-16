@@ -1,10 +1,9 @@
-from elasticsearch_dsl import analysis, analyzer, tokenizer
+from elasticsearch.dsl import analysis, analyzer, tokenizer
 
 
 # Documentation about analysers:
-# v7.17:
-# https://www.elastic.co/guide/en/elasticsearch/reference/7.17/analysis-keyword-tokenizer.html
-# https://www.elastic.co/guide/en/elasticsearch/reference/7.17/analysis-tokenizers.html
+# https://www.elastic.co/docs/reference/text-analysis/analyzer-reference
+# https://www.elastic.co/docs/reference/text-analysis/tokenizer-reference
 
 def id_analyzer():
     ''' Analyser for the different IDs in the OmicsPred indexes '''
