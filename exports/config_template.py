@@ -7,8 +7,8 @@ dataset_selection = { '<dataset_column>': '<dataset_value(s)>' }
 # 'num__in': ['56','105','154','203']
 
 # Metadata exports
-metadata_exports_publication_id = '<publication_id, e.g. 1>'
 metadata_exports_dir = '<path_to_directory>'
+sqlite_exports_dir = '<path_to_sqlite_directory>' # Uncompressed databases
 
 # PheWAS exports
 phewas_exports_dir = '<path_to_directory>'

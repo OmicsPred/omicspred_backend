@@ -1,7 +1,9 @@
 import os
 
+dataset_selection = { 'publication_id': 1 }
+
 current_dir = os.getcwd()
-metadata_exports_publication_id = 1
+sqlite_exports_dir = current_dir+'/exports/tests/datas'
 metadata_exports_dir = current_dir+'/exports/tests/output'
 phewas_exports_dir = current_dir+'/exports/tests/output'
 sqlite_exports_dir = current_dir+'/exports/tests/data/'

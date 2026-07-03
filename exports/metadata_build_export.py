@@ -13,7 +13,7 @@ class MetadataExport:
     def __init__(self, exports_dir:str, sqlite_dir:str, dataset:Dataset):
         self.dataset = dataset
         self.dataset_id = dataset.id
-        self.sqlite_dir = sqlite_dir
+        self.sqlite_dir = f'{sqlite_dir}/{self.dataset_id}'
         self.data = {
             'dataset': self.get_data_attr(self.dataset,'Dataset'),
             'publication': self.get_data_attr(self.dataset.publication,'Publication'),
@@ -26,15 +26,16 @@ class MetadataExport:
 
         # Find corresponding SQLite file
         self.sqlite_file = None
-        for s_file in os.listdir(sqlite_dir):
+        for s_file in os.listdir(self.sqlite_dir):
             if s_file.startswith(dataset.id) and s_file.endswith('.db'):
                 self.sqlite_file = (s_file)
                 break
         if not self.sqlite_file:
-            print(f"ERROR: Can't find a SQLite file for the dataset {dataset.id} in {sqlite_dir}")
+            print(f"ERROR: Can't find a SQLite file for the dataset {self.dataset_id} in {self.sqlite_dir}")
             exit()
 
-        self.filename = f'{exports_dir}/{self.dataset_id}_metadata.xlsx'
+        filename = self.sqlite_file.replace('.db','_metadata.xlsx')
+        self.filepath = f'{exports_dir}/{filename}'
 
 
     def get_data_attr(self, model:object, model_type:str)-> dict:
@@ -98,6 +99,9 @@ class MetadataExport:
             sample_perf_data = self.get_data_attr(perf,'Performance')
             # Update eval_type using the long name
             sample_perf_data['eval_type'] = perf.get_eval_type_display()
+
+            # Update the Sample ancestry_assignment using the long name
+            sample_perf_data['sample__ancestry_assignment'] = perf.sample.get_ancestry_assignment_display()
 
             # Cohorts
             cohorts_list = []
@@ -206,6 +210,6 @@ class MetadataExport:
             self.build_performance_metadata(score)
 
         # Create export
-        op_export = OPExport(self.filename, self.data)
+        op_export = OPExport(self.filepath, self.data)
         op_export.generate_sheets()
         op_export.save()

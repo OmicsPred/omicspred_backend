@@ -2,8 +2,7 @@ from datetime import date
 from omicspred.models import Dataset
 from exports.metadata_build_export import MetadataExport
 from exports.datasets import DatasetsSelection
-from exports.config import metadata_exports_dir, metadata_exports_publication_id, sqlite_exports_dir
-from django.db.models import Q
+from exports.config import metadata_exports_dir, sqlite_exports_dir
 
 
 def run():

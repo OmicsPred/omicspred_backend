@@ -23,8 +23,8 @@ class ExportSQLiteTest(TestCase):
     sqlite_filename = f'{opd_id}_{dataset_label}.db'
 
     # SQLite ref
-    ref_sqlite_dir = current_dir+'/exports/tests/data/'
-    ref_sqlite_filepath = f'{ref_sqlite_dir}{sqlite_filename}'
+    ref_sqlite_dir = current_dir+'/exports/tests/data/'+opd_id
+    ref_sqlite_filepath = f'{ref_sqlite_dir}/{sqlite_filename}'
     # SQLite Output
     output_sqlite_dir = sqlite_default_values['sqlite_dir']
     output_sqlite_filepath = f'{output_sqlite_dir}{sqlite_filename}'
