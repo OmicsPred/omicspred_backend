@@ -1167,6 +1167,29 @@ class RestListSamples(generics.ListAPIView):
     queryset = Sample.objects.all().prefetch_related('cohorts').order_by('id')
 
 
+class RestSampleSearch(generics.ListAPIView):
+    """
+    Search the Sample(s) using parameters as query
+    Endpoint: /api/sample/search
+    """
+    serializer_class = SampleSerializer
+
+    def get_queryset(self):
+        queryset = Sample.objects.all().prefetch_related('cohorts').order_by('id')
+
+        params = 0
+        # Cohort
+        cohort = self.request.query_params.get('cohort')
+        if cohort and cohort is not None:
+            queryset = queryset.filter(Q(cohorts__name_short__iexact=cohort) | Q(cohorts__name_full__iexact=cohort))
+            params += 1
+
+        if params == 0:
+            queryset = []
+        return queryset
+
+
+
 ## Scores ##
 
 class RestListScores(generics.ListAPIView):
@@ -1976,3 +1999,14 @@ class RestInfo(generics.RetrieveAPIView):
         }
 
         return Response(data)
+
+
+class RestListExternalSources(generics.ListAPIView):
+    """
+    Retrieve all the External Sources
+    Endpoint: /api/external_source/all
+    """
+    serializer_class = ExternalSourceSerializer
+
+    def get_queryset(self):
+        return ExternalSource.objects.all()

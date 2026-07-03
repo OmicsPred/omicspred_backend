@@ -3,7 +3,7 @@ servers:
   - url: https://rest.omicspred.org
 info:
   title: 'OmicsPred REST API'
-  version: '1.2.0'
+  version: '1.2.1'
   description: |
     Programmatic access to the OmicsPred metadata.
 
@@ -68,6 +68,13 @@ info:
 
     <a id="changelog">REST API version changelog</a>
     <div id="content_changelog">
+
+      * <span class="badge badge-pill">1.2.1</span> - July 2026:
+        * New endpoint `/api/external_source/all` (endpoint group 'Other') to retrieve information from the external sources used in OmicsPred.
+        * New field **training_window** in the Dataset schemas (`/api/dataset/` endpoints), containing the type of training window for the variants (Genome-wide, Cis-only, ...).
+        * New field **ancestry_assignment** in the Sample schemas, containing the description about how the ancestry category was assigned.
+        * Rename field **technic** by **technique** in the Platform schemas.
+        * New Sample endpoint `/api/sample/search` allowing to search the sample by cohort name.
 
       * <span class="badge badge-pill">1.2.0</span> - May 2026:
         * Refactor the Phenotype endpoints (`/api/phenotype/`), due to a change in the phenotype data structure.
@@ -145,7 +152,7 @@ tags:
   - name: "Dataset endpoints"
     description: "Dataset metadata (name, publication, platform, samples, ...)"
   - name: "Platform endpoints"
-    description: "Platform metadata (name, type, version, technic, ...)"
+    description: "Platform metadata (name, type, version, technique, ...)"
   - name: "Tissue endpoints"
     description: "Tissue ontology information (name, label, description, ...)"
   - name: "Sample/Cohort endpoints"
@@ -157,7 +164,7 @@ tags:
   - name: "Pathway endpoints"
     description: "Pathway metadata (Reactome)"
   - name: "Other endpoints"
-    description: "Extra endpoints: **/api/info** (REST API version, data counts, ...)"
+    description: "Extra endpoints: **/api/info** (REST API version, data counts, ...), **/api/external_source/all** (External sources information)"
 
 
 components:
@@ -291,6 +298,10 @@ components:
           type: string
           description: "The name or description of the method or computational algorithm used to develop the PGS."
           example: "Bayesian Ridge regression"
+        training_window:
+          type: string
+          description: "The type of training window used for the variants"
+          example: "Genome-wide"
         tissue:
           $ref: '#/components/schemas/Tissue'
         samples_training:
@@ -330,12 +341,8 @@ components:
               example: "https://app.box.com/shared/static/u4gq3qypwley3m0wfduuisrou3ij0iso"
             predictdb:
               type: string
-              description: "PredictDB prediction weigths - SQLite database"
-              example: "https://app.box.com/shared/static/unjn1bmt2xhwkd33pp0wczldfzrkevu2"
-            covariance:
-              type: string
-              description: "Covariance file, to be used alongside the PredictDB database in MetaXcan tools"
-              example: "https://app.box.com/shared/static/24avhdwb2gfo083oz3r6j8w6qqburbp2"
+              description: "Compressed archive contining the PredictDB prediction weigths - SQLite database file and the Covariance file. They are used together in MetaXcan tools"
+              example: "https://app.box.com/shared/static/m8yd9yrd6afbiq7jxm5ob66pbj3yj2qt"
             score_variant_info:
               type: string
               description: "Variant information file"
@@ -371,6 +378,23 @@ components:
           type: string
           example: "This REST endpoint does not exist"
 
+    # Cohort #
+    ExternalSource:
+      type: object
+      description: "Structure containing information about an external source used in OmicsPred."
+      properties:
+        name:
+          type: string
+          description: "Name of the external source"
+          example: "Ensembl"
+        version:
+          type: string
+          description: "Version used in OmicsPred"
+          example: "113"
+        url:
+          type: string
+          description: "URL of the external source"
+          example: "https://www.ensembl.org"
 
     # Gene #
     Gene_basic:
@@ -741,9 +765,9 @@ components:
           type: string
           description: "Platform's version"
           example: "3.0"
-        technic:
+        technique:
           type: string
-          description: "Technic used by the platform"
+          description: "Technique used by the platform"
           example: "aptamer-based multiplex protein assay"
         type:
           type: string
@@ -920,6 +944,10 @@ components:
           type: string
           description: "Author reported countries of recruitment (if available)."
           example: "Canada"
+        ancestry_assignment:
+          type: string
+          description: "Description about how the ancestry category was assigned."
+          example: "Self-reported"
         ancestry_additional:
           type: string
           description: "Any additional description not captured in the structured data (e.g. founder or genetically isolated populations, or further description of admixed samples)."
@@ -2915,7 +2943,7 @@ paths:
         Retrieve all the Platforms, including for each of them:
           * Name
           * Versions
-          * Technic
+          * Technique
           * Type (Transcriptomics, Proteomics, Metabolomics)
           * Number ofLinked genetic Scores
 
@@ -2955,7 +2983,7 @@ paths:
         Retrieve a Platform, including:
           * Name
           * Versions
-          * Technic
+          * Technique
           * Type (Transcriptomics, Proteomics, Metabolomics)
           * Number ofLinked genetic Scores
 
@@ -2995,9 +3023,11 @@ paths:
           * Publication information
           * Platform information
           * Number of Genetic Scores
+          * Method used to develop the scores
+          * Training window used to select the variants
           * Tissue information
           * Training Samples and Cohorts
-          * Validation Samples and Cohorts
+          * Validation Samples and Cohorts (if available)
           * URLs to the data files
 
         Example of request:
@@ -3039,9 +3069,11 @@ paths:
           * Publication information
           * Platform information
           * Number of Genetic Scores
+          * Method used to develop the scores
+          * Training window used to select the variants
           * Tissue information
           * Training Samples and Cohorts
-          * Validation Samples and Cohorts
+          * Validation Samples and Cohorts (if available)
           * URLs to the data files
 
         Examples of request:
@@ -3080,9 +3112,11 @@ paths:
           * Publication information
           * Platform information
           * Number of Genetic Scores
+          * Method used to develop the scores
+          * Training window used to select the variants
           * Tissue information
           * Training Samples and Cohorts
-          * Validation Samples and Cohorts
+          * Validation Samples and Cohorts (if available)
           * URLs to the data files
 
         Examples of request:
@@ -3461,5 +3495,45 @@ paths:
                         description: "Number of Tissues in OmicsPred"
                         example: 52
           description: 'Diverse information about the project, such as REST API version, data counts, ...'
+        '4XX':
+          $ref: '#/components/responses/4XX'
+
+
+  # External Sources #
+  /api/external_source/all:
+    get:
+      tags:
+        - "Other endpoints"
+      operationId: getAllExternalSources
+      description: |
+        Retrieve all External Sources, including for each of them:
+          * External source name
+          * External source version used
+          * External source URL
+
+        Example of request:
+        ```
+        https://rest.omicspred.org/api/external_source/all
+        ```
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                properties:
+                  results:
+                    description: "List of External Sources used in OmicsPred"
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExternalSource'
+          description: |
+            All External Sources used in OmicsPred
+
+            ---
+
+            __Notes:__ This endpoint uses pagination.
         '4XX':
           $ref: '#/components/responses/4XX'
