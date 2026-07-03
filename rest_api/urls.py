@@ -10,28 +10,31 @@ cache_time = 0
 
 slash = '/?'
 
+url_prefix = 'api'
+
 rest_urls = {
-    'applications_score':   'api/applications_score/',
-    'applications_sample':  'api/applications_sample/',
-    'cohort':               'api/cohort/',
-    'dataset':              'api/dataset/',
-    'gene':                 'api/gene/',
-    'info':                 'api/info',
-    'metabolite':           'api/metabolite/',
-    'metabolomics':         'api/metabolomics/',
-    'pathway':              'api/pathway/',
-    'phenotype':            'api/phenotype/',
-    'phenotype_old':        'api/phenotype_old/',
-    'platform':             'api/platform/',
-    'plot':                 'api/plot/',
-    'performance':          'api/performance/',
-    'protein':              'api/protein/',
-    'proteomics':           'api/proteomics/',
-    'publication':          'api/publication/',
-    'sample':               'api/sample/',
-    'score':                'api/score/',
-    'tissue':               'api/tissue/',
-    'transcriptomics':      'api/transcriptomics/'
+    'applications_score':   f'{url_prefix}/applications_score/',
+    'applications_sample':  f'{url_prefix}/applications_sample/',
+    'cohort':               f'{url_prefix}/cohort/',
+    'dataset':              f'{url_prefix}/dataset/',
+    'external_source':      f'{url_prefix}/external_source/',
+    'gene':                 f'{url_prefix}/gene/',
+    'info':                 f'{url_prefix}/info',
+    'metabolite':           f'{url_prefix}/metabolite/',
+    'metabolomics':         f'{url_prefix}/metabolomics/',
+    'pathway':              f'{url_prefix}/pathway/',
+    'phenotype':            f'{url_prefix}/phenotype/',
+    'phenotype_old':        f'{url_prefix}/phenotype_old/',
+    'platform':             f'{url_prefix}/platform/',
+    'plot':                 f'{url_prefix}/plot/',
+    'performance':          f'{url_prefix}/performance/',
+    'protein':              f'{url_prefix}/protein/',
+    'proteomics':           f'{url_prefix}/proteomics/',
+    'publication':          f'{url_prefix}/publication/',
+    'sample':               f'{url_prefix}/sample/',
+    'score':                f'{url_prefix}/score/',
+    'tissue':               f'{url_prefix}/tissue/',
+    'transcriptomics':      f'{url_prefix}/transcriptomics/'
 }
 
 urlpatterns = [
@@ -64,6 +67,7 @@ urlpatterns = [
     re_path(r'^'+rest_urls['publication']+'(?P<opp_id>[^/]+)'+slash, RestPublication.as_view(), name="getPublication"),
     # Samples
     re_path(r'^'+rest_urls['sample']+'all'+slash, cache_page(cache_time)(RestListSamples.as_view()), name="getAllSamples"),
+    re_path(r'^'+rest_urls['sample']+'search'+slash, cache_page(cache_time)(RestSampleSearch.as_view()), name="searchSamples"),
     # Score PheWAS
     re_path(r'^'+rest_urls['score']+'phewas/all'+slash, cache_page(cache_time)(RestListScorePheWAS.as_view()), name="getAllScorePheWAS"),
     re_path(r'^'+rest_urls['score']+'phewas/search'+slash, RestScorePheWASSearch.as_view(), name="searchScorePheWAS"),
@@ -93,14 +97,17 @@ urlpatterns = [
     re_path(r'^'+rest_urls['plot']+'file/search'+slash, cache_page(cache_time)(RestPlotFileSearch.as_view()), name="searchFilePlots"),
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
 
-    # Applications
+    # Applications [DEPRECATED]
     re_path(r'^'+rest_urls['phenotype_old']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotypeOld.as_view(), name="getPhenotypeOld"),
     re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhenotypeScore.as_view()), name="getAllPhenotypeScores"),
     re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhenotypeScoreSearch.as_view(), name="searchPhenotypeScores"),
     re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhenotypeScore.as_view(), name="getPhenotypeScore"),
     re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhenotypeSample.as_view()), name="getAllPhenotypeSamples"),
 
+    # Other
     re_path(r'^'+rest_urls['info']+slash, RestInfo.as_view(), name="getInfo"),
+    # -> External sources
+    re_path(r'^'+rest_urls['external_source']+'all'+slash, RestListExternalSources.as_view(), name="getAllExternalSources"),
 
     # Setup URL used to warmup the Django app in the Google App Engine
     path('_ah/warmup', warmup, name="Warmup"),

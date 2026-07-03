@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 from django.test import TestCase
+from django.db.models import Q
 from omicspred.models import *
 from exports.metadata_build_export import MetadataExport
-from exports.tests.config import metadata_exports_dir,metadata_exports_publication_id, sqlite_exports_dir
+from exports.tests.config import metadata_exports_dir, sqlite_exports_dir, dataset_selection
 
 
 class ExportMetadataTest(TestCase):
@@ -12,13 +13,13 @@ class ExportMetadataTest(TestCase):
     # Load data in DB - from the rest_api/fixtures/ directory
     fixtures = ['db_test']
     databases = {'default'}
-    filename = 'OPD000001_metadata.xlsx'
+    filename = 'OPD000001_DS1_metadata.xlsx'
 
     spreadsheets = ['Publication','Dataset','Scores','Performances','Cohorts']
 
     current_dir = os.getcwd()
     output_export_dir = metadata_exports_dir
-    data_export_dir = current_dir+'/exports/tests/data'
+    data_export_dir = current_dir+'/exports/tests/data/OPD000001'
     output_filepath = f'{output_export_dir}/{filename}'
     # Remove output metadata file before creating it again
     if os.path.isdir(output_export_dir):
@@ -36,7 +37,8 @@ class ExportMetadataTest(TestCase):
         except OSError:
             print (f'Creation of the directory {output_export_dir} failed')
             exit()
-    
+
+
     def check_file(self):
         ''' Check file exists and is not empty '''
         print(f' - Check file {self.filename}')
@@ -58,14 +60,20 @@ class ExportMetadataTest(TestCase):
             df_test = pd.read_excel(self.output_filepath, sheet_name=sp_name, index_col=0)
             df_ref = pd.read_excel(ref_filepath, sheet_name=sp_name, index_col=0)
             # Columns
-            self.assertEqual(df_test.columns.all(),df_ref.columns.all())
+            self.assertEqual(len(df_test.columns),len(df_ref.columns))
             # Rows
             self.assertEqual(len(df_test.index), len(df_ref.index))
 
 
     def test_metadata_export(self):
         print("# Test Metadata export")
-        datasets = Dataset.objects.filter(publication_id=metadata_exports_publication_id).order_by('num')
+
+        # Mimic DatasetsSelection
+        col = list(dataset_selection.keys())[0]
+        value = dataset_selection[col]
+        param = Q(**{f'{col}':value})
+
+        datasets = Dataset.objects.filter(param).order_by('num')
         dataset = datasets[0]
         metadata2export = MetadataExport(self.output_export_dir,sqlite_exports_dir, dataset)
         metadata2export.generate_metadata()

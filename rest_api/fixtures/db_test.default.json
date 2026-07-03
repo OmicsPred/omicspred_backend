@@ -1,5 +1,23 @@
 [
     {
+        "model": "omicspred.ExternalSource",
+        "pk": 1,
+        "fields": {
+            "name": "Ensembl",
+            "version": "113",
+            "url": "https://www.ensembl.org"
+        }
+    },
+    {
+        "model": "omicspred.ExternalSource",
+        "pk": 2,
+        "fields": {
+            "name": "UniProt",
+            "version": "2026_01",
+            "url": "https://www.uniprot.org"
+        }
+    },
+    {
         "model": "omicspred.Publication",
         "pk": 1,
         "fields": {
@@ -39,7 +57,7 @@
         "fields": {
             "name": "Somalogic",
             "full_name": "Somalogic",
-            "technic": "aptamer-based multiplex protein assay",
+            "technique": "aptamer-based multiplex protein assay",
             "type": "Proteomics"
         }
     },
@@ -49,7 +67,7 @@
         "fields": {
             "name": "Olink",
             "full_name": "Olink",
-            "technic": "antibody-based proximity extension assay for proteins",
+            "technique": "antibody-based proximity extension assay for proteins",
             "type": "Proteomics"
         }
     },
@@ -59,7 +77,7 @@
         "fields": {
             "name": "Metabolon",
             "full_name": "Metabolon Discovery HD4",
-            "technic": "untargeted mass spectrometry metabolomics platform",
+            "technique": "untargeted mass spectrometry metabolomics platform",
             "type": "Metabolomics"
         }
     },
@@ -69,7 +87,7 @@
         "fields": {
             "name": "Illumina RNAseq",
             "full_name": "Illumina NovaSeq 6000",
-            "technic": "whole-transcriptome sequencing platform",
+            "technique": "whole-transcriptome sequencing platform",
             "type": "Transcriptomics"
         }
     },
@@ -147,6 +165,7 @@
             "sample_age": 46.3,
             "sample_age_sd": 14.2,
             "ancestry_broad": "European",
+            "ancestry_assignment": "SR",
             "cohorts": [ 1 ]
         }
     },
@@ -159,6 +178,7 @@
             "sample_age": 56.5,
             "sample_age_sd": 8.1,
             "ancestry_broad": "European",
+            "ancestry_assignment": "SR",
             "cohorts": [ 2 ]
         }
     },
@@ -172,6 +192,7 @@
             "source_gwas_catalog": "GCST90475715",
             "source_pmid": 39024449,
             "ancestry_broad": "European",
+            "ancestry_assignment": "SR",
             "cohorts": [ 3 ]
         }
     },
@@ -185,6 +206,7 @@
             "source_gwas_catalog": "GCST90475799",
             "source_pmid": 39024449,
             "ancestry_broad": "European",
+            "ancestry_assignment": "SR",
             "cohorts": [ 3 ]
         }
     },
@@ -198,6 +220,7 @@
             "source_gwas_catalog": "GCST90475670",
             "source_pmid": 39024449,
             "ancestry_broad": "European",
+            "ancestry_assignment": "NR",
             "cohorts": [ 3 ]
         }
     },
@@ -211,7 +234,9 @@
             "source_gwas_catalog": "GCST90475569",
             "source_pmid": 39024449,
             "ancestry_broad": "European",
-            "cohorts": [ 3 ]
+            "ancestry_assignment": "NR",
+            "cohorts": [ 3 ],
+            "cohorts_additional": "withheld"
         }
     },
     {
@@ -263,6 +288,7 @@
             "platform": 1,
             "publication": 1,
             "method_name": "Bayesian Ridge regression",
+            "training_window": "genome-wide",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
@@ -289,6 +315,7 @@
             },
             "platform": 2,
             "publication": 1,
+            "training_window": "genome-wide",
             "species_id": 9606,
             "tissue_id": "BTO_0000133",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
@@ -316,6 +343,7 @@
             "platform": 4,
             "publication": 1,
             "method_name": "Bayesian Ridge regression",
+            "training_window": "genome-wide",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
@@ -343,6 +371,7 @@
             "platform": 5,
             "publication": 1,
             "method_name": "Bayesian Ridge regression",
+            "training_window": "genome-wide",
             "species_id": 9606,
             "tissue_id": "UBERON_0001969",
             "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",

@@ -13,6 +13,16 @@ scores_count = ('scores_count',)
 #### OmicsPred ####
 ###################
 
+#### External Source ####
+class ExternalSourceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ExternalSource
+        meta_fields = ('name', 'version', 'url')
+        fields = meta_fields
+        read_only_fields = meta_fields
+
+
 #### Cohort ####
 class CohortSerializer(serializers.ModelSerializer):
 
@@ -39,15 +49,19 @@ class CohortSerializerExtended(CohortSerializer):
 #### Sample ####
 class SampleSerializer(serializers.ModelSerializer):
     cohorts = CohortSerializer(many=True, read_only=True)
+    ancestry_assignment = serializers.SerializerMethodField('get_ancestry_assignment_label')
 
     class Meta:
         model = Sample
         meta_fields = ('sample_number', 'sample_cases', 'sample_controls',
                        'sample_age', 'sample_age_sd', 'sample_percent_male',
-                       'ancestry_broad', 'ancestry_free', 'ancestry_country', 'ancestry_additional',
+                       'ancestry_broad', 'ancestry_free', 'ancestry_country', 'ancestry_additional', 'ancestry_assignment',
                        'source_gwas_catalog', 'source_pmid','source_doi','cohorts','cohorts_additional')#,'tissue_name')
         fields = meta_fields
         read_only_fields = meta_fields
+    
+    def get_ancestry_assignment_label(self, obj):
+        return obj.get_ancestry_assignment_display()
 
 
 #### Tissue ####
@@ -79,19 +93,19 @@ class PublicationSerializer(serializers.ModelSerializer):
 class PlatformMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlatformMaster
-        meta_fields = ('name', 'full_name', 'versions', 'technic', 'type', 'scores_count')
+        meta_fields = ('name', 'full_name', 'versions', 'technique', 'type', 'scores_count')
         fields = meta_fields
         read_only_fields = meta_fields
 
 
 class PlatformSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField('get_full_name')
-    technic = serializers.SerializerMethodField('get_technic')
+    technique = serializers.SerializerMethodField('get_technique')
     type = serializers.SerializerMethodField('get_type')
 
     class Meta:
         model = Platform
-        meta_fields = ('name', 'full_name', 'version', 'technic', 'type')
+        meta_fields = ('name', 'full_name', 'version', 'technique', 'type')
         fields = meta_fields
         read_only_fields = meta_fields
 
@@ -102,8 +116,8 @@ class PlatformSerializer(serializers.ModelSerializer):
         else:
             return obj.name
 
-    def get_technic(self, obj):
-        return obj.platform_master.technic
+    def get_technique(self, obj):
+        return obj.platform_master.technique
 
     def get_type(self, obj):
         return obj.platform_master.type
@@ -123,13 +137,17 @@ class DatasetLightSerializer(serializers.ModelSerializer):
     tissue = TissueSerializer(many=False, read_only=True)
     samples_training = SampleSerializer(many=True, read_only=True)
     samples_validation = SampleSerializer(many=True, read_only=True)
+    training_window = serializers.SerializerMethodField('get_training_window_label')
 
     class Meta:
         model = Dataset
         meta_fields = ('id', 'name', 'platform', 'scores_count', 'omics_count', 'phewas_count', 'omics_type', 'method_name',
-                       'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
+                       'training_window', 'tissue', 'samples_training', 'samples_validation','scoring_files_urls')
         fields = meta_fields
         read_only_fields = meta_fields
+
+    def get_training_window_label(self, obj):
+        return obj.get_training_window_display()
 
 
 class DatasetSerializer(DatasetLightSerializer):
@@ -454,44 +472,6 @@ class PathwaySerializerExtendedCount(PathwaySerializer):
 
     def get_metabolites_count(self, obj):
         return obj.pathway_metabolites.count()
-
-
-#### Score ####
-# class ScoreWebsiteSerializer(serializers.ModelSerializer):
-#     dataset_id = serializers.SerializerMethodField()
-#     dataset_name = serializers.SerializerMethodField()
-#     publication = serializers.SerializerMethodField()
-#     platform_name = serializers.SerializerMethodField()
-
-#     genes = GeneSerializerMinimal(many=True, read_only=True)
-#     transcripts = TranscriptSerializer(many=True, read_only=True)
-#     proteins = ProteinBaseSerializer(many=True, read_only=True)
-#     metabolites = MetaboliteBaseSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Score
-#         meta_fields = ('id', 'name', 'variants_number', 'ancestry',
-#                        'dataset_id', 'dataset_name', 'publication', 'platform_name',
-#                        'genes', 'transcripts', 'proteins', 'metabolites')
-#         fields = meta_fields
-#         read_only_fields = meta_fields
-
-#     def get_dataset_id(self,obj):
-#         ''' Get Dataset ID '''
-#         return obj.dataset.id
-
-#     def get_dataset_name(self,obj):
-#         ''' Get Dataset name '''
-#         return obj.dataset.name
-
-#     def get_publication(self, obj):
-#         ''' Get Publication model '''
-#         publication = obj.dataset.publication
-#         return PublicationSerializer(publication, many=False, read_only=True).data
-
-#     def get_platform_name(self, obj):
-#         ''' Get Platform model '''
-#         return obj.dataset.platform.name
 
 
 class ScoreLightSerializer(serializers.ModelSerializer):

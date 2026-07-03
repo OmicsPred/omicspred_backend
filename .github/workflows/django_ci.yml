@@ -39,7 +39,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15
+        image: postgres:18
         # Provide the user/password/db for postgres
         env:
           POSTGRES_USER: postgres
@@ -58,7 +58,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        python-version: [3.13]
+        python-version: [3.14]
 
     steps:
     - uses: actions/checkout@v4

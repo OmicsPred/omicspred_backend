@@ -5,6 +5,10 @@ from time import sleep
 
 
 sleep_time = 60
+status_ok = 200
+status_not_found = 404
+status_too_many = 429
+
 
 class BrowseEndpointTest(APITestCase):
     """ Test the REST endpoints """
@@ -63,6 +67,7 @@ class BrowseEndpointTest(APITestCase):
     seach_mt = f'molecular_trait={proteins_list[0]}'
     search_combined = f'{search_opgs_id}&{search_pmid}'
     search_combined_2 = f'{search_opgs_ids}&{search_pmid}'
+    search_cohort = f'cohort=INTERVAL'
 
     omics_common_columns = ['id', 'trait_reported_id', 'trait_reported', 'variants_number', 'dataset__publication', 'dataset__platform__version', 'dataset__name']
 
@@ -96,6 +101,7 @@ class BrowseEndpointTest(APITestCase):
         ('Publication Search', 'publication/search', 1, {'query': [search_opgs_id,search_pmid,search_author]}),
         # Sample endpoint
         ('Samples', 'sample/all', 1),
+        ('Samples Search', 'sample/search', 1, {'query': [search_cohort]}),
         # Score endpoints
         ('Scores', 'score/all', 1),
         ('Score/ID', 'score', 0, {'path': scores_list}),
@@ -123,7 +129,8 @@ class BrowseEndpointTest(APITestCase):
         ('Score PheWAS', 'score/phewas', 1, {'path': scores_list}),
         ('Score PheWAS Search', 'score/phewas/search', 1, {'query': [search_phenotype,search_opgs_ids,search_opgs_ids_2,search_opp_id,search_combined_2]}),
         # Other endpoints
-        ('Info', 'info', 0)
+        ('Info', 'info', 0),
+        ('External Sources - all', 'external_source/all', 1)
     ]
 
 
@@ -246,7 +253,7 @@ class BrowseEndpointTest(APITestCase):
     def client_response(self,url:str):
         resp = self.client.get(url)
         # In case the number of REST API calls is too high (i.e. greater than the modified 'rate4test' variable)
-        if resp.status_code == 429:
+        if resp.status_code == status_too_many:
             print(f"\nNeed to put the test on sleep for {sleep_time}s as it reaches the maximum number of calls/min.\nMight be worth increasing the value of the 'rate4test' variable (currently {self.rate4test}).")
             sleep(sleep_time)
             resp = self.client.get(url)
@@ -286,9 +293,11 @@ class BrowseEndpointTest(APITestCase):
     def send_request(self, url:str):
         """ Send REST API request and check the reponse status code """
         resp = self.client_response(url)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status_ok)
         content = resp.content.decode("utf-8")
         for empty_content in self.empty_resp:
+            if content == empty_content:
+                print(f"\t>> Equal data on endpoint: {url}")
             self.assertNotEqual(content, empty_content)
         return content
 
@@ -296,20 +305,20 @@ class BrowseEndpointTest(APITestCase):
     def get_empty_response(self, url:str, index:int):
         """ Send REST API request and check the reponse status code """
         resp = self.client_response(url)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status_ok)
         self.assertEqual(resp.content.decode("utf-8"), self.empty_resp[index])
 
 
     def get_not_found_response(self, url:str):
         """ Send REST API request on non existing endpoint and check reponse status code """
         resp = self.client_response(url)
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, status_not_found)
 
 
     def get_paginated_response(self, url:str):
         """ Send REST API request with limit and offset parameters, and check the reponse status code """
         resp = self.client_response(url+'?limit=20&offset=20')
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status_ok)
 
 
     def test_endpoints(self):
