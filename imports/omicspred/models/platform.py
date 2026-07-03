@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class PlatformMasterData(GenericData):
 
-    def __init__(self,name,type,full_name=None,technic=None):
+    def __init__(self,name,type,full_name=None,technique=None):
         GenericData.__init__(self)
         self.name = name
         self.data = {
@@ -17,8 +17,8 @@ class PlatformMasterData(GenericData):
         }
         if full_name:
             self.data['full_name'] = full_name
-        if technic:
-            self.data['technic'] = technic
+        if technique:
+            self.data['technique'] = technique
 
 
     def check_model_exist(self):
