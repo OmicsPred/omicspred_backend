@@ -107,7 +107,7 @@ class PlatformMaster(models.Model):
     """ Class to describe the platform used to get the omics data """
     name = models.CharField('Platform name', max_length=100)
     full_name = models.CharField('Platform full name', max_length=100)
-    technic = models.CharField('Platform technic', max_length=100)
+    technique = models.CharField('Platform technique', max_length=100)
     type = models.CharField('Platform type', max_length=100)
 
     @property
@@ -132,10 +132,7 @@ class PlatformMaster(models.Model):
 class Platform(models.Model):
     """ Class to describe the versioned platform used to get the omics data """
     name = models.CharField('Platform name', max_length=100, db_index=True)
-    # full_name = models.CharField('Platform full name', max_length=100)
     version = models.CharField('Platform version', max_length=50)
-    # technic = models.CharField('Platform technic', max_length=100)
-    # type = models.CharField('Platform type', max_length=100)
     platform_master = models.ForeignKey(PlatformMaster, on_delete=models.CASCADE, related_name='platform_version', verbose_name='Platform')
 
     @property
@@ -185,6 +182,19 @@ class Sample(models.Model):
     ancestry_free = models.TextField('Ancestry (e.g. French, Chinese)', null=True)
     ancestry_country = models.TextField('Country of Recruitment', null=True)
     ancestry_additional = models.TextField('Additional Ancestry Description', null=True)
+    ANCESTRY_ASSIGNMENT_CHOICES = [
+        ('SR', 'Self reported'),
+        ('GS', 'Genetic similarity'),
+        ('GSR', 'Genetic similarity to reference panel'),
+        ('AS', 'Author statement - no method reported'),
+        ('INF', 'Curator inferred ancestry label from cohort description (e.g. country of recruitment)'),
+        ('NR', 'No population descriptor or inferrable CoR provided')
+    ]
+    ancestry_assignment = models.CharField(max_length=4,
+        choices=ANCESTRY_ASSIGNMENT_CHOICES,
+        default='SR',
+        db_index=False
+    )
 
     ## Cohorts/Sources
     source_gwas_catalog = models.CharField('GWAS Catalog Study ID (GCST...)', max_length=20, null=True)
@@ -324,6 +334,17 @@ class Dataset(models.Model):
     omics_count = models.IntegerField('Omics Entities count', null=False)
     omics_type = models.CharField('Omics type', max_length=50)
     method_name = models.TextField('Score Development Method')
+    # Cis-variant, Trans-variants
+    TRAINING_WINDOW_CHOICES = [
+        ('',''),
+        ('genome-wide', 'Genome-wide'),
+        ('cis-only', 'Cis-only')
+    ]
+    training_window = models.CharField(max_length=25,
+        choices=TRAINING_WINDOW_CHOICES,
+        default='',
+        db_index=True
+    )
     tissue = models.ForeignKey(Tissue, on_delete=models.PROTECT, related_name='tissue_dataset', verbose_name='Tissue', null=True) # Tissue trait defining the sampled tissue
     scores_count = models.IntegerField('Associated Scores count', null=False)
     phewas_count = models.IntegerField('Associated PheWAS data count', default=0)
@@ -783,3 +804,10 @@ class ScorePheWAS(models.Model):
             'effect_size': self.effect_size,
             'var_gene_exp': self.var_gene_exp
         }
+
+
+class ExternalSource(models.Model):
+    """ Class to hold ExternalSource values """
+    name = models.CharField('External Source Name', max_length=50)
+    version = models.CharField('External Source Version', max_length=50, null=True)
+    url = models.CharField('External Source URL', max_length=100)
