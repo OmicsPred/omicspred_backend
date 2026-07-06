@@ -8,19 +8,19 @@ Backend part of the OmicsPred Project
 ## Roles
 Manage import, querying and retrieval of the OmicsPred metadata:
 
-* Scripts to import the metadata and generate the genetic scoring files (app [imports](https://github.com/OmicsPred/omicspred_backend/tree/main/imports))
-* Access the databases (apps [omicspred](https://github.com/OmicsPred/omicspred_backend/tree/main/omicspred), [applications](https://github.com/OmicsPred/omicspred_backend/tree/main/applications), [plot](https://github.com/OmicsPred/omicspred_backend/tree/main/plot)) *[read & write]*
+* Scripts to import the metadata and generate the genetic scoring files (app [imports](https://github.com/OmicsPred/omicspred_backend/tree/main/imports) -> [README](https://github.com/OmicsPred/omicspred_backend/tree/main/imports/README.md))
+* Scripts to export the metadata and data (app [exports](https://github.com/OmicsPred/omicspred_backend/tree/main/exports))
+* Access the databases (apps [omicspred](https://github.com/OmicsPred/omicspred_backend/tree/main/omicspred), [plot](https://github.com/OmicsPred/omicspred_backend/tree/main/plot)) *[read & write]*
 * Provide private (accessible by the website) and public REST APIs (app [rest_api](https://github.com/OmicsPred/omicspred_backend/tree/main/rest_api)) *[read only]*
 * Build and query the search engine (app [search_es](https://github.com/OmicsPred/omicspred_backend/tree/main/search_es)) using ElasticSearch *[read & write]*
 
 ## Softwares / tools
 
-
 | Tool | Role | Version |
 | ---- | ---- | ------- |
-| [PostgreSQL](https://www.postgresql.org/)| Database to store and query metadata | >= 15 |
-| [ElasticSearch](https://www.elastic.co/) | Server used as search engine | 7.xx (e.g. 7.17) |
-| [Django ](https://www.djangoproject.com/) | Python framework to communicate with the database, the ElasticSearch indexes and build a REST API | 5.2.x (e.g. 5.2.5) |
+| [PostgreSQL](https://www.postgresql.org/)| Database to store and query metadata | >= 18 |
+| [ElasticSearch](https://www.elastic.co/) | Server used as search engine | 8.xx (e.g. 8.19) |
+| [Django ](https://www.djangoproject.com/) | Python framework to communicate with the database, the ElasticSearch indexes and build a REST API | 6.0.x (e.g. 6.0.7) |
 
 
 ## Setup
@@ -43,27 +43,18 @@ Go to root of the repository (e.g. `cd .../omicspred_backend`)
 
 * Create **ElasticSearch** indexes
 
-  * Main indexes
-
-    ```bash
-    python manage.py search_index --rebuild -f
-    ```
-
-  * Phenotype index
-
-    * In *search_es/indexes.py*, comment all the lines and uncomment the PhenotypeDocument line
-    * In *applications/models.py*, replace the line `applications_db = 'applications'` by `applications_db = 'default'`
-    * In *config/settings.py*:
-      * Comment the `DATABASE[‘default’]` items
-      * Rename `DATABASE[‘applications’]` by `DATABASE[‘default’]`
-    * Run script
-
-      ```bash
-      python manage.py search_index --rebuild -f
-      ```
+  ```bash
+  python manage.py search_index --create
+  ```
 
   > [!WARNING]
-  > Do not forget to revert all these changes after generating the Phenotype search index!
+  > The indexing of the scores takes few hours (2-3h)!
+
+  To rebuild existing OmicsPred indexes:
+
+  ```bash
+    python manage.py search_index --rebuild -f
+  ```
 
 * For **local** deployment, run the command:
 
@@ -94,6 +85,9 @@ To run the tests manually, run the command:
 ```bash
 python manage.py test
 ```
+
+> [!NOTE]
+> This runs the REST API, exports and imports tests
 
 or to only run one test (e.g. metadata imports):
 
