@@ -15,7 +15,6 @@ class BrowseEndpointTest(APITestCase):
 
     # Load data in DB - Must live in the rest_api/fixtures/ directory
     fixtures = ['db_test']
-    # databases = {'default', 'applications'}
     databases = {'default'}
 
     # Change throttle rates for the tests
@@ -221,8 +220,6 @@ class BrowseEndpointTest(APITestCase):
     endpoints_with_filter_ids = (
         ('Scores / filter_ids', 'score/all' , scores_list[1:]), # Exclude 1st element
         ('Publications / filter_ids', 'publication/all' , publication_ids_list[1:]), # Exclude 1st element
-        # ('Applications - Score / filter_ids', 'applications_score/all', scores_list[1:]), # Exclude 1st element
-        # ('Applications - Sample', 'applications_sample/all', phenotypes_list[1:]) # Exclude 1st element
     )
 
 

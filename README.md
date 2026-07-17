@@ -56,15 +56,22 @@ Go to root of the repository (e.g. `cd .../omicspred_backend`)
     python manage.py search_index --rebuild -f
   ```
 
-* For **local** deployment, run the command:
+## Deployment
 
-  ```bash
-  python manage.py runserver
-  ```
+First of all, you need to rename and then update the file `app.yaml_template` to `app.yaml`.
 
-  This will create an instance of the Django apps on your local machine on `http://127.0.0.1:8000/`
+### Local
 
-* For **cloud** deployment (e.g. Google Cloud App Engine), after setting up the Cloud account on your laptop and updating the **app.yaml** file, run the command:
+Run the command:
+```bash
+python manage.py runserver
+```
+
+This will create an instance of the Django apps on your local machine on `http://127.0.0.1:8000/`
+
+### Cloud
+
+For **cloud** deployment (e.g. Google Cloud App Engine), after setting up the Cloud account on your laptop and updating the **app.yaml** file, run the command:
 
   ```bash
   gcloud app deploy
@@ -74,8 +81,8 @@ Go to root of the repository (e.g. `cd .../omicspred_backend`)
 > You will need to deploy the backend twice:
 >
 > * One for the [Public REST API](https://rest.omicspred.org/) with the app deployment name `service: rest` and the variable `PUBLIC_SITE: 'True'`.
-> * One for the **Private REST API** (i.e. the one consumed by the OmicsPred website) with the app deployment name `service: rest-private` and the variable `PUBLIC_SITE: 'False'`.  
-> See the different **app.yaml** configuration files already set in the Group Google Drive directory `Website -> Systems/Settings -> REST API (back-end)`
+> * One for the **Private REST API** (i.e. the one consumed by the OmicsPred frontend website) with the app deployment name, e.g. `service: rest-private`, and the variable `PUBLIC_SITE: 'False'`.
+> See the different **app.yaml** configuration files already set in the Group Google Drive directory `Website -> Systems/Settings -> REST API (back-end)`.
 
 ## Tests
 
