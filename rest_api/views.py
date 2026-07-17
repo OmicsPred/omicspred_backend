@@ -10,7 +10,6 @@ from django.db.models.functions import Cast, Lower
 from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings
 from omicspred.models import *
-from applications.models import *
 from .serializers import *
 
 opgs_prefix = 'OPGS'
@@ -40,8 +39,7 @@ defer_dict = {
         'dataset__publication__curation_status',
         'dataset__publication__date_released',
         'dataset__publication__authors'],
-    'publication_defer': ['curation_notes','curation_status'],
-    'publication_applications': [f'publication__{x}' for x in ['doi','journal','firstauthor','authors','title','date_publication']]
+    'publication_defer': ['curation_notes','curation_status']
 }
 
 performance_metric = [Prefetch('performance_metric', queryset=Metric.objects.only('id','performance_id','name_short','estimate').all())]
@@ -80,8 +78,6 @@ related_dict = {
     'dataset_prefetch': ['samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts'],#,'dataset_score'],
     'platform_prefetch': ['platform_version','platform_version__platform_dataset'],
     'publication_datasets': Prefetch('datasets',queryset=Dataset.objects.select_related('platform','platform__platform_master','tissue').all().prefetch_related('samples_training','samples_training__cohorts','samples_validation','samples_validation__cohorts').order_by('num')),
-    'score_applications_select': ['phenotype','platform','platform__platform_master','sample','cohort'],
-    'score_applications_prefetch': ['genes','proteins','metabolites'],
     'score_dataset': ['dataset','dataset__publication','dataset__platform', 'dataset__tissue'],
     'score_dataset_full': [
         'dataset',
@@ -1816,162 +1812,6 @@ class RestPlotScoreSearch(generics.ListAPIView):
         return queryset
 
 
-##################
-## Applications ##
-##################
-applications_db = 'applications'
-
-class RestPhenotypeOld(generics.RetrieveAPIView):
-    """
-    Retrieve the Phenotype information
-    Endpoint: /api/phenotype_old/<phenotype_id>
-    """
-
-    def get(self, request, phenotype_id):
-        param_inc_children = self.request.query_params.get('include_children')
-        try:
-            queryset = Phenotype.objects.using(applications_db).prefetch_related('phenotype_score').get(id=phenotype_id)
-        except Phenotype.DoesNotExist:
-            queryset = None
-        if (param_inc_children and str(param_inc_children)=='1'):
-            serializer = PhenotypeOldSerializerExtended(queryset,many=False)
-        else:
-            serializer = PhenotypeOldSerializerScoresCount(queryset,many=False)
-        return Response(serializer.data)
-
-
-class RestListPhenotypeScore(generics.ListAPIView):
-    """
-    Retrieve all the Phenotype Score Applications
-    Endpoint: /api/applications_score/all
-    """
-    serializer_class = ScoreApplicationsSerializer
-
-    def get_queryset(self):
-        # Fetch all the ScoresApplications
-        # queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related('molecular_traits').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).all().prefetch_related(*related_dict['score_applications_prefetch']).annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
-
-        # Filter by list of Score IDs
-        ids_list = get_ids_list(self)
-        if ids_list:
-            queryset = queryset.filter(score_id__in=ids_list)
-
-        # Filter data - FOR PRIVATE USE CASE
-        filter_term = self.request.query_params.get('filter')
-        if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(platform__name__iexact=filter_term) | Q(platform__platform_master__type__iexact=filter_term) |
-                                       Q(phenotype__id__iexact=filter_term) | Q(phenotype__name__icontains=filter_term) | Q(phenotype__category__icontains=filter_term) |
-                                       Q(cohort__name_short__iexact=filter_term) | Q(cohort__name_full__iexact=filter_term) |
-                                       Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
-                                       Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
-                                       Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term))
-        # Sort data + distinct data
-        queryset = sort_data_list(self.request,'score_application',queryset,'phenotype_as_float')
-        # return queryset.distinct()
-        return queryset
-
-
-class RestPhenotypeScore(generics.ListAPIView):
-    """
-    Retrieve all the Phenotype Score Application for a given Score ID
-    Endpoint: /api/applications_score/<opgs_id>
-    """
-
-    serializer_class = ScoreApplicationsSerializer
-
-    def get_queryset(self):
-        opgs_id = self.kwargs['opgs_id'].upper()
-        # queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related('molecular_traits').filter(score_id=opgs_id)
-        queryset = ScoreApplications.objects.using(applications_db).select_related(*related_dict['score_applications_select']).prefetch_related(*related_dict['score_applications_prefetch']).filter(score_id=opgs_id)
-        return queryset
-
-
-class RestPhenotypeScoreSearch(generics.ListAPIView):
-    """
-    Search the Phenotype Score Application using query
-    Endpoint: /api/applications_score/search
-    """
-    serializer_class = ScoreApplicationsSerializer
-
-    def get_queryset(self):
-        # queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related('molecular_traits').all()
-        queryset = ScoreApplications.objects.using(applications_db).defer(*defer_dict['publication_applications']).select_related(*related_dict['score_applications_select'],'publication').prefetch_related(*related_dict['score_applications_prefetch']).all()
-        params = 0
-
-        # Search by Score ID
-        opgs_id = self.request.query_params.get('opgs_id')
-        if opgs_id and opgs_id is not None:
-            opgs_id = opgs_id.upper()
-            queryset = queryset.filter(score_id=opgs_id)
-            params += 1
-        # Search by PubMed ID
-        opp_id = self.request.query_params.get('opp_id')
-        if opp_id and opp_id is not None:
-            if opp_id.upper().startswith(opp_prefix):
-                publication_num = get_publication_num(opp_id)
-                queryset = queryset.filter(Q(publication__num=publication_num))
-            # queryset = queryset.filter(Q(publication__id=opp_id))
-            params += 1
-        pmid = self.request.query_params.get('pmid')
-        if pmid and pmid.isnumeric():
-            queryset = queryset.filter(publication__pmid=pmid)
-            params += 1
-        # Search by Phenotype ID
-        phenotype_id = self.request.query_params.get('phenotype_id')
-        if phenotype_id and re.match(r'^\d+\.?\d*$',phenotype_id):
-            queryset = queryset.filter(phenotype__id=phenotype_id)
-            params += 1
-        # # Search by Molecular Trait ID/name (gene, protein, metabolite)
-        molecular_trait = self.request.query_params.get('molecular_trait')
-        if molecular_trait and molecular_trait is not None:
-            queryset = queryset.filter(Q(genes__name__iexact=molecular_trait) | Q(genes__external_id__iexact=molecular_trait) |
-                                       Q(proteins__name__iexact=molecular_trait) | Q(proteins__external_id__iexact=molecular_trait) |
-                                       Q(metabolites__name__iexact=molecular_trait) | Q(metabolites__external_id__iexact=molecular_trait))
-            params += 1
-
-        # # Filter data - FOR PRIVATE USE CASE
-        # filter_term = self.request.query_params.get('filter')
-        # if filter_term and filter_term is not None:
-        #     # queryset = queryset.filter(Q(score_id__iexact=filter_term) | Q(molecular_traits__external_id__iexact=filter_term) | Q(molecular_traits__name__icontains=filter_term))
-        #     queryset = queryset.filter(Q(score_id__iexact=filter_term) |
-        #                                Q(genes__external_id__iexact=filter_term) | Q(genes__name__icontains=filter_term) |
-        #                                Q(proteins__external_id__iexact=filter_term) | Q(proteins__name__icontains=filter_term) |
-        #                                Q(metabolites__external_id__iexact=filter_term) | Q(metabolites__name__icontains=filter_term) |
-        #                                Q(publication__id__iexact=filter_term))
-
-        if params == 0:
-            queryset = []
-
-        return queryset
-
-
-class RestListPhenotypeSample(generics.ListAPIView):
-    """
-    Retrieve all the Phenotype Sample Applications
-    Endpoint: /api/applications_sample/all
-    """
-    serializer_class = SampleApplicationsLegacySerializer
-
-    def get_queryset(self):
-        # Fetch all the ScoresApplications
-        queryset = SampleApplicationsLegacy.objects.using(applications_db).select_related('phenotype',).all().prefetch_related('phenotype__phenotype_score').annotate(phenotype_as_float=Cast('phenotype__id', output_field=FloatField()))
-
-        # Filter by list of PheCode IDs
-        ids_list = get_ids_list(self)
-        if ids_list:
-            queryset = queryset.filter(phenotype__id__in=ids_list)
-
-        # Filter data - FOR PRIVATE USE CASE
-        filter_term = self.request.query_params.get('filter')
-        if filter_term and filter_term is not None:
-            queryset = queryset.filter(Q(phenotype__id__iexact=filter_term) | Q(phenotype__name__icontains=filter_term) | Q(phenotype__category__icontains=filter_term))
-        # Sort data
-        queryset = sort_data_list(self.request,'sample_application',queryset,'phenotype_as_float')
-
-        return queryset
-
-
 class RestInfo(generics.RetrieveAPIView):
     """
     Return diverse information related to the REST API and the PGS Catalog
@@ -1992,8 +1832,6 @@ class RestInfo(generics.RetrieveAPIView):
                 'pathways': Pathway.objects.count(),
                 'phenotypes': Phenotype.objects.count(),
                 'phewas': ScorePheWAS.objects.count(),
-                # 'phenotypes': PhenotypeOld.objects.using(applications_db).count(),
-                # 'phenotype_associations': ScoreApplications.objects.using(applications_db).count(),
                 'tissues': Tissue.objects.filter(type='tissue').count()
             }
         }

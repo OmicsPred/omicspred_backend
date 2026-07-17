@@ -13,8 +13,6 @@ slash = '/?'
 url_prefix = 'api'
 
 rest_urls = {
-    'applications_score':   f'{url_prefix}/applications_score/',
-    'applications_sample':  f'{url_prefix}/applications_sample/',
     'cohort':               f'{url_prefix}/cohort/',
     'dataset':              f'{url_prefix}/dataset/',
     'external_source':      f'{url_prefix}/external_source/',
@@ -96,13 +94,6 @@ urlpatterns = [
     # To generate plot data
     re_path(r'^'+rest_urls['plot']+'file/search'+slash, cache_page(cache_time)(RestPlotFileSearch.as_view()), name="searchFilePlots"),
     re_path(r'^'+rest_urls['plot']+'score/search'+slash, cache_page(cache_time)(RestPlotScoreSearch.as_view()), name="searchScorePlots"),
-
-    # Applications [DEPRECATED]
-    re_path(r'^'+rest_urls['phenotype_old']+'(?P<phenotype_id>[^/]+)'+slash, RestPhenotypeOld.as_view(), name="getPhenotypeOld"),
-    re_path(r'^'+rest_urls['applications_score']+'all'+slash, cache_page(cache_time)(RestListPhenotypeScore.as_view()), name="getAllPhenotypeScores"),
-    re_path(r'^'+rest_urls['applications_score']+'search'+slash, RestPhenotypeScoreSearch.as_view(), name="searchPhenotypeScores"),
-    re_path(r'^'+rest_urls['applications_score']+'(?P<opgs_id>[^/]+)'+slash, RestPhenotypeScore.as_view(), name="getPhenotypeScore"),
-    re_path(r'^'+rest_urls['applications_sample']+'all'+slash, cache_page(cache_time)(RestListPhenotypeSample.as_view()), name="getAllPhenotypeSamples"),
 
     # Other
     re_path(r'^'+rest_urls['info']+slash, RestInfo.as_view(), name="getInfo"),
