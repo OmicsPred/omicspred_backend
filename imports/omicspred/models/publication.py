@@ -6,26 +6,34 @@ from omicspred.models import Publication
 
 class PublicationData(GenericData):
 
-    def __init__(self,pmid):
+    def __init__(self,pmid:int,data:dict):
         GenericData.__init__(self)
-        self.pmid = int(pmid)
-        self.check_model_exist()
-        if not self.model:
-            self.fetch_publication_information()
+        if pmid and str(pmid).isdigit():
+            self.pmid = int(pmid)
+            self.check_model_exist()
+            if not self.model:
+                self.fetch_publication_information()
+        else:
+           self.pmid = None
+           self.data = data
+        self.firstauthor = data['firstauthor']
 
 
     def check_model_exist(self):
         '''
         Check if a Publication model already exists.
         '''
-        try:
-            publication = Publication.objects.get(pmid=self.pmid)
-            self.model = publication
-        except Publication.DoesNotExist:
+        if self.pmid:
+            try:
+                publication = Publication.objects.get(pmid=self.pmid)
+                self.model = publication
+            except Publication.DoesNotExist:
+                self.model = None
+        else:
             self.model = None
 
 
-    def rest_api_call_to_epmc(self,query):
+    def rest_api_call_to_epmc(self,query:str):
         '''
         REST API call to EuropePMC
         - query: the search query
