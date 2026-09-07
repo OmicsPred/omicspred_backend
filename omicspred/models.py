@@ -607,7 +607,8 @@ class Performance(models.Model):
     # Evaluation Type
     EVALUATION_CHOICES = [
         ('T',  'Training'),
-        ('IV', 'Independent Validation'),
+        ('IDV', 'Independent Validation'),
+        ('IV', 'Internal Validation'),
         ('EV', 'External Validation'),
         ('E',  'Evaluation')
     ]
@@ -811,3 +812,9 @@ class ExternalSource(models.Model):
     name = models.CharField('External Source Name', max_length=50)
     version = models.CharField('External Source Version', max_length=50, null=True)
     url = models.CharField('External Source URL', max_length=100)
+
+
+class Info(models.Model):
+    """ Class to hold overall information counts/values """
+    name = models.CharField('Info Name', max_length=50)
+    value = models.IntegerField(verbose_name='Info Value')
