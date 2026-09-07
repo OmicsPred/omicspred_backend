@@ -82,7 +82,14 @@ class PerformanceData(GenericData):
 
 
     def update_eval_type(self):
+        eval_type_mapping = {
+            'Variant associations': 'Training',
+            'Score development': 'Training',
+            'Validation': 'External Validation'
+        }
         eval_type = self.data['eval_type']
+        if eval_type in eval_type_mapping.keys():
+            eval_type = eval_type_mapping[eval_type]
         eval_type_choices = Performance.eval_type.field.choices
         eval_types = {}
         for choice in eval_type_choices:

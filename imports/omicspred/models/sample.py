@@ -69,7 +69,7 @@ class SampleData(GenericData):
                         elif field == 'sample_percent_male':
                             # Remove % character
                             val_str = str(val)
-                            if re.search('\%',val_str):
+                            if re.search('\\%',val_str):
                                 val_str = re.sub(r'\%', r'', val_str)
                                 val_str = re.sub(r' ', r'', val_str)
                                 val = float(val_str)

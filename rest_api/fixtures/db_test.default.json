@@ -1044,5 +1044,69 @@
             "variants_number_used": 19,
             "variants_fraction_found": 1
         }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 1,
+        "fields": {
+            "name": "datasets",
+            "value": 216
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 2,
+        "fields": {
+            "name": "scores",
+            "value": 3339610
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 3,
+        "fields": {
+            "name": "publications",
+            "value": 7
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 4,
+        "fields": {
+            "name": "platforms",
+            "value": 6
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 5,
+        "fields": {
+            "name": "pathways",
+            "value": 2748
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 6,
+        "fields": {
+            "name": "phenotypes",
+            "value": 927
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 7,
+        "fields": {
+            "name": "phewas",
+            "value": 369024
+        }
+    },
+    {
+        "model": "omicspred.Info",
+        "pk": 8,
+        "fields": {
+            "name": "tissues",
+            "value": 53
+        }
     }
 ]

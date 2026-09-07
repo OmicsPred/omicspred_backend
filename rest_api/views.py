@@ -1819,21 +1819,14 @@ class RestInfo(generics.RetrieveAPIView):
     """
 
     def get(self, request):
-
+        data_count = {}
+        for info in Info.objects.all().order_by('id'):
+            data_count[info.name] = info.value
         data = {
             'rest_api': {
                 "version": settings.REST_API_VERSION
             },
-            'data_count': {
-                'datasets': Dataset.objects.count(),
-                'scores': Score.objects.count(),
-                'publications': Publication.objects.count(),
-                'platforms': PlatformMaster.objects.count(),
-                'pathways': Pathway.objects.count(),
-                'phenotypes': Phenotype.objects.count(),
-                'phewas': ScorePheWAS.objects.count(),
-                'tissues': Tissue.objects.filter(type='tissue').count()
-            }
+            'data_count': data_count
         }
 
         return Response(data)

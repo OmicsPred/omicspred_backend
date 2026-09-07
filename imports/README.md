@@ -17,3 +17,4 @@ python manage.py runscript import_metadata
 4. update_ensembl_proteins.py
 5. download_reactome_data.py (optional - only for updated dataset from Reactome)
 6. get_reactome_mappings.py
+7. update_db_info_count.py

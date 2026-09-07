@@ -136,17 +136,20 @@ class PublicationSpreadSheet(SpreadSheet):
         model = 'Publication'
         logger.info(f"Start to parse the {model} spreadsheet")
         pmid = None
+        data = {}
         pub_info = self.dataframe.iloc[0]
         for col in pub_info.keys():
             # m, f = self.get_model_field_from_schema(col,self.spreadsheet_schema)
             m, f  = self.spreadsheet_schema.loc[col][:2]
             if f == 'pmid':
                 pmid = pub_info[col]
-                break
-        if pmid:
-            pub_data = PublicationData(pmid)
+                # break
+            elif f in ['doi','journal','date_publication','firstauthor']:
+                data[f] = pub_info[col]
+        pub_data = PublicationData(pmid,data)
+        if pmid and str(pmid).isdigit():
             pub_data.fetch_publication_information()
-            self.parsed_data[pmid] = pub_data
+        self.parsed_data[pmid] = pub_data
 
 
 
@@ -286,7 +289,8 @@ class ScoreSpreadSheet(SpreadSheet):
                 dataset_name_suffix = score_components[1]
             #################################################
 
-            dataset_tag = f'{platform.name}_{platform_version}_{self.publication.pmid}_{dataset_tag_suffix}'
+            publication_tag = self.publication.pmid if self.publication.pmid else self.publication.firstauthor
+            dataset_tag = f'{platform.name}_{platform_version}_{publication_tag}_{dataset_tag_suffix}'
             if dataset_tag in self.datasets.keys():
                 dataset = self.datasets[dataset_tag]
                 dataset.add_score()

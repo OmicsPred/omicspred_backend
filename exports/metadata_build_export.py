@@ -13,7 +13,9 @@ class MetadataExport:
     def __init__(self, exports_dir:str, sqlite_dir:str, dataset:Dataset):
         self.dataset = dataset
         self.dataset_id = dataset.id
-        self.sqlite_dir = f'{sqlite_dir}/{self.dataset_id}'
+        self.sqlite_dir = None
+        if sqlite_dir:
+           self.sqlite_dir = f'{sqlite_dir}/{self.dataset_id}'
         self.data = {
             'dataset': self.get_data_attr(self.dataset,'Dataset'),
             'publication': self.get_data_attr(self.dataset.publication,'Publication'),
@@ -26,15 +28,18 @@ class MetadataExport:
 
         # Find corresponding SQLite file
         self.sqlite_file = None
-        for s_file in os.listdir(self.sqlite_dir):
-            if s_file.startswith(dataset.id) and s_file.endswith('.db'):
-                self.sqlite_file = (s_file)
-                break
-        if not self.sqlite_file:
-            print(f"ERROR: Can't find a SQLite file for the dataset {self.dataset_id} in {self.sqlite_dir}")
-            exit()
-
-        filename = self.sqlite_file.replace('.db','_metadata.xlsx')
+        if self.sqlite_dir:
+            for s_file in os.listdir(self.sqlite_dir):
+                if s_file.startswith(dataset.id) and s_file.endswith('.db'):
+                    self.sqlite_file = (s_file)
+                    break
+            if not self.sqlite_file:
+                print(f"ERROR: Can't find a SQLite file for the dataset {self.dataset_id} in {self.sqlite_dir}")
+                exit()
+        if self.sqlite_file:
+            filename = self.sqlite_file.replace('.db','_metadata.xlsx')
+        else:
+            filename = f'{self.dataset_id}_metadata.xlsx'
         self.filepath = f'{exports_dir}/{filename}'
 
 
@@ -192,7 +197,8 @@ class MetadataExport:
         self.data['publication'] = self.get_data_attr(self.dataset.publication,'Publication')
 
         # Fetch phi values from the SQLite export
-        self.fetch_phi_values_from_sqlite()
+        if self.sqlite_dir:
+            self.fetch_phi_values_from_sqlite()
 
         # Add file urls to the dataset
         self.add_dataset_file_urls()
