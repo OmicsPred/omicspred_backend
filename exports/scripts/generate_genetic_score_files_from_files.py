@@ -20,16 +20,48 @@ def generate_scoring_file_header(score:Score, dataset:Dataset):
             reported_trait = score.trait_reported
     else:
         reported_trait = score.trait_reported_id
-    return f'''#omicspred_id={score.id}
+
+    trait_type = dataset.platform.platform_master.type
+
+    # Setup 'trait_mapped'
+    molecular_traits = []
+    trait_mapped = set()
+    match trait_type:
+        case 'Proteomics':
+            molecular_traits = score.proteins.all()
+        case 'Transcriptomics':
+            molecular_traits = score.genes.all()
+        case 'Metabolomics':
+            molecular_traits = score.metabolites.all()
+        case _:
+            print("Can't find a valid platform type.")  # Default case
+            exit()
+    for mt in molecular_traits:
+        if mt.name and mt.external_id:
+            trait_mapped.add(f'{mt.name} ({mt.external_id})')
+        elif mt.name:
+            trait_mapped.add(mt.name)
+        elif mt.external_id:
+            trait_mapped.add(mt.external_id)
+
+    platform_version = f' ({dataset.platform.version})' if dataset.platform.version else ''
+    return f'''###GENETIC SCORING FILE - see https://www.pgscatalog.org/downloads/#dl_ftp_scoring for additional information
+#format_version=2.0
+##GENETIC SCORE (OPGS) INFORMATION
+#omicspred_id={score.id}
 #pgs_name={score.name}
-#trait_type=proteomics
+#trait_type={trait_type}
 #measurement_tissue={dataset.tissue.label} ({dataset.tissue.id})
-#measurement_platform=Somalogic ({dataset.platform.version})
+#measurement_platform={dataset.platform.name}{platform_version}
+#trait_mapped={'|'.join(sorted(trait_mapped))}
 #trait_reported={reported_trait}
 #genome_build={score.variants_genomebuild}
 #variants_number={score.variants_number}
+##SOURCE INFORMATION
+#pgp_id={dataset.publication.id}
 #citation={publication_model.firstauthor} et al. {publication_model.journal} ({publication_model.pub_year}). doi:{publication_model.doi}
 #license={score.license}'''
+
 
 
 def write_scoring_file(header:str, content:str, filepath:str) -> None:
@@ -56,7 +88,7 @@ def get_dataset_label(id:str, name:str) -> str:
 
 def run():
 
-    pmid = scoring_file_from_file_config['pmid']
+    publication_id = scoring_file_from_file_config['publication_id']
     input_dir_root = scoring_file_from_file_config['input_dir_root']
     output_dir_root = scoring_file_from_file_config['output_dir_root']
 
@@ -69,7 +101,7 @@ def run():
             print(f'-> input_dir_name > {scores_dir}: {scores_dir_path}')
             input_dirs[scores_dir] = scores_dir_path
 
-    datasets = Dataset.objects.filter(publication__pmid=pmid)
+    datasets = Dataset.objects.filter(publication__id=publication_id)
 
     for dataset in datasets:
         print(f"# {dataset.name} ({dataset.id}) - {dataset.num}")

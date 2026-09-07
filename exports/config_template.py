@@ -36,7 +36,7 @@ scoring_file_config = {
 
 # Scoring files exports - from text files
 scoring_file_from_file_config = {
-    'pmid': '<pubmed ID>', # e.g. 35501419
+    'publication_id': '<OPP ID>', # e.g. OPP000001
     'input_dir_root': '<path_to_dir_containing_raw_scoring_files>',
     'output_dir_root': '<path_to_omicspred_scoring_files_output_dir>'
 }
