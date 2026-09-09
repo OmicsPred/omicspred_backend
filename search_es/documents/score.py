@@ -23,11 +23,9 @@ class ScoreDocument(Document):
     """ Score elasticsearch document """
 
     id = fields.TextField(analyzer=id_analyzer)
-    name = fields.TextField(
-        analyzer=name_delimiter#,
-        # fields={
-        #     'raw': fields.KeywordField()
-        # }
+    score_name = fields.TextField(
+        attr="name",
+        analyzer=name_delimiter
     )
     variants_number = fields.IntegerField(index=False, doc_values=False)
     platform_name = fields.TextField(index=False)
@@ -50,6 +48,9 @@ class ScoreDocument(Document):
             'name': fields.TextField(index=False)
         }
     )
+
+    def prepare_genes_data(self, instance):
+        return instance.name
 
     def prepare_genes_data(self, instance):
         # Limit fetch of gene data to protein and gene platforms

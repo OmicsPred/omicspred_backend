@@ -26,11 +26,9 @@ def fetch_mt_data(objects_list):
 @registry.register_document
 class PathwayDocument(Document):
     """ Pathway elasticsearch document """
-    name = fields.TextField(
-        analyzer=name_delimiter#,
-        # fields={
-        #     'raw': fields.KeywordField()
-        # }
+    pathway_name = fields.TextField(
+        attr="name",
+        analyzer=name_delimiter
     )
     id = fields.TextField(attr="external_id", analyzer=id_analyzer)
     external_id_source = fields.TextField(index=False)
