@@ -6,4 +6,4 @@ openpyxl==3.1.5
 PyYAML==6.0.3
 
 # For testing only:
-django-debug-toolbar==7.0.0
+django-debug-toolbar==8.0.0
