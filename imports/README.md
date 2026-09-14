@@ -18,3 +18,4 @@ python manage.py runscript import_metadata
 5. download_reactome_data.py (optional - only for updated dataset from Reactome)
 6. get_reactome_mappings.py
 7. update_db_info_count.py
+8. count_unique_traits.py
