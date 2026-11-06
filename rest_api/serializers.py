@@ -168,6 +168,13 @@ class DatasetSerializer(DatasetLightSerializer):
         read_only_fields = DatasetLightSerializer.Meta.fields + meta_fields
 
 
+class DatasetAncestrySerializer(DatasetSerializer):
+    class Meta(DatasetSerializer.Meta):
+        meta_fields = ('ancestry',)
+        fields = DatasetSerializer.Meta.fields + meta_fields
+        read_only_fields = DatasetSerializer.Meta.fields + meta_fields
+
+
 class DatasetPheWASPublicationSerializer(DatasetSerializer):
     phewas_publications = PublicationSerializer(many=True, read_only=True)
 

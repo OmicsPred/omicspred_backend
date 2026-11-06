@@ -353,6 +353,10 @@ class Dataset(models.Model):
     samples_training = models.ManyToManyField(Sample, verbose_name='Training sample(s)', related_name='samples_training_dataset')
     samples_validation = models.ManyToManyField(Sample, verbose_name='Validation sample(s)', related_name='samples_validation_dataset')
     species = models.ForeignKey(Species, on_delete=models.PROTECT, related_name='species_dataset', verbose_name='Species', null=False) # Associated species
+
+    # Ancestry distribution
+    ancestry = models.JSONField('Ancestry distribution', null=True)
+
     # Dir ID
     files_ids = models.JSONField('Files IDs on Box', default=dict)
     # LICENSE information/text

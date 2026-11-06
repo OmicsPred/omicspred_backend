@@ -3,6 +3,7 @@
 /static/
 app.yaml
 **/.DS_Store
+.conda/
 .vscode/
 /exports/config.py
 /imports/config.py
